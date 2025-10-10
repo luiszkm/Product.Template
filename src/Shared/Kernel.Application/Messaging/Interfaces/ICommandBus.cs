@@ -1,4 +1,4 @@
-﻿namespace Kernel.Application.Messaging.Interfaces;
+namespace Product.Template.Kernel.Application.Messaging.Interfaces;
 
 public interface ICommandBus
 {
@@ -6,3 +6,4 @@ public interface ICommandBus
     Task<TResponse> Send<TCommand, TResponse>(TCommand command, CancellationToken cancellationToken = default)
         where TCommand : ICommand<TResponse>;
 }
+

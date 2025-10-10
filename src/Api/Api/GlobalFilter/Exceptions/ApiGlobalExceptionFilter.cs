@@ -1,11 +1,9 @@
-﻿using Application.Exceptions;
-using Domain.Exceptions;
-using Kernel.Application.Exceptions;
-using Kernel.Domain.Exceptions;
+using Product.Template.Kernel.Application.Exceptions;
+using Product.Template.Kernel.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Api.FiltersExceptions
+namespace Product.Template.Api.FiltersExceptions
 {
     public class ApiGlobalExceptionFilter : IExceptionFilter
     {
@@ -55,3 +53,4 @@ namespace Api.FiltersExceptions
         }
     }
 }
+

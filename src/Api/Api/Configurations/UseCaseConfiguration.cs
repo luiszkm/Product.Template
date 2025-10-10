@@ -1,15 +1,13 @@
-﻿
-using Kernel.Application.Data;
-using Kernel.Infrastructure.Persistence;
+using Product.Template.Kernel.Application.Data;
+using Product.Template.Kernel.Infrastructure.Persistence;
 
-namespace Api.Configurations
+namespace Product.Template.Api.Configurations
 {
     public static class UseCaseConfiguration
     {
         public static IServiceCollection AddUseCases(
             this IServiceCollection services)
         {
-           
             services.AddRepositories();
             return services;
         }
@@ -23,3 +21,4 @@ namespace Api.Configurations
         }
     }
 }
+

@@ -1,9 +1,7 @@
-﻿using Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data;
 
-
-namespace Kernel.Application.Messaging
+namespace Product.Template.Kernel.Application.Messaging
 {
     public class CommandBus : ICommandBus
     {
@@ -45,3 +43,4 @@ namespace Kernel.Application.Messaging
         }
     }
 }
+

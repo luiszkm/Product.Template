@@ -1,7 +1,7 @@
-﻿
-namespace Kernel.Domain.SeedWorks;
+namespace Product.Template.Kernel.Domain.SeedWorks;
 
 public interface IDomainEvent
 {
-    public DateTime OccurredOn { get; }
+    DateTime OccurredOn { get; }
 }
+

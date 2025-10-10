@@ -1,7 +1,7 @@
 using FluentValidation;
-using Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Messaging.Interfaces;
 
-namespace Kernel.Application.Behaviors;
+namespace Product.Template.Kernel.Application.Behaviors;
 
 public class ValidationBehavior : ICommandBehavior, IQueryBehavior
 {
@@ -9,13 +9,10 @@ public class ValidationBehavior : ICommandBehavior, IQueryBehavior
 
     public ValidationBehavior(IEnumerable<IValidator<object>> validators)
     {
-        // Cast seguro para IEnumerable<IValidator<T>>
         _validators = validators;
     }
 
-    // -------------------------------
-    // COMMAND (sem retorno)
-    // -------------------------------
+    // COMMAND (no return)
     public async Task Handle<TCommand>(TCommand command, Func<Task> next, CancellationToken cancellationToken)
         where TCommand : ICommand
     {
@@ -32,9 +29,7 @@ public class ValidationBehavior : ICommandBehavior, IQueryBehavior
         await next();
     }
 
-    // -------------------------------
-    // COMMAND (com retorno)
-    // -------------------------------
+    // COMMAND (with return)
     async Task<TResponse> ICommandBehavior.Handle<TCommand, TResponse>(
         TCommand command,
         Func<Task<TResponse>> next,
@@ -53,9 +48,7 @@ public class ValidationBehavior : ICommandBehavior, IQueryBehavior
         return await next();
     }
 
-    // -------------------------------
-    // QUERY (com retorno)
-    // -------------------------------
+    // QUERY (with return)
     async Task<TResponse> IQueryBehavior.Handle<TQuery, TResponse>(
         TQuery query,
         Func<Task<TResponse>> next,
@@ -74,12 +67,9 @@ public class ValidationBehavior : ICommandBehavior, IQueryBehavior
         return await next();
     }
 
-    // -------------------------------
-    // MÉTODO PRIVADO DE VALIDAÇÃO
-    // -------------------------------
+    // Validation helper
     private async Task ValidateAsync<T>(T message, CancellationToken cancellationToken)
     {
-        // Filtra apenas validadores compatíveis com T
         var validators = _validators
             .OfType<IValidator<T>>()
             .ToList();
@@ -101,3 +91,4 @@ public class ValidationBehavior : ICommandBehavior, IQueryBehavior
             throw new ValidationException(failures);
     }
 }
+

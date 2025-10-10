@@ -1,20 +1,21 @@
-﻿namespace Api.ApiModels.Response
+namespace Product.Template.Api.ApiModels.Response
 {
     public class ApiResponseListMeta
     {
         public ApiResponseListMeta(
             int currentPage,
             int perPage,
-            int total)
+            int totalCount)
         {
-            Total = total;
+            TotalCount = totalCount;
             PerPage = perPage;
             CurrentPage = currentPage;
         }
 
-        public int Total { get; set; }
+        public int TotalCount { get; set; }
         public int PerPage { get; set; }
         public int CurrentPage { get; set; }
 
     }
 }
+

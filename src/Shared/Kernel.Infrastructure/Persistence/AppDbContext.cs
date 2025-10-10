@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 
-namespace Kernel.Infrastructure.Persistence;
+namespace Product.Template.Kernel.Infrastructure.Persistence;
 
 public class AppDbContext : DbContext
 {

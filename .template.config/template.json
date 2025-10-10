@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Neuraptor",
+  "classifications": [ "Web", "API", "Clean Architecture" ],
+  "identity": "Neuraptor.Product.Template",
+  "name": "Neuraptor .NET Product Template",
+  "shortName": "product-template",
+  "sourceName": "Product.Template",
+  "description": "Template universal para aplicações .NET com camadas Kernel.* e API.",
+  "tags": { "language": "C#", "type": "project" },
+  "preferNameDirectory": true,
+  "symbols": {
+    "RootNamespace": {
+      "type": "parameter",
+      "datatype": "string",
+      "replaces": "Product.Template",
+      "defaultValue": "Neuraptor.Product"
+    }
+  },
+  "primaryOutputs": [
+    { "path": "src/Api/Api/Api.csproj" },
+    { "path": "src/Shared/Kernel.Domain/Kernel.Domain.csproj" },
+    { "path": "src/Shared/Kernel.Application/Kernel.Application.csproj" },
+    { "path": "src/Shared/Kernel.Infrastructure/Kernel.Infrastructure.csproj" }
+  ],
+  "postActions": [
+    {
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "description": "Restaurar pacotes",
+      "manualInstructions": [ { "text": "dotnet restore" } ],
+      "args": { "executable": "dotnet", "args": "restore" },
+      "continueOnError": true
+    }
+  ],
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**",
+            ".vs/**",
+            "**/*.user",
+            ".git/**",
+            ".github/**"
+          ]
+        }
+      ]
+    }
+  ]
+}
+

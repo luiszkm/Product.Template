@@ -1,6 +1,7 @@
-﻿namespace Kernel.Application.Messaging.Interfaces;
+namespace Product.Template.Kernel.Application.Messaging.Interfaces;
 
-public interface IQueryHandler <in TQuery, TResponse> where TQuery : IQuery<TResponse>
+public interface IQueryHandler<in TQuery, TResponse> where TQuery : IQuery<TResponse>
 {
     Task<TResponse> Handle(TQuery query, CancellationToken cancellationToken);
 }
+

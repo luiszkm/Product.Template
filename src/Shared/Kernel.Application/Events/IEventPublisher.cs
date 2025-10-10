@@ -1,9 +1,10 @@
-﻿using Kernel.Domain.SeedWorks;
+using Product.Template.Kernel.Domain.SeedWorks;
 
-namespace Shared.Kernel.Application.Events;
+namespace Product.Template.Kernel.Application.Events;
 
 public interface IEventPublisher
 {
     Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default);
 
 }
+

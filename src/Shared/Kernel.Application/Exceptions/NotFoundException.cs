@@ -1,6 +1,4 @@
-﻿
-
-namespace Kernel.Application.Exceptions
+namespace Product.Template.Kernel.Application.Exceptions
 {
     public class NotFoundException : Exception
     {
@@ -9,3 +7,4 @@ namespace Kernel.Application.Exceptions
         }
     }
 }
+

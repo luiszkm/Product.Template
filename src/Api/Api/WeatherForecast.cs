@@ -1,4 +1,4 @@
-namespace Api
+namespace Product.Template.Api
 {
     public class WeatherForecast
     {

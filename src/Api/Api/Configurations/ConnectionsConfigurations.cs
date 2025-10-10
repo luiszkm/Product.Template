@@ -1,8 +1,6 @@
-﻿using Infrastructure.Data;
-using Kernel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.Configurations
+namespace Product.Template.Api.Configurations
 {
     public static class ConnectionsConfigurations
     {
@@ -15,11 +13,10 @@ namespace Api.Configurations
             return services;
         }
 
-  
         public static IServiceCollection AddTestConnections(
             this IServiceCollection services)
         {
-            services.AddDbContext<AppDbContext>(
+            services.AddDbContext<Product.Template.Kernel.Infrastructure.Persistence.AppDbContext>(
                 options => options.UseInMemoryDatabase("e2e-tests-db"));
 
             return services;
@@ -27,3 +24,4 @@ namespace Api.Configurations
 
     }
 }
+

@@ -1,6 +1,4 @@
-﻿
-
-namespace Kernel.Domain.SeedWorks;
+namespace Product.Template.Kernel.Domain.SeedWorks;
 
 public abstract class AggregateRoot<TId> : Entity<TId>
 {
@@ -10,5 +8,6 @@ public abstract class AggregateRoot<TId> : Entity<TId>
     protected void AddDomainEvent(IDomainEvent domainEvent)
         => _domainEvents.Add(domainEvent);
     public void ClearDomainEvents()
-    =>  _domainEvents.Clear();
+        => _domainEvents.Clear();
 }
+

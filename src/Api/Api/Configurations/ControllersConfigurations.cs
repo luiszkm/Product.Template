@@ -1,6 +1,4 @@
-﻿using Api.FiltersExceptions;
-
-namespace Api.Configurations
+namespace Product.Template.Api.Configurations
 {
 
     public static class ControllersConfigurations
@@ -9,7 +7,7 @@ namespace Api.Configurations
             this IServiceCollection services)
         {
             services.AddControllers(options =>
-                options.Filters.Add(typeof(ApiGlobalExceptionFilter)));
+                options.Filters.Add(typeof(Product.Template.Api.FiltersExceptions.ApiGlobalExceptionFilter)));
             services.AddDocumentation();
             return services;
         }
@@ -35,3 +33,4 @@ namespace Api.Configurations
         }
     }
 }
+

@@ -1,8 +1,8 @@
-using Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace Kernel.Application.Behaviors;
+namespace Product.Template.Kernel.Application.Behaviors;
 
 public class LoggingBehavior : ICommandBehavior, IQueryBehavior
 {

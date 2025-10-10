@@ -1,8 +1,8 @@
 ﻿
 
-using Kernel.Application.Data;
+using Product.Template.Kernel.Application.Data;
 
-namespace Kernel.Infrastructure.Persistence
+namespace Product.Template.Kernel.Infrastructure.Persistence
 {
     public class UnitOfWork : IUnitOfWork
     {
@@ -17,6 +17,6 @@ namespace Kernel.Infrastructure.Persistence
             => _context.SaveChangesAsync(cancellationToken);
 
         public Task Rollback(CancellationToken cancellationToken)
-        => Task.CompletedTask;
+            => Task.CompletedTask;
     }
 }

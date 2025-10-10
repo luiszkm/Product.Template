@@ -1,5 +1,4 @@
-﻿
-namespace Kernel.Application.Messaging.Interfaces;
+namespace Product.Template.Kernel.Application.Messaging.Interfaces;
 
 public interface ICommandBehavior
 {
@@ -7,5 +6,4 @@ public interface ICommandBehavior
     Task<TResponse> Handle<TCommand, TResponse>(TCommand command, Func<Task<TResponse>> next, CancellationToken cancellationToken)
         where TCommand : ICommand<TResponse>;
 }
-
 

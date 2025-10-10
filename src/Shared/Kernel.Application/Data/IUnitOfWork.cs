@@ -1,4 +1,4 @@
-﻿namespace Kernel.Application.Data;
+namespace Product.Template.Kernel.Application.Data;
 
 public interface IUnitOfWork
 {
@@ -6,3 +6,4 @@ public interface IUnitOfWork
 
     public Task Rollback(CancellationToken cancellationToken);
 }
+
