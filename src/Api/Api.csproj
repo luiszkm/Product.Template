@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>f5e72b5e-b450-4e58-b7f9-96ae75cfa1f9</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..\..</DockerfileContext>
+    <DockerfileContext>..\.</DockerfileContext>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
@@ -58,8 +58,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Shared\Kernel.Application\Kernel.Application.csproj" />
-    <ProjectReference Include="..\..\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
+    <ProjectReference Include="..\Shared\Kernel.Application\Kernel.Application.csproj" />
+    <ProjectReference Include="..\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
