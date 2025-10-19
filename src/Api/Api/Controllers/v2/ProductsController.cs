@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Product.Template.Api.Configurations;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace Product.Template.Api.Controllers.v2;
@@ -100,12 +101,21 @@ public class ProductsController : ControllerBase
     [SwaggerResponse(404, "Not Found")]
     public ActionResult<ProductDtoV2> GetById(int id)
     {
+        // Exemplo de custom span/trace com OpenTelemetry
+        using var activity = OpenTelemetryConfiguration.ActivitySource.StartActivity("GetProductById");
+        activity?.SetTag("product.id", id);
+
         _logger.LogInformation("API v2.0 - Buscando produto com ID: {ProductId}", id);
 
         if (id <= 0)
         {
+            activity?.SetTag("product.found", false);
+            activity?.SetTag("error.reason", "invalid_id");
             return NotFound(new { message = "Produto não encontrado", errorCode = "PRODUCT_NOT_FOUND" });
         }
+
+        // Simular uma operação de busca no banco de dados
+        activity?.AddEvent(new System.Diagnostics.ActivityEvent("Querying database"));
 
         var product = new ProductDtoV2
         {
@@ -116,6 +126,10 @@ public class ProductsController : ControllerBase
             Stock = id * 10,
             IsActive = true
         };
+
+        activity?.SetTag("product.found", true);
+        activity?.SetTag("product.name", product.Name);
+        activity?.SetTag("product.category", product.Category);
 
         return Ok(product);
     }

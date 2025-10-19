@@ -25,6 +25,7 @@ Template universal para criação rápida de aplicações .NET com Clean Archite
 - **API RESTful** com Swagger/OpenAPI melhorado
 - **API Versioning** completo (URL, Header, Query String)
 - **Serilog** para logging estruturado (Console, File, Seq)
+- **OpenTelemetry** para traces e métricas (Jaeger, Prometheus, Datadog)
 - **Entity Framework Core** com suporte a múltiplos bancos
 - **Docker** pronto para uso
 
@@ -700,6 +701,173 @@ public class ProductsController : ControllerBase
 }
 ```
 
+### 10. OpenTelemetry Lite - Observabilidade Distribuída
+
+O template inclui **OpenTelemetry** para traces e métricas, seguindo o padrão da indústria para observabilidade.
+
+#### Características
+
+- **Traces Distribuídos**: Rastreamento automático de requisições HTTP (entrada e saída)
+- **Métricas de Runtime**: CPU, memória, GC, threads
+- **Vendor Neutral**: Funciona com Jaeger, Tempo, Datadog, Prometheus, etc
+- **Zero Configuração**: Instrumentação automática de ASP.NET Core e HttpClient
+- **OTLP Exporter**: Protocolo padrão OpenTelemetry
+
+#### Configuração (appsettings.json)
+
+```json
+{
+  "OpenTelemetry": {
+    "ServiceName": "Product.Template.Api",
+    "ServiceVersion": "1.0.0",
+    "EnableTraces": true,
+    "EnableMetrics": true,
+    "EnableConsoleExporter": false,
+    "OtlpEndpoint": "http://localhost:4317"
+  }
+}
+```
+
+#### Traces automáticos
+
+Todos os requests HTTP são rastreados automaticamente:
+
+```
+GET /api/v2/products/123
+├─ Span: GET /api/v2/products/{id}
+│  ├─ http.method: GET
+│  ├─ http.url: /api/v2/products/123
+│  ├─ http.status_code: 200
+│  └─ duration: 45ms
+```
+
+#### Custom Spans (Traces Personalizados)
+
+```csharp
+using Product.Template.Api.Configurations;
+
+public class ProductService
+{
+    public async Task<Product> GetProductAsync(int id)
+    {
+        // Criar um custom span
+        using var activity = OpenTelemetryConfiguration.ActivitySource.StartActivity("GetProduct");
+        activity?.SetTag("product.id", id);
+
+        var product = await _repository.GetByIdAsync(id);
+
+        activity?.SetTag("product.found", product != null);
+        activity?.SetTag("product.category", product.Category);
+
+        return product;
+    }
+}
+```
+
+#### Métricas disponíveis (automáticas)
+
+**Runtime Metrics**:
+- `process.runtime.dotnet.gc.collections.count` - Contagem de GC
+- `process.runtime.dotnet.gc.heap.size` - Tamanho do heap
+- `process.runtime.dotnet.thread_pool.threads.count` - Threads ativas
+
+**ASP.NET Core Metrics**:
+- `http.server.request.duration` - Duração das requisições
+- `http.server.active_requests` - Requisições ativas
+
+#### Visualizando Traces com Jaeger
+
+**1. Instalar Jaeger via Docker**:
+
+```bash
+docker run -d --name jaeger \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  jaegertracing/all-in-one:latest
+```
+
+**2. Configurar endpoint no appsettings.json**:
+
+```json
+{
+  "OpenTelemetry": {
+    "OtlpEndpoint": "http://localhost:4317"
+  }
+}
+```
+
+**3. Acessar Jaeger UI**: http://localhost:16686
+
+#### Visualizando Métricas com Prometheus + Grafana
+
+**Docker Compose (opcional)**:
+
+```yaml
+version: '3.8'
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+```
+
+#### Console Exporter (Desenvolvimento)
+
+Para ver traces e métricas no console durante desenvolvimento:
+
+```json
+// appsettings.Development.json
+{
+  "OpenTelemetry": {
+    "EnableConsoleExporter": true
+  }
+}
+```
+
+#### Exemplo de trace completo
+
+```
+Trace ID: 7f8a9b2c-1234-5678-90ab-cdef12345678
+│
+├─ HTTP GET /api/v2/products/5 (200 OK) - 52ms
+│  ├─ product.id: 5
+│  ├─ http.method: GET
+│  ├─ http.status_code: 200
+│  │
+│  └─ GetProductById - 48ms
+│     ├─ product.id: 5
+│     ├─ product.found: true
+│     ├─ product.name: "Product 5"
+│     └─ Event: "Querying database"
+```
+
+#### Exportando para outros backends
+
+O template usa **OTLP** (OpenTelemetry Protocol), compatível com:
+
+- **Jaeger** - Traces
+- **Tempo** - Traces (Grafana)
+- **Prometheus** - Metrics
+- **Datadog** - Traces + Metrics
+- **New Relic** - Traces + Metrics
+- **Azure Application Insights** - Traces + Metrics
+- **AWS X-Ray** - Traces
+
+Basta alterar o `OtlpEndpoint` para o backend desejado.
+
 ## Docker
 
 ### Build da imagem
@@ -742,6 +910,13 @@ dotnet new uninstall Neuraptor.Product.Template
   - Serilog.Exceptions
   - Serilog.Sinks.File
   - Serilog.Sinks.Seq
+- **OpenTelemetry** (Distributed tracing and metrics)
+  - OpenTelemetry.Extensions.Hosting
+  - OpenTelemetry.Instrumentation.AspNetCore
+  - OpenTelemetry.Instrumentation.Http
+  - OpenTelemetry.Instrumentation.Runtime
+  - OpenTelemetry.Exporter.Console
+  - OpenTelemetry.Exporter.OpenTelemetryProtocol
 - **AspNetCore.HealthChecks** (Health check endpoints e UI)
 - **Microsoft.Extensions.Diagnostics.HealthChecks**
 

@@ -38,6 +38,9 @@ builder.Services.AddHealthChecksConfiguration();
 // Security (CORS, JWT Authentication)
 builder.Services.AddSecurityConfiguration(builder.Configuration);
 
+// OpenTelemetry (Traces e Metrics)
+builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
+
 var app = builder.Build();
 
 // ========================================
