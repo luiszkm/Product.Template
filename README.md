@@ -21,8 +21,10 @@ Template universal para criação rápida de aplicações .NET com Clean Archite
 - **CORS** configurável por ambiente
 - **JWT Authentication** com políticas de autorização
 
-### Infraestrutura
-- **API RESTful** com Swagger/OpenAPI
+### Infraestrutura e Observabilidade
+- **API RESTful** com Swagger/OpenAPI melhorado
+- **API Versioning** completo (URL, Header, Query String)
+- **Serilog** para logging estruturado (Console, File, Seq)
 - **Entity Framework Core** com suporte a múltiplos bancos
 - **Docker** pronto para uso
 
@@ -500,6 +502,204 @@ var token = tokenHandler.CreateToken(tokenDescriptor);
 var tokenString = tokenHandler.WriteToken(token);
 ```
 
+### 8. Serilog - Logging Estruturado
+
+O template utiliza **Serilog** para logging estruturado com suporte a múltiplos sinks (Console, File, Seq).
+
+#### Características
+
+- **Logging Estruturado**: Logs em formato JSON com propriedades tipadas
+- **Enrichers**: Adiciona contexto automático (Machine Name, Thread ID, Exception Details)
+- **Múltiplos Sinks**: Console, Arquivo (com rotação diária), Seq
+- **Correlation ID**: Integração com X-Correlation-ID header
+- **Performance**: Request logging otimizado com Serilog
+
+#### Configuração (appsettings.json)
+
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.AspNetCore": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/log-.txt",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 30
+        }
+      },
+      {
+        "Name": "Seq",
+        "Args": {
+          "serverUrl": "http://localhost:5341"
+        }
+      }
+    ]
+  }
+}
+```
+
+#### Usando Serilog no código
+
+```csharp
+public class ProductService
+{
+    private readonly ILogger<ProductService> _logger;
+
+    public ProductService(ILogger<ProductService> logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task<Product> GetProductAsync(int id)
+    {
+        _logger.LogInformation("Buscando produto {ProductId}", id);
+
+        try
+        {
+            var product = await _repository.GetByIdAsync(id);
+            _logger.LogInformation("Produto {ProductId} encontrado: {ProductName}",
+                id, product.Name);
+            return product;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar produto {ProductId}", id);
+            throw;
+        }
+    }
+}
+```
+
+#### Visualizando logs no Seq
+
+Se você tiver o **Seq** rodando localmente (http://localhost:5341), todos os logs estruturados serão enviados automaticamente para visualização e análise.
+
+**Instalando Seq com Docker**:
+```bash
+docker run -d --name seq -e ACCEPT_EULA=Y -p 5341:80 datalust/seq:latest
+```
+
+Acesse: http://localhost:5341
+
+### 9. API Versioning
+
+Suporte completo para versionamento de API com múltiplas estratégias.
+
+#### Características
+
+- **Versionamento por URL**: `/api/v1/products`, `/api/v2/products`
+- **Versionamento por Header**: `X-Api-Version: 2.0`
+- **Versionamento por Query String**: `?api-version=1.0`
+- **Swagger Multi-Versão**: Documentação separada para cada versão
+- **Versão Padrão**: v1.0 quando não especificada
+- **Deprecation Support**: Marcar versões antigas como descontinuadas
+
+#### Criando controllers versionados
+
+**Versão 1.0**:
+```csharp
+using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MeuProjeto.Api.Controllers.v1;
+
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult GetAll()
+    {
+        // Implementação v1.0
+        return Ok(new[] { "Product A", "Product B" });
+    }
+}
+```
+
+**Versão 2.0 (com breaking changes)**:
+```csharp
+using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
+
+namespace MeuProjeto.Api.Controllers.v2;
+
+[ApiController]
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsController : ControllerBase
+{
+    [HttpGet]
+    public IActionResult GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        // Versão 2.0 com paginação
+        return Ok(new
+        {
+            items = new[] { "Product A", "Product B" },
+            totalCount = 2,
+            page,
+            pageSize
+        });
+    }
+}
+```
+
+#### Chamando a API
+
+**Por URL (recomendado)**:
+```bash
+curl https://localhost:5001/api/v1/products
+curl https://localhost:5001/api/v2/products
+```
+
+**Por Header**:
+```bash
+curl -H "X-Api-Version: 1.0" https://localhost:5001/api/products
+curl -H "X-Api-Version: 2.0" https://localhost:5001/api/products
+```
+
+**Por Query String**:
+```bash
+curl https://localhost:5001/api/products?api-version=1.0
+curl https://localhost:5001/api/products?api-version=2.0
+```
+
+#### Swagger com múltiplas versões
+
+O Swagger UI exibirá um dropdown para selecionar a versão da API:
+
+- **v1** - Product Template API v1.0
+- **v2** - Product Template API v2.0
+
+Cada versão terá sua própria documentação completa com schemas, exemplos e autenticação JWT.
+
+#### Deprecando versões antigas
+
+```csharp
+[ApiController]
+[ApiVersion("1.0", Deprecated = true)]
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public class ProductsController : ControllerBase
+{
+    // v1.0 será marcada como deprecated no Swagger
+}
+```
+
 ## Docker
 
 ### Build da imagem
@@ -535,11 +735,21 @@ dotnet new uninstall Neuraptor.Product.Template
 - **Microsoft.AspNetCore.Authentication.JwtBearer** (JWT Authentication)
 
 ### Observabilidade
+- **Serilog** (Structured logging)
+  - Serilog.AspNetCore
+  - Serilog.Enrichers.Environment
+  - Serilog.Enrichers.Thread
+  - Serilog.Exceptions
+  - Serilog.Sinks.File
+  - Serilog.Sinks.Seq
 - **AspNetCore.HealthChecks** (Health check endpoints e UI)
 - **Microsoft.Extensions.Diagnostics.HealthChecks**
 
-### Documentação
+### Documentação e Versionamento
 - **Swashbuckle.AspNetCore** (Swagger/OpenAPI)
+- **Swashbuckle.AspNetCore.Annotations** (Swagger annotations)
+- **Asp.Versioning.Mvc** (API Versioning)
+- **Asp.Versioning.Mvc.ApiExplorer** (Swagger multi-version support)
 
 ### Testes
 - **xUnit** (Test framework)

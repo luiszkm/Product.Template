@@ -1,7 +1,11 @@
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Middleware;
 
+// ========================================
+// 0. Configure Serilog (Before Building)
+// ========================================
 var builder = WebApplication.CreateBuilder(args);
+builder.AddSerilogConfiguration();
 
 // ========================================
 // 1. Services Configuration
@@ -15,6 +19,9 @@ builder.Services.AddUseCases();
 
 // Database Connections
 builder.Services.AddAppConnections(builder.Configuration);
+
+// API Versioning
+builder.Services.AddApiVersioningConfiguration();
 
 // Controllers and API Documentation
 builder.Services.AddControllersConfigurations();
@@ -37,7 +44,10 @@ var app = builder.Build();
 // 2. Middleware Pipeline Configuration
 // ========================================
 
-// Request Logging (deve vir primeiro para capturar todas as requisições)
+// Serilog Request Logging (captura todas as requisições de forma performática)
+app.UseSerilogConfiguration();
+
+// Request Logging Detalhado (com correlationId e mascaramento de dados sensíveis)
 app.UseMiddleware<RequestLoggingMiddleware>();
 
 // IP Whitelist/Blacklist Validation
