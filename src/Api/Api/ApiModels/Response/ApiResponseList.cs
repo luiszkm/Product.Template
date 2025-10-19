@@ -1,6 +1,7 @@
+using Product.Template.Kernel.Application.Data;
+
 namespace Product.Template.Api.ApiModels.Response
 {
-    using Product.Template.Kernel.Application.Data;
 
     public class ApiResponseList<TItemData> : ApiResponse<IReadOnlyList<TItemData>>
     {

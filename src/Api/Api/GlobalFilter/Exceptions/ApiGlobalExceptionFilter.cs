@@ -3,7 +3,7 @@ using Product.Template.Kernel.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Product.Template.Api.FiltersExceptions
+namespace Product.Template.Api.GlobalFilter.Exceptions
 {
     public class ApiGlobalExceptionFilter : IExceptionFilter
     {

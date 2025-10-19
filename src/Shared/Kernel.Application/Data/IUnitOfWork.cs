@@ -2,8 +2,8 @@ namespace Product.Template.Kernel.Application.Data;
 
 public interface IUnitOfWork
 {
-    public Task Commit(CancellationToken cancellationToken);
+    Task Commit(CancellationToken cancellationToken);
 
-    public Task Rollback(CancellationToken cancellationToken);
+    Task Rollback(CancellationToken cancellationToken);
 }
 
