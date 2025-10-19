@@ -1,51 +1,176 @@
 {
   "$schema": "http://json.schemastore.org/template",
-  "author": "Luis Sioares",
-  "classifications": [ "Web", "Clean Architecture", "DDD", "CQRS", "Template" ],
+  "author": "Luis Soares",
+  "classifications": [ "Web", "API", "Clean Architecture", "DDD", "CQRS" ],
   "identity": "Product.Template",
-  "name": "template arquiteture dotnet",
+  "name": "Luis .NET Product Template",
   "shortName": "product-template",
-  "description": "Template simples de Clean Architecture (.NET) com DDD e CQRS, focado em produtividade sem over-engineering.",
-  "sourceName": "MeuProjeto",
-  "defaultName": "MyProduct",
-  "preferNameDirectory": true,
+  "sourceName": "Product.Template",
+  "description": "Template universal para aplicações .NET com Clean Architecture, DDD, CQRS e camadas Kernel.*",
   "tags": {
     "language": "C#",
     "type": "project"
   },
-
+  "preferNameDirectory": true,
   "symbols": {
-    "projectName": {
-      "type": "parameter",
-      "datatype": "text",
-      "replaces": "MeuProjeto",
-      "description": "Namespace base do projeto (será aplicado nos arquivos).",
-      "defaultValue": "MeuProjeto"
+    "SolutionGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "61CD335D-677C-4517-B035-BB7B51149C1E",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "UserSecretsId": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "f5e72b5e-b450-4e58-b7f9-96ae75cfa1f9"
+    },
+    "KernelDomainGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "CCEF3C1A-278B-4960-AFEE-7BB4FA8C1A50",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "KernelApplicationGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "24149B0A-A2BF-4D95-AB6C-9463BB6BF4C8",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "KernelInfrastructureGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "6EE15516-223A-43B3-85A9-E7E0499C5CC3",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "ApiGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "D00AB551-5C1A-45C2-B6B2-83F44E7EA040",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "UnitTestsGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "BFA3AB2A-A6CC-4371-854C-7BA959C38797",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "CommonTestsGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "36D96A94-CE3F-4BA5-A38F-5A91BEBE482B",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "IntegrationTestsGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "136DD2F1-8652-41D1-BBD9-CECB9FEB685F",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "E2ETestsGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "FDC0AA0F-5F0C-4394-A4E9-3DF6A5C34931",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "SrcFolderGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "02EA681E-C7D8-13C7-8484-4AC65E1B71E8",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "TestsFolderGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "95D14A52-B5A3-43B4-8116-2CDAD5E354B8",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "SharedFolderGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "42A6C8C2-18DB-49C8-8B68-50F6FC82276F",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "ModulesFolderGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "1E87313C-EBA6-4C7A-96F3-469A15BACEFE",
+      "parameters": {
+        "format": "N"
+      }
+    },
+    "ApiFolderGuid": {
+      "type": "generated",
+      "generator": "guid",
+      "replaces": "46D613DC-EB59-4666-BE83-9051AA88F938",
+      "parameters": {
+        "format": "N"
+      }
     }
   },
-
-  "sources": [
-    {
-      "modifiers": [
-        { "exclude": [ "**/[Bb]in/**", "**/[Oo]bj/**", "**/.git/**", "**/.vs/**", "**/.idea/**" ] }
-      ]
-    }
-  ],
-
   "primaryOutputs": [
-    { "path": "src/Api/Api/Api.csproj" }
+    { "path": "src/Api/Api/Api.csproj" },
+    { "path": "src/Shared/Kernel.Domain/Kernel.Domain.csproj" },
+    { "path": "src/Shared/Kernel.Application/Kernel.Application.csproj" },
+    { "path": "src/Shared/Kernel.Infrastructure/Kernel.Infrastructure.csproj" }
   ],
-
   "postActions": [
     {
       "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "description": "Restaurar pacotes NuGet",
+      "manualInstructions": [
+        { "text": "Execute 'dotnet restore' na raiz do projeto" }
+      ],
       "args": {
         "executable": "dotnet",
         "args": "restore"
       },
-      "manualInstructions": [ { "text": "Execute 'dotnet restore' na raiz do projeto gerado." } ],
-      "continueOnError": true,
-      "description": "Restaura os pacotes NuGet do projeto."
+      "continueOnError": true
+    }
+  ],
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "exclude": [
+            "**/bin/**",
+            "**/obj/**",
+            ".vs/**",
+            "**/*.user",
+            "**/*.suo",
+            ".git/**",
+            ".github/**",
+            "**/.DS_Store",
+            "**/node_modules/**",
+            "**/.idea/**",
+            "**/.vscode/**"
+          ]
+        }
+      ]
     }
   ]
 }
+
