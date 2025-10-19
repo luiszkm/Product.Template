@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Luis Sioares",
+  "classifications": [ "Web", "Clean Architecture", "DDD", "CQRS", "Template" ],
+  "identity": "Product.Template",
+  "name": "template arquiteture dotnet",
+  "shortName": "product-template",
+  "description": "Template simples de Clean Architecture (.NET) com DDD e CQRS, focado em produtividade sem over-engineering.",
+  "sourceName": "MeuProjeto",
+  "defaultName": "MyProduct",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "project"
+  },
+
+  "symbols": {
+    "projectName": {
+      "type": "parameter",
+      "datatype": "text",
+      "replaces": "MeuProjeto",
+      "description": "Namespace base do projeto (será aplicado nos arquivos).",
+      "defaultValue": "MeuProjeto"
+    }
+  },
+
+  "sources": [
+    {
+      "modifiers": [
+        { "exclude": [ "**/[Bb]in/**", "**/[Oo]bj/**", "**/.git/**", "**/.vs/**", "**/.idea/**" ] }
+      ]
+    }
+  ],
+
+  "primaryOutputs": [
+    { "path": "src/Api/Api/Api.csproj" }
+  ],
+
+  "postActions": [
+    {
+      "actionId": "210D431B-A78B-4D2F-B762-4ED3E3EA9025",
+      "args": {
+        "executable": "dotnet",
+        "args": "restore"
+      },
+      "manualInstructions": [ { "text": "Execute 'dotnet restore' na raiz do projeto gerado." } ],
+      "continueOnError": true,
+      "description": "Restaura os pacotes NuGet do projeto."
+    }
+  ]
+}
