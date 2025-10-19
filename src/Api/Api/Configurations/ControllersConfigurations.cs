@@ -63,7 +63,7 @@ public static class ControllersConfigurations
             }
 
             // Ordenar por nome
-            options.OrderActionsBy(apiDesc => apiDesc.RelativePathSansQueryString());
+            options.OrderActionsBy(apiDesc => apiDesc.RelativePath);
 
             // Exemplos personalizados
             options.EnableAnnotations();
