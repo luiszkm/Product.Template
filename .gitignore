@@ -361,3 +361,35 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Serilog logs
+logs/
+*.log
+
+# OpenTelemetry
+otel/
+
+# User Secrets
+appsettings.*.local.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage/
+TestResults/
+
+# Temporary test projects (created during template testing)
+test-output/
+TestProject/

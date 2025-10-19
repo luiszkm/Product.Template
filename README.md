@@ -1,6 +1,66 @@
 # Product Template - .NET Clean Architecture
 
+[![.NET 8.0](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Build Status](https://github.com/Neuraptor/Product.Template/workflows/Validate%20Template/badge.svg)](https://github.com/Neuraptor/Product.Template/actions)
+
 Template universal para criação rápida de aplicações .NET com Clean Architecture, DDD, CQRS e padrões de alta qualidade.
+
+## 🚀 Início Rápido
+
+### Instalação do Template
+
+#### Opção 1: Clonar do GitHub (Recomendado)
+
+```bash
+# Clonar o repositório
+git clone https://github.com/Neuraptor/Product.Template.git
+cd Product.Template
+
+# Instalar o template
+dotnet new install .
+```
+
+#### Opção 2: Instalar direto do GitHub (sem clonar)
+
+```bash
+# Download e instalação automática
+dotnet new install https://github.com/Neuraptor/Product.Template/archive/refs/tags/v1.0.0.zip
+```
+
+#### Opção 3: Instalação local para desenvolvimento
+
+```bash
+# Na pasta raiz do template
+dotnet new install .
+```
+
+### Criar Novo Projeto
+
+```bash
+# Criar projeto a partir do template
+dotnet new product-template -n MeuProjeto
+
+# Navegar para o projeto
+cd MeuProjeto
+
+# Restaurar e compilar
+dotnet restore
+dotnet build
+
+# Executar a API
+dotnet run --project src/Api/Api/Api.csproj
+```
+
+Acesse: `https://localhost:5001/swagger`
+
+### Desinstalar Template
+
+```bash
+dotnet new uninstall Neuraptor.Product.Template
+```
+
+---
 
 ## Características
 
