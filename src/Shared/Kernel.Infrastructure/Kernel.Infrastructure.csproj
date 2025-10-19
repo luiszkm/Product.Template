@@ -4,8 +4,6 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Product.Template.Kernel.Infrastructure</RootNamespace>
-    <AssemblyName>Product.Template.Kernel.Infrastructure</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

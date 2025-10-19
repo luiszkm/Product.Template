@@ -7,8 +7,6 @@
     <UserSecretsId>f5e72b5e-b450-4e58-b7f9-96ae75cfa1f9</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..\..</DockerfileContext>
-    <RootNamespace>Product.Template.Api</RootNamespace>
-    <AssemblyName>Product.Template.Api</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

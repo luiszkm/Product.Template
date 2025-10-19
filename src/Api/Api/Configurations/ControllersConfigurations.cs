@@ -7,7 +7,7 @@ namespace Product.Template.Api.Configurations
             this IServiceCollection services)
         {
             services.AddControllers(options =>
-                options.Filters.Add(typeof(Product.Template.Api.FiltersExceptions.ApiGlobalExceptionFilter)));
+                options.Filters.Add(typeof(Product.Template.Api.GlobalFilter.Exceptions.ApiGlobalExceptionFilter)));
             services.AddDocumentation();
             return services;
         }
