@@ -50,7 +50,7 @@ public static class ControllersConfigurations
                             Id = "Bearer"
                         }
                     },
-                    Array.Empty<string>()
+                    new List<string>()
                 }
             });
 

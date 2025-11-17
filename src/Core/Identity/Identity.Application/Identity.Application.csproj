@@ -4,15 +4,17 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Product.Template.Core.Identity.Application</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.*" />
+    <PackageReference Include="MediatR" Version="12.4.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kernel.Domain\Kernel.Domain.csproj" />
+    <ProjectReference Include="..\Identity.Domain\Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Kernel.Application\Kernel.Application.csproj" />
   </ItemGroup>
 
 </Project>

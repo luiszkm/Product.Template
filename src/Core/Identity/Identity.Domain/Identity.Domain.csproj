@@ -4,14 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Product.Template.Core.Identity.Domain</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.*" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Kernel.Application\Kernel.Application.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Kernel.Domain\Kernel.Domain.csproj" />
   </ItemGroup>
 
 </Project>
