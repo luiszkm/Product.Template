@@ -1,0 +1,398 @@
+{
+  "version": 1,
+  "parameters": "--include-transitive",
+  "projects": [
+    {
+      "path": "C:/Users/luis.pereira/source/repos/luiszkm/Neuraptor.ERP/src/Api/Api.csproj",
+      "frameworks": [
+        {
+          "framework": "net10.0",
+          "topLevelPackages": [
+            {
+              "id": "Asp.Versioning.Mvc",
+              "requestedVersion": "8.1.0",
+              "resolvedVersion": "8.1.0"
+            },
+            {
+              "id": "Asp.Versioning.Mvc.ApiExplorer",
+              "requestedVersion": "8.1.0",
+              "resolvedVersion": "8.1.0"
+            },
+            {
+              "id": "AspNetCore.HealthChecks.UI",
+              "requestedVersion": "9.0.0",
+              "resolvedVersion": "9.0.0"
+            },
+            {
+              "id": "AspNetCore.HealthChecks.UI.Client",
+              "requestedVersion": "9.0.0",
+              "resolvedVersion": "9.0.0"
+            },
+            {
+              "id": "AspNetCore.HealthChecks.UI.InMemory.Storage",
+              "requestedVersion": "9.0.0",
+              "resolvedVersion": "9.0.0"
+            },
+            {
+              "id": "AspNetCoreRateLimit",
+              "requestedVersion": "5.0.0",
+              "resolvedVersion": "5.0.0"
+            },
+            {
+              "id": "Microsoft.AspNetCore.Authentication.JwtBearer",
+              "requestedVersion": "10.0.*",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore",
+              "requestedVersion": "10.0.*",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore.InMemory",
+              "requestedVersion": "10.0.*",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore",
+              "requestedVersion": "10.0.*",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.Extensions.Http.Polly",
+              "requestedVersion": "10.0.*",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets",
+              "requestedVersion": "1.22.1",
+              "resolvedVersion": "1.22.1"
+            },
+            {
+              "id": "OpenTelemetry.Exporter.Console",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Exporter.OpenTelemetryProtocol",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Extensions.Hosting",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Instrumentation.AspNetCore",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Instrumentation.Http",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Instrumentation.Runtime",
+              "requestedVersion": "1.9.0",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "Polly",
+              "requestedVersion": "8.5.0",
+              "resolvedVersion": "8.5.0"
+            },
+            {
+              "id": "Scrutor",
+              "requestedVersion": "6.1.0",
+              "resolvedVersion": "6.1.0"
+            },
+            {
+              "id": "Serilog.AspNetCore",
+              "requestedVersion": "8.0.0",
+              "resolvedVersion": "8.0.0"
+            },
+            {
+              "id": "Serilog.Enrichers.Environment",
+              "requestedVersion": "3.0.1",
+              "resolvedVersion": "3.0.1"
+            },
+            {
+              "id": "Serilog.Enrichers.Thread",
+              "requestedVersion": "4.0.0",
+              "resolvedVersion": "4.0.0"
+            },
+            {
+              "id": "Serilog.Exceptions",
+              "requestedVersion": "8.4.0",
+              "resolvedVersion": "8.4.0"
+            },
+            {
+              "id": "Serilog.Sinks.File",
+              "requestedVersion": "6.0.0",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "Serilog.Sinks.Seq",
+              "requestedVersion": "8.0.0",
+              "resolvedVersion": "8.0.0"
+            },
+            {
+              "id": "Swashbuckle.AspNetCore",
+              "requestedVersion": "7.0.*",
+              "resolvedVersion": "7.0.0"
+            },
+            {
+              "id": "Swashbuckle.AspNetCore.Annotations",
+              "requestedVersion": "7.0.*",
+              "resolvedVersion": "7.0.0"
+            }
+          ],
+          "transitivePackages": [
+            {
+              "id": "Asp.Versioning.Abstractions",
+              "resolvedVersion": "8.1.0"
+            },
+            {
+              "id": "Asp.Versioning.Http",
+              "resolvedVersion": "8.1.0"
+            },
+            {
+              "id": "AspNetCore.HealthChecks.UI.Core",
+              "resolvedVersion": "9.0.0"
+            },
+            {
+              "id": "AspNetCore.HealthChecks.UI.Data",
+              "resolvedVersion": "9.0.0"
+            },
+            {
+              "id": "FluentValidation",
+              "resolvedVersion": "12.0.0"
+            },
+            {
+              "id": "Fractions",
+              "resolvedVersion": "7.3.0"
+            },
+            {
+              "id": "Google.Protobuf",
+              "resolvedVersion": "3.22.5"
+            },
+            {
+              "id": "Grpc.Core.Api",
+              "resolvedVersion": "2.52.0"
+            },
+            {
+              "id": "Grpc.Net.Client",
+              "resolvedVersion": "2.52.0"
+            },
+            {
+              "id": "Grpc.Net.Common",
+              "resolvedVersion": "2.52.0"
+            },
+            {
+              "id": "Humanizer.Core",
+              "resolvedVersion": "2.14.1"
+            },
+            {
+              "id": "IdentityModel",
+              "resolvedVersion": "5.2.0"
+            },
+            {
+              "id": "IdentityModel.OidcClient",
+              "resolvedVersion": "5.2.1"
+            },
+            {
+              "id": "KubernetesClient",
+              "resolvedVersion": "15.0.1"
+            },
+            {
+              "id": "Microsoft.Bcl.AsyncInterfaces",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "Microsoft.CodeAnalysis.Analyzers",
+              "resolvedVersion": "3.3.3"
+            },
+            {
+              "id": "Microsoft.CodeAnalysis.Common",
+              "resolvedVersion": "4.5.0"
+            },
+            {
+              "id": "Microsoft.CodeAnalysis.CSharp",
+              "resolvedVersion": "4.5.0"
+            },
+            {
+              "id": "Microsoft.CodeAnalysis.CSharp.Workspaces",
+              "resolvedVersion": "4.5.0"
+            },
+            {
+              "id": "Microsoft.CodeAnalysis.Workspaces.Common",
+              "resolvedVersion": "4.5.0"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore.Abstractions",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore.Analyzers",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore.Design",
+              "resolvedVersion": "8.0.11"
+            },
+            {
+              "id": "Microsoft.EntityFrameworkCore.Relational",
+              "resolvedVersion": "10.0.0"
+            },
+            {
+              "id": "Microsoft.Extensions.ApiDescription.Server",
+              "resolvedVersion": "6.0.5"
+            },
+            {
+              "id": "Microsoft.Extensions.DependencyModel",
+              "resolvedVersion": "8.0.2"
+            },
+            {
+              "id": "Microsoft.IdentityModel.Abstractions",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.IdentityModel.JsonWebTokens",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.IdentityModel.Logging",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.IdentityModel.Protocols",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.IdentityModel.Protocols.OpenIdConnect",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.IdentityModel.Tokens",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "Microsoft.OpenApi",
+              "resolvedVersion": "1.6.22"
+            },
+            {
+              "id": "Mono.TextTemplating",
+              "resolvedVersion": "2.2.1"
+            },
+            {
+              "id": "Newtonsoft.Json",
+              "resolvedVersion": "13.0.2"
+            },
+            {
+              "id": "OpenTelemetry",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Api",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "OpenTelemetry.Api.ProviderBuilderExtensions",
+              "resolvedVersion": "1.9.0"
+            },
+            {
+              "id": "Polly.Core",
+              "resolvedVersion": "8.5.0"
+            },
+            {
+              "id": "Polly.Extensions.Http",
+              "resolvedVersion": "3.0.0"
+            },
+            {
+              "id": "Serilog",
+              "resolvedVersion": "4.0.0"
+            },
+            {
+              "id": "Serilog.Extensions.Hosting",
+              "resolvedVersion": "8.0.0"
+            },
+            {
+              "id": "Serilog.Extensions.Logging",
+              "resolvedVersion": "8.0.0"
+            },
+            {
+              "id": "Serilog.Formatting.Compact",
+              "resolvedVersion": "2.0.0"
+            },
+            {
+              "id": "Serilog.Settings.Configuration",
+              "resolvedVersion": "8.0.0"
+            },
+            {
+              "id": "Serilog.Sinks.Console",
+              "resolvedVersion": "5.0.0"
+            },
+            {
+              "id": "Serilog.Sinks.Debug",
+              "resolvedVersion": "2.0.0"
+            },
+            {
+              "id": "Swashbuckle.AspNetCore.Swagger",
+              "resolvedVersion": "7.0.0"
+            },
+            {
+              "id": "Swashbuckle.AspNetCore.SwaggerGen",
+              "resolvedVersion": "7.0.0"
+            },
+            {
+              "id": "Swashbuckle.AspNetCore.SwaggerUI",
+              "resolvedVersion": "7.0.0"
+            },
+            {
+              "id": "System.CodeDom",
+              "resolvedVersion": "4.4.0"
+            },
+            {
+              "id": "System.Composition",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.Composition.AttributedModel",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.Composition.Convention",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.Composition.Hosting",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.Composition.Runtime",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.Composition.TypedParts",
+              "resolvedVersion": "6.0.0"
+            },
+            {
+              "id": "System.IdentityModel.Tokens.Jwt",
+              "resolvedVersion": "8.0.1"
+            },
+            {
+              "id": "System.Reflection.TypeExtensions",
+              "resolvedVersion": "4.7.0"
+            },
+            {
+              "id": "YamlDotNet",
+              "resolvedVersion": "16.0.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

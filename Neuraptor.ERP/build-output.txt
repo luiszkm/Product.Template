@@ -1,0 +1,18 @@
+  Determinando os projetos a serem restaurados...
+  Todos os projetos estão atualizados para restauração.
+  Kernel.Domain -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Shared\Kernel.Domain\bin\Debug\net10.0\Kernel.Domain.dll
+  E2ETests -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\tests\E2ETests\bin\Debug\net10.0\E2ETests.dll
+  CommonTests -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\tests\CommonTests\bin\Debug\net10.0\CommonTests.dll
+  UnitTests -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\tests\UnitTests\bin\Debug\net10.0\UnitTests.dll
+  IntegrationTests -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\tests\IntegrationTests\bin\Debug\net10.0\IntegrationTests.dll
+  Kernel.Application -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Shared\Kernel.Application\bin\Debug\net10.0\Kernel.Application.dll
+  Kernel.Infrastructure -> C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Shared\Kernel.Infrastructure\bin\Debug\net10.0\Kernel.Infrastructure.dll
+C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Api\Configurations\ControllersConfigurations.cs(4,25): error CS0234: O nome de tipo ou namespace "Models" não existe no namespace "Microsoft.OpenApi" (você está sem uma referência de assembly?) [C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Api\Api.csproj]
+
+FALHA da compilação.
+
+C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Api\Configurations\ControllersConfigurations.cs(4,25): error CS0234: O nome de tipo ou namespace "Models" não existe no namespace "Microsoft.OpenApi" (você está sem uma referência de assembly?) [C:\Users\luis.pereira\source\repos\luiszkm\Neuraptor.ERP\src\Api\Api.csproj]
+    0 Aviso(s)
+    1 Erro(s)
+
+Tempo Decorrido 00:00:22.66
