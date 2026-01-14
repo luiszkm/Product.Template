@@ -1,159 +1,157 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Product.Template.Api.Configurations;
 
 public static class SecurityConfiguration
 {
+    private const string DefaultCorsPolicyName = "DefaultCorsPolicy";
+
     public static IServiceCollection AddSecurityConfiguration(
         this IServiceCollection services,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHostEnvironment env)
     {
-        // CORS Configuration
-        services.AddCors(options =>
-        {
-            var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                                 ?? new[] { "*" };
+        services.AddCorsFromConfiguration(configuration);
 
-            var allowedMethods = configuration.GetSection("Cors:AllowedMethods").Get<string[]>()
-                                 ?? new[] { "GET", "POST", "PUT", "DELETE", "OPTIONS" };
+        if (!configuration.GetValue<bool>("Jwt:Enabled"))
+            return services;
 
-            var allowedHeaders = configuration.GetSection("Cors:AllowedHeaders").Get<string[]>()
-                                 ?? new[] { "*" };
+        var jwt = JwtOptions.From(configuration);
 
-            options.AddPolicy("DefaultCorsPolicy", builder =>
+        services
+            .AddAuthentication(options =>
             {
-                if (allowedOrigins.Contains("*"))
-                {
-                    builder.AllowAnyOrigin();
-                }
-                else
-                {
-                    builder.WithOrigins(allowedOrigins)
-                           .AllowCredentials();
-                }
-
-                if (allowedMethods.Contains("*"))
-                {
-                    builder.AllowAnyMethod();
-                }
-                else
-                {
-                    builder.WithMethods(allowedMethods);
-                }
-
-                if (allowedHeaders.Contains("*"))
-                {
-                    builder.AllowAnyHeader();
-                }
-                else
-                {
-                    builder.WithHeaders(allowedHeaders);
-                }
-
-                builder.WithExposedHeaders("X-Correlation-ID", "X-Pagination");
-            });
-        });
-
-        // JWT Authentication
-        var jwtEnabled = configuration.GetValue<bool>("Jwt:Enabled", false);
-
-        if (jwtEnabled)
-        {
-            var jwtSecret = configuration["Jwt:Secret"];
-            var jwtIssuer = configuration["Jwt:Issuer"];
-            var jwtAudience = configuration["Jwt:Audience"];
-            var jwtExpirationMinutes = configuration.GetValue<int>("Jwt:ExpirationMinutes", 60);
-
-            if (string.IsNullOrEmpty(jwtSecret))
-            {
-                throw new InvalidOperationException(
-                    "JWT Secret is required when JWT authentication is enabled. " +
-                    "Please configure 'Jwt:Secret' in appsettings.json or environment variables.");
-            }
-
-            var key = Encoding.ASCII.GetBytes(jwtSecret);
-
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; // "Bearer"
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = true;
+                // Em dev, permitir HTTP local sem travar o pipeline (recomendado)
+                options.RequireHttpsMetadata = !env.IsDevelopment();
+
                 options.SaveToken = true;
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = !string.IsNullOrEmpty(jwtIssuer),
-                    ValidIssuer = jwtIssuer,
-                    ValidateAudience = !string.IsNullOrEmpty(jwtAudience),
-                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(jwt.SigningKey),
+
+                    ValidateIssuer = jwt.ValidateIssuer,
+                    ValidIssuer = jwt.Issuer,
+
+                    ValidateAudience = jwt.ValidateAudience,
+                    ValidAudience = jwt.Audience,
+
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero // Remove o delay padrão de 5 minutos
+                    ClockSkew = TimeSpan.Zero
                 };
 
                 options.Events = new JwtBearerEvents
                 {
                     OnAuthenticationFailed = context =>
                     {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILogger<Program>>();
-
-                        logger.LogWarning(
-                            "JWT Authentication failed: {Error}",
-                            context.Exception.Message);
-
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        logger.LogWarning("JWT Authentication failed: {Error}", context.Exception.Message);
                         return Task.CompletedTask;
                     },
                     OnTokenValidated = context =>
                     {
-                        var logger = context.HttpContext.RequestServices
-                            .GetRequiredService<ILogger<Program>>();
-
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                         var userId = context.Principal?.Identity?.Name;
-                        logger.LogInformation(
-                            "JWT Token validated for user: {UserId}",
-                            userId);
-
+                        logger.LogInformation("JWT Token validated for user: {UserId}", userId);
                         return Task.CompletedTask;
                     }
                 };
             });
 
-            services.AddAuthorization(options =>
-            {
-                // Política padrão - requer autenticação
-                options.AddPolicy("Authenticated", policy =>
-                    policy.RequireAuthenticatedUser());
-
-                // Política baseada em claims - exemplo
-                options.AddPolicy("AdminOnly", policy =>
-                    policy.RequireClaim("role", "admin"));
-
-                options.AddPolicy("UserOnly", policy =>
-                    policy.RequireClaim("role", "user", "admin"));
-            });
-        }
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin"));
+            options.AddPolicy("UserOnly", policy => policy.RequireClaim("role", "user", "admin"));
+        });
 
         return services;
     }
 
     public static WebApplication UseSecurityConfiguration(this WebApplication app)
     {
-        // CORS deve vir antes de Authentication e Authorization
-        app.UseCors("DefaultCorsPolicy");
+        app.UseCors(DefaultCorsPolicyName);
 
-        var jwtEnabled = app.Configuration.GetValue<bool>("Jwt:Enabled", false);
-        if (jwtEnabled)
+        if (app.Configuration.GetValue<bool>("Jwt:Enabled"))
         {
             app.UseAuthentication();
             app.UseAuthorization();
         }
 
         return app;
+    }
+
+    // ===================== Helpers =====================
+
+    private static IServiceCollection AddCorsFromConfiguration(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddCors(options =>
+        {
+            var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["*"];
+            var allowedMethods = configuration.GetSection("Cors:AllowedMethods").Get<string[]>() ?? ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"];
+            var allowedHeaders = configuration.GetSection("Cors:AllowedHeaders").Get<string[]>() ?? ["*"];
+
+            options.AddPolicy(DefaultCorsPolicyName, builder =>
+            {
+                // Origins
+                if (allowedOrigins.Contains("*"))
+                {
+                    builder.AllowAnyOrigin();
+                }
+                else
+                {
+                    builder.WithOrigins(allowedOrigins).AllowCredentials();
+                }
+
+                // Methods
+                if (allowedMethods.Contains("*"))
+                    builder.AllowAnyMethod();
+                else
+                    builder.WithMethods(allowedMethods);
+
+                // Headers
+                if (allowedHeaders.Contains("*"))
+                    builder.AllowAnyHeader();
+                else
+                    builder.WithHeaders(allowedHeaders);
+
+                builder.WithExposedHeaders("X-Correlation-ID", "X-Pagination");
+            });
+        });
+
+        return services;
+    }
+
+    private sealed record JwtOptions(byte[] SigningKey, string? Issuer, string? Audience, bool ValidateIssuer, bool ValidateAudience)
+    {
+        public static JwtOptions From(IConfiguration configuration)
+        {
+            var secret = configuration["Jwt:Secret"];
+            if (string.IsNullOrWhiteSpace(secret))
+            {
+                throw new InvalidOperationException(
+                    "JWT Secret is required when JWT authentication is enabled. " +
+                    "Configure 'Jwt:Secret' in appsettings.json or environment variables.");
+            }
+
+            var issuer = configuration["Jwt:Issuer"];
+            var audience = configuration["Jwt:Audience"];
+
+            return new JwtOptions(
+                SigningKey: Encoding.UTF8.GetBytes(secret),
+                Issuer: issuer,
+                Audience: audience,
+                ValidateIssuer: !string.IsNullOrWhiteSpace(issuer),
+                ValidateAudience: !string.IsNullOrWhiteSpace(audience)
+            );
+        }
     }
 }
