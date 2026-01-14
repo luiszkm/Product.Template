@@ -1,5 +1,5 @@
-using Polly;
-using Polly.Extensions.Http;
+using Microsoft.Extensions.Http.Resilience;
+using Polly; 
 
 namespace Product.Template.Api.Configurations;
 
@@ -9,54 +9,51 @@ public static class ResilienceConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var retryCount = configuration.GetValue<int>("ResiliencePolicies:RetryCount", 3);
-        var circuitBreakerThreshold = configuration.GetValue<int>("ResiliencePolicies:CircuitBreakerThreshold", 5);
-        var circuitBreakerDurationSeconds = configuration.GetValue<int>("ResiliencePolicies:CircuitBreakerDurationSeconds", 30);
-        var timeoutSeconds = configuration.GetValue<int>("ResiliencePolicies:TimeoutSeconds", 30);
+        // 1. Captura as configurações (mantendo seus valores padrão)
+        var retryCount = configuration.GetValue("ResiliencePolicies:RetryCount", 3);
+        var circuitBreakerThreshold = configuration.GetValue("ResiliencePolicies:CircuitBreakerThreshold", 0.5); // 0.5 = 50% de falhas
+        var circuitBreakerDurationSeconds = configuration.GetValue("ResiliencePolicies:CircuitBreakerDurationSeconds", 30);
+        var timeoutSeconds = configuration.GetValue("ResiliencePolicies:TimeoutSeconds", 30);
 
-        // Configuração de HttpClient com Polly para serviços externos
+        // 2. Configura o HttpClient com o Handler de Resiliência Moderno
         services.AddHttpClient("ResilientHttpClient")
-            .AddPolicyHandler(GetRetryPolicy(retryCount))
-            .AddPolicyHandler(GetCircuitBreakerPolicy(circuitBreakerThreshold, circuitBreakerDurationSeconds))
-            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(timeoutSeconds));
+            .AddResilienceHandler("custom-pipeline", builder =>
+            {
+                // A ordem importa! No Polly v8, a ordem é de "fora para dentro" da chamada.
+                // Pipeline: Timeout Total -> Retry -> Circuit Breaker -> Timeout por Tentativa
+
+                // A. Timeout Total da Requisição (Opcional, mas recomendado)
+                builder.AddTimeout(TimeSpan.FromSeconds(timeoutSeconds));
+
+                // B. Retry (Tentativas)
+                builder.AddRetry(new HttpRetryStrategyOptions
+                {
+                    MaxRetryAttempts = retryCount,
+                    BackoffType = DelayBackoffType.Exponential, // Já substitui o Math.Pow
+                    UseJitter = true, // Adiciona aleatoriedade para evitar "thundering herd"
+                    Delay = TimeSpan.FromSeconds(2),
+                    // Filtra quais erros devem disparar o retry (já inclui 5xx e 408 por padrão)
+                    ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                        .Handle<HttpRequestException>()
+                        .HandleResult(response => response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                });
+
+                // C. Circuit Breaker (Disjuntor)
+                builder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+                {
+                    SamplingDuration = TimeSpan.FromSeconds(60), // Janela de tempo para analisar falhas
+                    FailureRatio = 0.5, // Se 50% das requisições falharem, abre o circuito
+                    MinimumThroughput = (int)circuitBreakerThreshold, // Conversão explícita de double para int
+                    BreakDuration = TimeSpan.FromSeconds(circuitBreakerDurationSeconds),
+                    ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+                        .Handle<HttpRequestException>()
+                        .HandleResult(response => response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                });
+
+                // D. Timeout por Tentativa (Opcional: impede que uma única tentativa trave tudo)
+                builder.AddTimeout(TimeSpan.FromSeconds(10));
+            });
 
         return services;
-    }
-
-    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(int retryCount)
-    {
-        return HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .WaitAndRetryAsync(
-                retryCount,
-                retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                onRetry: (outcome, timespan, retryAttempt, context) =>
-                {
-                    // Log retry attempts (pode ser expandido para usar ILogger via context)
-                    Console.WriteLine($"Delaying for {timespan.TotalSeconds}s, then making retry {retryAttempt}");
-                });
-    }
-
-    private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(
-        int threshold,
-        int durationSeconds)
-    {
-        return HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .CircuitBreakerAsync(
-                handledEventsAllowedBeforeBreaking: threshold,
-                durationOfBreak: TimeSpan.FromSeconds(durationSeconds),
-                onBreak: (outcome, duration) =>
-                {
-                    Console.WriteLine($"Circuit breaker opened for {duration.TotalSeconds}s");
-                },
-                onReset: () =>
-                {
-                    Console.WriteLine("Circuit breaker closed");
-                },
-                onHalfOpen: () =>
-                {
-                    Console.WriteLine("Circuit breaker half-open, testing connection");
-                });
     }
 }

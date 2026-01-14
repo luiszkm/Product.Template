@@ -1,6 +1,9 @@
+using MediatR;
+
 namespace Product.Template.Kernel.Application.Messaging.Interfaces;
 
-public interface ICommand { }
+public interface ICommand : IRequest { }
 
-public interface ICommand<TResponse> { }
+public interface ICommand<TResponse> : IRequest<TResponse> { }
+
 

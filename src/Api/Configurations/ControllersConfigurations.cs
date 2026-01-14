@@ -1,8 +1,7 @@
 using Asp.Versioning.ApiExplorer;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Reflection;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 
 namespace Product.Template.Api.Configurations;
 
@@ -14,60 +13,53 @@ public static class ControllersConfigurations
         services.AddControllers(options =>
             options.Filters.Add(typeof(Product.Template.Api.GlobalFilter.Exceptions.ApiGlobalExceptionFilter)));
 
-        services.AddDocumentation();
+        services.AddOpenApiDocumentation();
 
         return services;
     }
 
-    private static IServiceCollection AddDocumentation(
+    private static IServiceCollection AddOpenApiDocumentation(
         this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
 
-        services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+        // ⚠️ Nota de Arquiteto: BuildServiceProvider aqui é aceitável para configuração de startup,
+        // mas evite usá-lo dentro de métodos de requisição para não gerar "Memory Leaks" ou antipatterns.
+        var serviceProvider = services.BuildServiceProvider();
+        var provider = serviceProvider.GetRequiredService<IApiVersionDescriptionProvider>();
 
-        services.AddSwaggerGen(options =>
+        foreach (var description in provider.ApiVersionDescriptions)
         {
-            // Adicionar autenticação JWT no Swagger
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            services.AddOpenApi(description.GroupName, options =>
             {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "JWT Authorization header usando o esquema Bearer. Exemplo: \"Bearer {token}\""
-            });
+                options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
 
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
+                // Transformer 1: Metadados
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
                 {
-                    new OpenApiSecurityScheme
+                    document.Info.Title = "Product Template API";
+                    document.Info.Version = description.ApiVersion.ToString();
+                    document.Info.Description = description.IsDeprecated
+                        ? "<strong>Esta versão da API foi descontinuada.</strong>"
+                        : "API moderna utilizando .NET Native OpenAPI com Clean Architecture.";
+
+                    document.Info.Contact = new OpenApiContact
                     {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    new List<string>()
-                }
+                        Name = "Product Team",
+                        Email = "template@neuraptor.com"
+                    };
+
+                    document.Info.License = new OpenApiLicense
+                    {
+                        Name = "MIT License",
+                        Url = new Uri("https://opensource.org/licenses/MIT")
+                    };
+
+                    return Task.CompletedTask;
+                });
+
             });
-
-            // Comentários XML
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-            {
-                options.IncludeXmlComments(xmlPath);
-            }
-
-            // Ordenar por nome
-            options.OrderActionsBy(apiDesc => apiDesc.RelativePath);
-
-            // Exemplos personalizados
-            options.EnableAnnotations();
-        });
+        }
 
         return services;
     }
@@ -77,25 +69,21 @@ public static class ControllersConfigurations
     {
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-
             var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
 
-            app.UseSwaggerUI(options =>
+            // 1. Gera os endpoints JSON (/openapi/v1.json, etc)
+            foreach (var description in provider.ApiVersionDescriptions)
             {
-                // Cria um endpoint Swagger para cada versão descoberta
-                foreach (var description in provider.ApiVersionDescriptions)
-                {
-                    options.SwaggerEndpoint(
-                        $"/swagger/{description.GroupName}/swagger.json",
-                        description.GroupName.ToUpperInvariant());
-                }
+                app.MapOpenApi($"/openapi/{description.GroupName}.json");
+            }
 
-                options.RoutePrefix = "swagger";
-                options.DocumentTitle = "Product Template API";
-                options.DisplayRequestDuration();
-                options.EnableTryItOutByDefault();
-                options.EnableDeepLinking();
+            // 2. Configura a UI do Scalar
+            app.MapScalarApiReference(options =>
+            {
+                options.Title = "Product API Documentation";
+                options.Theme = ScalarTheme.DeepSpace;
+                options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+
             });
         }
 

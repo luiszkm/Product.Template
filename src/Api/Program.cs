@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Middleware;
 
@@ -57,6 +58,10 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<IpWhitelistMiddleware>();
 
 // Rate Limiting
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 app.UseRateLimiting();
 
 // Health Checks Endpoints
