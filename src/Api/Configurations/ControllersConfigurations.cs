@@ -31,29 +31,64 @@ public static class ControllersConfigurations
         {
             services.AddOpenApi(description.GroupName, options =>
             {
-                options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
-
-                // Transformer 1: Metadados
+                // ========================================
+                // 1️⃣ Transformer: Metadados da API
+                // ========================================
                 options.AddDocumentTransformer((document, context, cancellationToken) =>
                 {
-                    document.Info = new()
+                    document.Info.Title = "Product Template API";
+                    document.Info.Version = description.ApiVersion.ToString();
+                    document.Info.Description = description.IsDeprecated
+                        ? "⚠️ **Esta versão da API foi descontinuada.** Por favor, migre para a versão mais recente."
+                        : """
+                        # 🚀 Product Template API
+                        
+                        API RESTful moderna construída com .NET 10 seguindo princípios de **Clean Architecture**.
+                        
+                        ## 📌 Recursos Principais
+                        - ✅ Autenticação JWT
+                        - ✅ Rate Limiting
+                        - ✅ Versionamento de API
+                        - ✅ Health Checks
+                        - ✅ OpenTelemetry (Tracing & Metrics)
+                        - ✅ Retry Policies com Polly
+                        
+                        ## 🔐 Autenticação
+                        Para endpoints protegidos, use o header:
+                        ```
+                        Authorization: Bearer {seu-token-jwt}
+                        ```
+                        
+                        Obtenha o token através do endpoint `/api/v1/identity/login`.
+                        """;
+
+                    document.Info.Contact = new()
                     {
-                        Title = "Product Template API",
-                        Version = description.ApiVersion.ToString(),
-                        Description = description.IsDeprecated
-                            ? "<strong>Esta versão da API foi descontinuada.</strong>"
-                            : "API moderna utilizando .NET Native OpenAPI com Clean Architecture.",
-                        Contact = new()
-                        {
-                            Name = "Product Team",
-                            Email = "template@neuraptor.com"
-                        },
-                        License = new()
-                        {
-                            Name = "MIT License",
-                            Url = new Uri("https://opensource.org/licenses/MIT")
-                        }
+                        Name = "Product Team",
+                        Email = "template@neuraptor.com",
+                        Url = new Uri("https://github.com/luiszkm/Product.Template")
                     };
+
+                    document.Info.License = new()
+                    {
+                        Name = "MIT License",
+                        Url = new Uri("https://opensource.org/licenses/MIT")
+                    };
+
+                    return Task.CompletedTask;
+                });
+
+                // ========================================
+                // 2️⃣ Transformer: Servidores (Environments)
+                // ========================================
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
+                {
+                    // Limpa servidores padrão e adiciona personalizados
+                    document.Servers.Clear();
+                    document.Servers.Add(new() { Url = "https://localhost:7254", Description = "🏠 Desenvolvimento (HTTPS)" });
+                    document.Servers.Add(new() { Url = "http://localhost:5117", Description = "🏠 Desenvolvimento (HTTP)" });
+                    document.Servers.Add(new() { Url = "https://api-staging.exemplo.com", Description = "🧪 Staging" });
+                    document.Servers.Add(new() { Url = "https://api.exemplo.com", Description = "🚀 Produção" });
 
                     return Task.CompletedTask;
                 });
@@ -74,21 +109,37 @@ public static class ControllersConfigurations
             // 1. Gera os endpoints JSON (/openapi/v1.json, etc)
             foreach (var description in provider.ApiVersionDescriptions)
             {
-                app.MapOpenApi($"/openapi/{description.GroupName}.json");
+                app.MapOpenApi($"/openapi/{description.GroupName}.json")
+                    .AllowAnonymous();
             }
 
-            // 2. Configura a UI do Scalar
+            // ========================================
+            // 2. Configuração Avançada do Scalar UI
+            // ========================================
             app.MapScalarApiReference(options =>
             {
-                options.Title = "Product API Documentation";
-                options.Theme = ScalarTheme.DeepSpace;
-                options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+                // 🎨 Temas Disponíveis:
+                // - ScalarTheme.Default (Claro/Escuro automático)
+                // - ScalarTheme.DeepSpace (Escuro profundo - ATUAL)
+                // - ScalarTheme.Saturn (Roxo escuro)
+                // - ScalarTheme.BluePlanet (Azul)
+                // - ScalarTheme.Mars (Laranja/Vermelho)
+                options
+                    .WithTitle("Product API Documentation")
+                    .WithTheme(ScalarTheme.DeepSpace)
+                    .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+                    .WithSidebar(true)
+                    .WithModels(true)
+                    .WithDownloadButton(true)
+                    .WithSearchHotKey("k")
+                    .WithPreferredScheme("https")
+                    .WithDefaultOpenAllTags();
 
+                // 🔗 Configura documentos OpenAPI para cada versão
+                // O Scalar automaticamente detecta /openapi/v{version}.json
             });
         }
 
         return app;
     }
 }
-
-
