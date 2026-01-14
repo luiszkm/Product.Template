@@ -17,4 +17,8 @@
     <ProjectReference Include="..\..\..\Shared\Kernel.Application\Kernel.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\" />
+  </ItemGroup>
+
 </Project>

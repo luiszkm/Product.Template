@@ -1,6 +1,6 @@
 using Product.Template.Kernel.Application;
-using Product.Template.Core.Identity.Application.Commands;
 using System.Reflection;
+using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 
 namespace Product.Template.Api.Configurations;
 

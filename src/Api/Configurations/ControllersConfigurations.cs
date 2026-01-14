@@ -1,6 +1,5 @@
 using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 namespace Product.Template.Api.Configurations;
@@ -32,27 +31,28 @@ public static class ControllersConfigurations
         {
             services.AddOpenApi(description.GroupName, options =>
             {
-                options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;
+                options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
 
                 // Transformer 1: Metadados
                 options.AddDocumentTransformer((document, context, cancellationToken) =>
                 {
-                    document.Info.Title = "Product Template API";
-                    document.Info.Version = description.ApiVersion.ToString();
-                    document.Info.Description = description.IsDeprecated
-                        ? "<strong>Esta versão da API foi descontinuada.</strong>"
-                        : "API moderna utilizando .NET Native OpenAPI com Clean Architecture.";
-
-                    document.Info.Contact = new OpenApiContact
+                    document.Info = new()
                     {
-                        Name = "Product Team",
-                        Email = "template@neuraptor.com"
-                    };
-
-                    document.Info.License = new OpenApiLicense
-                    {
-                        Name = "MIT License",
-                        Url = new Uri("https://opensource.org/licenses/MIT")
+                        Title = "Product Template API",
+                        Version = description.ApiVersion.ToString(),
+                        Description = description.IsDeprecated
+                            ? "<strong>Esta versão da API foi descontinuada.</strong>"
+                            : "API moderna utilizando .NET Native OpenAPI com Clean Architecture.",
+                        Contact = new()
+                        {
+                            Name = "Product Team",
+                            Email = "template@neuraptor.com"
+                        },
+                        License = new()
+                        {
+                            Name = "MIT License",
+                            Url = new Uri("https://opensource.org/licenses/MIT")
+                        }
                     };
 
                     return Task.CompletedTask;
@@ -90,4 +90,5 @@ public static class ControllersConfigurations
         return app;
     }
 }
+
 

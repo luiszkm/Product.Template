@@ -1,6 +1,6 @@
-namespace Product.Template.Core.Identity.Application.DTOs;
+namespace Product.Template.Core.Identity.Application.Queries.User;
 
-public record UserDto(
+public record UserOutput(
     Guid Id,
     string Email,
     string FirstName,
