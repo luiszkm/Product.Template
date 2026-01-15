@@ -1,7 +1,9 @@
+using Kernel.Domain.SeedWorks;
 using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Core.Identity.Domain.ValueObjects;
+using Product.Template.Kernel.Domain.SeedWorks;
 using Product.Template.Kernel.Infrastructure.Persistence;
 namespace Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 public class UserRepository : IUserRepository
@@ -18,7 +20,7 @@ public class UserRepository : IUserRepository
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
-    public async Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default)
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
             .Include(u => u.UserRoles)
@@ -45,5 +47,16 @@ public class UserRepository : IUserRepository
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
             .ToListAsync(cancellationToken);
+    }
+
+
+    public Task<PaginatedListOutput<User>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    {
+        _context.Users.Remove(user);
     }
 }

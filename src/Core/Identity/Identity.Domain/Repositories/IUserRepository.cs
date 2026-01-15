@@ -1,14 +1,9 @@
+using Kernel.Domain.SeedWorks;
 using Product.Template.Core.Identity.Domain.Entities;
-using Product.Template.Core.Identity.Domain.ValueObjects;
 
 namespace Product.Template.Core.Identity.Domain.Repositories;
 
-public interface IUserRepository
+public interface IUserRepository : IBaseRepository<User>
 {
-    Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<User?> GetByEmailAsync(Email email, CancellationToken cancellationToken = default);
-    Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default);
-    Task AddAsync(User user, CancellationToken cancellationToken = default);
-    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
-    Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 }

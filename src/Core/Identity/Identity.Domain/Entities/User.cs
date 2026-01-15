@@ -21,14 +21,14 @@ public class User : AggregateRoot<Guid>
     private User(Guid id) : base(id) { }
 
     public static User Create(
-        Email email,
+        string email,
         string passwordHash,
         string firstName,
         string lastName)
     {
         var user = new User(Guid.NewGuid())
         {
-            Email = email,
+            Email = Email.Create(email),
             PasswordHash = passwordHash,
             FirstName = firstName,
             LastName = lastName,

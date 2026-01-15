@@ -1,4 +1,5 @@
 using Product.Template.Kernel.Application.Data;
+using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Api.ApiModels.Response
 {
@@ -18,11 +19,11 @@ namespace Product.Template.Api.ApiModels.Response
         }
         public ApiResponseList(
             PaginatedListOutput<TItemData> paginatedListOutput
-            ) : base(paginatedListOutput.Items)
+            ) : base(paginatedListOutput.Data)
         {
             Meta = new ApiResponseListMeta(
-                paginatedListOutput.Page,
-                paginatedListOutput.PerPage,
+                paginatedListOutput.PageNumber,
+                paginatedListOutput.PageNumber,
                 paginatedListOutput.TotalCount);
         }
         public ApiResponseListMeta Meta { get; private set; }
