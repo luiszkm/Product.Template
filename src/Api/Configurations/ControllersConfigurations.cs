@@ -46,12 +46,8 @@ public static class ControllersConfigurations
                 options
                     .WithTitle("Product API Documentation")
                     .WithTheme(ScalarTheme.DeepSpace)
-                    .WithPreferredScheme("https")
-                    .WithSidebar(true)
-                    .WithModels(true)
-                    .WithDownloadButton(true)
-                    .WithSearchHotKey("k")
-                    .WithDefaultOpenAllTags();
+                    .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+                    .AddPreferredSecuritySchemes(new[] { "Bearer" });
             });
         }
 
@@ -127,7 +123,14 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
                 In = ParameterLocation.Header,
-                BearerFormat = "Json Web Token"
+                BearerFormat = "JWT",
+                Description = "🔐 Insira o token JWT obtido através do endpoint `/login`.\n\n" +
+                              "**Fluxo de autenticação:**\n" +
+                              "1. Registre um usuário via `POST /api/v1/Identity/register`\n" +
+                              "2. Faça login via `POST /api/v1/Identity/login` para obter o token\n" +
+                              "3. Cole apenas o valor do token (sem o prefixo 'Bearer') no campo abaixo\n" +
+                              "4. Clique em 'Set Token' para autenticar suas requisições\n\n" +
+                              "Exemplo de token:\n`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`"
             }
         };
 

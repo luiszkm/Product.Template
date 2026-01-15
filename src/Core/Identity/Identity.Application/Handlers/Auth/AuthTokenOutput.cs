@@ -6,5 +6,14 @@ public record AuthTokenOutput(
     string AccessToken,
     string TokenType,
     int ExpiresIn,
-    UserOutput User
+    UserAuthOutput User
+);
+
+
+public record UserAuthOutput(
+    Guid Id,
+    string Email,
+    string FirstName,
+    DateTime? LastLoginAt,
+    IEnumerable<string> Roles
 );

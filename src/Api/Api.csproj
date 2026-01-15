@@ -54,6 +54,7 @@
     <ProjectReference Include="..\Shared\Kernel.Application\Kernel.Application.csproj" />
     <ProjectReference Include="..\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
     <ProjectReference Include="..\Core\Identity\Identity.Application\Identity.Application.csproj" />
+    <ProjectReference Include="..\Core\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

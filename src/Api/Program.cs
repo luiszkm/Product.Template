@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
 
 // Core Application Services (CQRS, Behaviors, Handlers)
-builder.Services.AddApplicationCore();
+builder.Services.AddApplicationCore(builder.Configuration);
 
 // Use Cases and Repositories
 builder.Services.AddUseCases();

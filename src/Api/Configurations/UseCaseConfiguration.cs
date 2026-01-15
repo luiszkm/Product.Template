@@ -1,5 +1,7 @@
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Infrastructure.Persistence;
+using Product.Template.Core.Identity.Domain.Repositories;
+using Product.Template.Core.Identity.Infrastructure.Persistence;
 
 namespace Product.Template.Api.Configurations
 {
@@ -16,6 +18,10 @@ namespace Product.Template.Api.Configurations
             this IServiceCollection services)
         {
             services.AddTransient<IUnitOfWork, UnitOfWork>();
+
+            // Identity Repositories
+            services.AddTransient<IUserRepository, UserRepository>();
+            services.AddTransient<IRoleRepository, RoleRepository>();
 
             return services;
         }
