@@ -1,7 +1,7 @@
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Infrastructure.Persistence;
 using Product.Template.Core.Identity.Domain.Repositories;
-using Product.Template.Core.Identity.Infrastructure.Persistence;
+using Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 
 namespace Product.Template.Api.Configurations
 {

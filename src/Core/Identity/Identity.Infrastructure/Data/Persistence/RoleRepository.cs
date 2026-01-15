@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Infrastructure.Persistence;
-namespace Product.Template.Core.Identity.Infrastructure.Persistence;
+namespace Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 public class RoleRepository : IRoleRepository
 {
     private readonly AppDbContext _context;

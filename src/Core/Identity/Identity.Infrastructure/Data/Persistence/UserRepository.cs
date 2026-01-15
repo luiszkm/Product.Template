@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Core.Identity.Domain.ValueObjects;
 using Product.Template.Kernel.Infrastructure.Persistence;
-namespace Product.Template.Core.Identity.Infrastructure.Persistence;
+namespace Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 public class UserRepository : IUserRepository
 {
     private readonly AppDbContext _context;

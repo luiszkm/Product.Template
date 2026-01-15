@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Security\" />
+    <Folder Include="Data\Configurations\" />
   </ItemGroup>
 
 </Project>

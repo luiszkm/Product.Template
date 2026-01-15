@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.HttpOverrides;
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Middleware;
+using Product.Template.Core.Identity.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
@@ -10,6 +11,9 @@ builder.Services.AddApplicationCore(builder.Configuration);
 
 // Use Cases and Repositories
 builder.Services.AddUseCases();
+
+// Database Configuration (InMemory)
+builder.Services.AddDatabaseConfiguration();
 
 // Database Connections
 builder.Services.AddAppConnections(builder.Configuration);
@@ -36,6 +40,9 @@ builder.Services.AddSecurityConfiguration(builder.Configuration, builder.Environ
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
 var app = builder.Build();
+
+// Initialize Database with Seeders
+await app.Services.InitializeDatabaseAsync();
 
 // Serilog Request Logging (captura todas as requisições de forma performática)
 app.UseSerilogConfiguration();
