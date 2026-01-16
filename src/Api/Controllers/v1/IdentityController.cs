@@ -7,6 +7,7 @@ using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Application.Handlers.User.Commands;
 using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Core.Identity.Application.Queries.Users;
+using Product.Template.Kernel.Domain.SeedWorks;
 
 
 namespace Product.Template.Api.Controllers.v1;
@@ -16,7 +17,7 @@ namespace Product.Template.Api.Controllers.v1;
 /// </summary>
 /// <remarks>
 /// Esta API gerencia toda a autenticação da aplicação utilizando JWT Bearer Tokens.
-/// 
+///
 /// ## Fluxo de Autenticação
 /// 1. Registre um novo usuário via `/register`
 /// 2. Faça login via `/login` para obter o token JWT
@@ -50,7 +51,7 @@ public class IdentityController : ControllerBase
     /// GET /api/v1/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
     /// Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
     /// ```
-    /// 
+    ///
     /// ## Exemplo de Resposta (200 OK)
     /// ```json
     /// {
@@ -93,7 +94,7 @@ public class IdentityController : ControllerBase
     ///   "password": "SenhaSegura123!"
     /// }
     /// ```
-    /// 
+    ///
     /// ## Exemplo de Resposta (200 OK)
     /// ```json
     /// {
@@ -106,7 +107,7 @@ public class IdentityController : ControllerBase
     ///   }
     /// }
     /// ```
-    /// 
+    ///
     /// ⚠️ **Importante**: Guarde o token retornado para usar nos próximos requests!
     /// </remarks>
     /// <response code="200">✅ Login realizado com sucesso</response>
@@ -148,7 +149,7 @@ public class IdentityController : ControllerBase
     ///   "name": "Maria Santos"
     /// }
     /// ```
-    /// 
+    ///
     /// ## Exemplo de Resposta (201 Created)
     /// ```json
     /// {
@@ -158,7 +159,7 @@ public class IdentityController : ControllerBase
     ///   "createdAt": "2026-01-14T14:30:00Z"
     /// }
     /// ```
-    /// 
+    ///
     /// ## Regras de Validação
     /// - ✅ Email deve ser válido e único
     /// - ✅ Senha deve ter no mínimo 8 caracteres
@@ -184,5 +185,162 @@ public class IdentityController : ControllerBase
         _logger.LogInformation("Usuário registrado com sucesso: {UserId}", result.Id);
 
         return CreatedAtAction(nameof(GetById), new { id = result.Id, version = "1.0" }, result);
+    }
+
+    /// <summary>
+    /// 📋 Lista todos os usuários com paginação
+    /// </summary>
+    /// <param name="pageNumber">Número da página (inicia em 1)</param>
+    /// <param name="pageSize">Quantidade de itens por página (padrão: 10)</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Lista paginada de usuários</returns>
+    /// <remarks>
+    /// ## Exemplo de Requisição
+    /// ```http
+    /// GET /api/v1/identity?pageNumber=1&amp;pageSize=10
+    /// Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+    /// ```
+    ///
+    /// ## Exemplo de Resposta (200 OK)
+    /// ```json
+    /// {
+    ///   "pageNumber": 1,
+    ///   "pageSize": 10,
+    ///   "totalCount": 45,
+    ///   "data": [
+    ///     {
+    ///       "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///       "email": "usuario1@exemplo.com",
+    ///       "name": "João Silva",
+    ///       "createdAt": "2026-01-14T10:30:00Z"
+    ///     },
+    ///     {
+    ///       "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+    ///       "email": "usuario2@exemplo.com",
+    ///       "name": "Maria Santos",
+    ///       "createdAt": "2026-01-14T14:30:00Z"
+    ///     }
+    ///   ]
+    /// }
+    /// ```
+    /// </remarks>
+    /// <response code="200">✅ Lista de usuários retornada com sucesso</response>
+    /// <response code="401">🔒 Token JWT inválido ou ausente</response>
+    [HttpGet]
+    [Authorize]
+    [ProducesResponseType(typeof(PaginatedListOutput<UserOutput>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<PaginatedListOutput<UserOutput>>> ListUsers(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Listando usuários - Página: {PageNumber}, Tamanho: {PageSize}", pageNumber, pageSize);
+
+        var query = new ListUserQuery
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// ✏️ Atualiza os dados de um usuário existente
+    /// </summary>
+    /// <param name="id">ID único do usuário (GUID)</param>
+    /// <param name="command">Dados atualizados do usuário</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Usuário atualizado</returns>
+    /// <remarks>
+    /// ## Exemplo de Requisição
+    /// ```http
+    /// PUT /api/v1/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+    /// Content-Type: application/json
+    ///
+    /// {
+    ///   "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    /// }
+    /// ```
+    ///
+    /// ## Exemplo de Resposta (200 OK)
+    /// ```json
+    /// {
+    ///   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    ///   "email": "usuario@exemplo.com",
+    ///   "name": "João Silva Atualizado",
+    ///   "createdAt": "2026-01-14T10:30:00Z"
+    /// }
+    /// ```
+    /// </remarks>
+    /// <response code="200">✅ Usuário atualizado com sucesso</response>
+    /// <response code="400">⚠️ Dados de entrada inválidos</response>
+    /// <response code="401">🔒 Token JWT inválido ou ausente</response>
+    /// <response code="404">❌ Usuário não encontrado</response>
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserOutput>> UpdateUser(
+        Guid id,
+        [FromBody] UpdateUserCommand command,
+        CancellationToken cancellationToken)
+    {
+        if (id != command.UserId)
+        {
+            _logger.LogWarning("ID da URL ({UrlId}) não corresponde ao ID do comando ({CommandId})", id, command.UserId);
+            return BadRequest("O ID da URL deve corresponder ao ID do usuário no corpo da requisição");
+        }
+
+        _logger.LogInformation("Atualizando usuário com ID: {UserId}", id);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        _logger.LogInformation("Usuário atualizado com sucesso: {UserId}", id);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 🗑️ Deleta um usuário do sistema
+    /// </summary>
+    /// <param name="id">ID único do usuário (GUID)</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Confirmação de exclusão</returns>
+    /// <remarks>
+    /// ## Exemplo de Requisição
+    /// ```http
+    /// DELETE /api/v1/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+    /// Authorization: Bearer eyJhbGciOiJIUzI1NiIs...
+    /// ```
+    ///
+    /// ## Resposta (204 No Content)
+    /// Sem corpo na resposta - exclusão confirmada pelo status code
+    ///
+    /// ⚠️ **Atenção**: Esta ação é irreversível!
+    /// </remarks>
+    /// <response code="204">✅ Usuário deletado com sucesso</response>
+    /// <response code="401">🔒 Token JWT inválido ou ausente</response>
+    /// <response code="404">❌ Usuário não encontrado</response>
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Deletando usuário com ID: {UserId}", id);
+
+        var command = new DeleteUserCommand(id);
+        await _mediator.Send(command, cancellationToken);
+
+        _logger.LogInformation("Usuário deletado com sucesso: {UserId}", id);
+
+        return NoContent();
     }
 }

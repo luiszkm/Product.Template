@@ -1,0 +1,69 @@
+﻿### Testes das Novas Rotas de Usuário
+### Arquivo HTTP para testar os endpoints criados no IdentityController
+
+@baseUrl = https://localhost:7139
+@apiVersion = 1.0
+@token = seu-token-jwt-aqui
+
+### 1. Fazer Login (obter token JWT)
+POST {{baseUrl}}/api/v{{apiVersion}}/identity/login
+Content-Type: application/json
+
+{
+  "email": "admin@exemplo.com",
+  "password": "Admin@123"
+}
+
+### 2. Listar Usuários (Paginação - Página 1, 10 itens)
+GET {{baseUrl}}/api/v{{apiVersion}}/identity?pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+
+### 3. Listar Usuários (Paginação - Página 2, 5 itens)
+GET {{baseUrl}}/api/v{{apiVersion}}/identity?pageNumber=2&pageSize=5
+Authorization: Bearer {{token}}
+
+### 4. Buscar Usuário por ID (existente)
+GET {{baseUrl}}/api/v{{apiVersion}}/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Bearer {{token}}
+
+### 5. Atualizar Usuário
+PUT {{baseUrl}}/api/v{{apiVersion}}/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+}
+
+### 6. Atualizar Usuário (erro: ID incompatível)
+PUT {{baseUrl}}/api/v{{apiVersion}}/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "00000000-0000-0000-0000-000000000000"
+}
+
+### 7. Deletar Usuário
+DELETE {{baseUrl}}/api/v{{apiVersion}}/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Bearer {{token}}
+
+### 8. Tentar buscar usuário deletado (deve retornar 404)
+GET {{baseUrl}}/api/v{{apiVersion}}/identity/3fa85f64-5717-4562-b3fc-2c963f66afa6
+Authorization: Bearer {{token}}
+
+### 9. Registrar novo usuário
+POST {{baseUrl}}/api/v{{apiVersion}}/identity/register
+Content-Type: application/json
+
+{
+  "email": "novousuario@exemplo.com",
+  "password": "SenhaSegura@123",
+  "firstName": "Novo",
+  "lastName": "Usuário"
+}
+
+### 10. Listar todos os usuários novamente
+GET {{baseUrl}}/api/v{{apiVersion}}/identity?pageNumber=1&pageSize=20
+Authorization: Bearer {{token}}
+

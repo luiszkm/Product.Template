@@ -24,12 +24,14 @@ public class ListUserQueryHandler : IQueryHandler<ListUserQuery, PaginatedListOu
     {
         var users = await _userRepository.ListAllAsync(request, cancellationToken);
 
+        var userOutputs = users.Data.ToOutputList().ToList();
+
         var output = new PaginatedListOutput<UserOutput>
         (
-            PageNumber: request.PageNumber,
-            PageSize: request.PageSize,
+            PageNumber: users.PageNumber,
+            PageSize: users.PageSize,
             TotalCount: users.TotalCount,
-            Data: users.Data.ToOutputList().ToArray()
+            Data: userOutputs
         );
 
         return output;

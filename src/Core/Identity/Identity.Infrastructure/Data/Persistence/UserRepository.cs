@@ -41,22 +41,31 @@ public class UserRepository : IUserRepository
         _context.Users.Update(user);
         return Task.CompletedTask;
     }
-    public async Task<IEnumerable<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<PaginatedListOutput<User>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
     {
-        return await _context.Users
+        var query = _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var users = await query
+            .Skip((listInput.PageNumber - 1) * listInput.PageSize)
+            .Take(listInput.PageSize)
             .ToListAsync(cancellationToken);
+
+        return new PaginatedListOutput<User>(
+            PageNumber: listInput.PageNumber,
+            PageSize: listInput.PageSize,
+            TotalCount: totalCount,
+            Data: users
+        );
     }
 
-
-    public Task<PaginatedListOutput<User>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
     {
         _context.Users.Remove(user);
+        return Task.CompletedTask;
     }
 }
