@@ -1,6 +1,9 @@
+using Kernel.Application.Security;
 using Kernel.Infrastructure.Configurations;
+using Kernel.Infrastructure.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Product.Template.Kernel.Application.Data;
 
 namespace Kernel.Infrastructure;
 
@@ -21,6 +24,8 @@ public static class DependencyInjection
 
         // Adicionar outras configurações de infraestrutura aqui
         // Ex: services.AddCachingConfiguration(configuration);
+        services.AddScoped<IHashServices, HashServices>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         return services;
     }
