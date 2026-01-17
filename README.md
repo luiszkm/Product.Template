@@ -72,7 +72,8 @@ dotnet new uninstall Neuraptor.Product.Template
 - **Audit Trail** - Rastreamento automático de criação/modificação de entidades
 - **Current User Service** - Acesso ao usuário autenticado em toda aplicação
 
-> 📖 **Documentação completa:** [ADVANCED_FEATURES.md](./docs/ADVANCED_FEATURES.md)
+> 📖 **Documentação completa:** [ADVANCED_FEATURES.md](./docs/ADVANCED_FEATURES.md)  
+> 🔄 **Migrando da v1.0?** [Guia de Migração](./docs/MIGRATION_GUIDE_v1.0_to_v1.1.md)
 
 ### Arquitetura e Padrões
 - **Clean Architecture** com separação clara de responsabilidades
@@ -1014,5 +1015,18 @@ Neuraptor
 
 ## Mais Informações
 
-- [Documentação da Arquitetura](ARCHITECTURE.md)
-- [Guia de Contribuição](CONTRIBUTING.md)
+### 📚 Documentação Completa
+
+- **[📑 Índice de Documentação](./docs/INDEX.md)** - Encontre rapidamente o que precisa
+- **[🏗️ Arquitetura](./docs/ARCHITECTURE.md)** - Arquitetura detalhada do projeto
+- **[🎯 Recursos Avançados](./docs/ADVANCED_FEATURES.md)** - Guia dos recursos v1.1.0
+- **[🔄 Guia de Migração](./docs/MIGRATION_GUIDE_v1.0_to_v1.1.md)** - Migrar de v1.0 para v1.1
+- **[✅ Checklist de Validação](./docs/VALIDATION_CHECKLIST.md)** - Validar implementação
+- **[📋 Changelog](./docs/CHANGELOG.md)** - Histórico de mudanças
+- **[🤝 Contribuindo](./docs/CONTRIBUTING.md)** - Como contribuir
+
+### 🔗 Links Rápidos
+
+- [MediatR Implementation](./MEDIATR_IMPLEMENTATION_SUMMARY.md)
+- [Rotas Criadas](./ROTAS_CRIADAS.md)
+- [Agents Documentation](./docs/AGENTS.md)
