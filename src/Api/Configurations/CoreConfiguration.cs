@@ -8,6 +8,8 @@ namespace Product.Template.Api.Configurations
             this IServiceCollection services)
         {
             services.AddIdentityInJections();
+            // HttpContextAccessor para CurrentUserService
+            services.AddHttpContextAccessor();
             return services;
         }
     }

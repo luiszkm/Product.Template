@@ -225,9 +225,7 @@ public class IdentityController : ControllerBase
     /// ```
     /// </remarks>
     /// <response code="200">✅ Lista de usuários retornada com sucesso</response>
-    /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     [HttpGet]
-    [Authorize]
     [ProducesResponseType(typeof(PaginatedListOutput<UserOutput>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PaginatedListOutput<UserOutput>>> ListUsers(

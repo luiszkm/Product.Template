@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Core.Identity.Infrastructure.Data.Seeders;
 using Product.Template.Kernel.Infrastructure.Persistence;
+using Kernel.Infrastructure.Persistence.Interceptors;
 
 namespace Product.Template.Core.Identity.Infrastructure.Data;
 
@@ -12,11 +13,18 @@ public static class DatabaseConfiguration
         string databaseName = "ProductTemplateDb")
     {
         // Configure InMemory Database
-        services.AddDbContext<AppDbContext>(options =>
+        services.AddDbContext<AppDbContext>((sp, options) =>
         {
             options.UseInMemoryDatabase(databaseName);
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
+
+            // Adicionar interceptor de auditoria
+            var auditInterceptor = sp.GetService<AuditableEntityInterceptor>();
+            if (auditInterceptor != null)
+            {
+                options.AddInterceptors(auditInterceptor);
+            }
         });
 
         return services;

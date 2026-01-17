@@ -24,6 +24,15 @@ builder.Services.AddApiVersioningConfiguration();
 // Controllers and API Documentation
 builder.Services.AddControllersConfigurations();
 
+// Response Compression (Brotli + Gzip)
+builder.Services.AddCompressionConfiguration();
+
+// Output Caching
+builder.Services.AddCachingConfiguration(builder.Configuration);
+
+// Feature Flags
+builder.Services.AddFeatureFlagsConfiguration(builder.Configuration);
+
 // Resilience Policies (Retry, Circuit Breaker, Timeout)
 builder.Services.AddResiliencePolicies(builder.Configuration);
 
@@ -44,11 +53,20 @@ var app = builder.Build();
 // Initialize Database with Seeders
 await app.Services.InitializeDatabaseAsync();
 
+// Response Compression
+app.UseResponseCompression();
+
+// Output Caching
+app.UseCachingConfiguration();
+
 // Serilog Request Logging (captura todas as requisições de forma performática)
 app.UseSerilogConfiguration();
 
 // Request Logging Detalhado (com correlationId e mascaramento de dados sensíveis)
 app.UseMiddleware<RequestLoggingMiddleware>();
+
+// Request Deduplication (previne requisições duplicadas)
+app.UseMiddleware<RequestDeduplicationMiddleware>();
 
 // IP Whitelist/Blacklist Validation
 app.UseMiddleware<IpWhitelistMiddleware>();

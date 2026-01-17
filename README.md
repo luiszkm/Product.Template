@@ -64,6 +64,16 @@ dotnet new uninstall Neuraptor.Product.Template
 
 ## Características
 
+### 🎯 Recursos Avançados (Novos!)
+- **Response Compression** (Brotli + Gzip) - Reduz respostas em até 70-80%
+- **Output Caching** - Cache de respostas HTTP com políticas configuráveis
+- **Request Deduplication** - Previne requisições duplicadas (idempotência)
+- **Feature Flags** - Controle de features sem redeploy
+- **Audit Trail** - Rastreamento automático de criação/modificação de entidades
+- **Current User Service** - Acesso ao usuário autenticado em toda aplicação
+
+> 📖 **Documentação completa:** [ADVANCED_FEATURES.md](./docs/ADVANCED_FEATURES.md)
+
 ### Arquitetura e Padrões
 - **Clean Architecture** com separação clara de responsabilidades
 - **Domain-Driven Design (DDD)** com SeedWorks (Entity, AggregateRoot, Domain Events)
