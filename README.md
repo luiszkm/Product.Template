@@ -37,27 +37,79 @@ dotnet new install .
 
 ### Criar Novo Projeto
 
+#### Método 1: Com Script Automatizado (Recomendado) 🌟
+
+O script automaticamente cria o projeto e organiza os Solution Folders:
+
+```powershell
+# Windows PowerShell
+pwsh scripts/init-project.ps1 -ProjectName "MeuNovoProjeto"
+
+# Com opções adicionais
+pwsh scripts/init-project.ps1 -ProjectName "API.Vendas" -OutputPath "C:\Projects" -OpenIDE
+```
+
+**Parâmetros disponíveis:**
+- `-ProjectName` (obrigatório): Nome do projeto
+- `-OutputPath` (opcional): Diretório onde criar (padrão: atual)
+- `-SkipBuild` (opcional): Não compila após criar
+- `-OpenIDE` (opcional): Abre no IDE após criar
+
+#### Método 2: Criação Manual
+
 ```bash
-# Criar projeto a partir do template
+# 1. Criar projeto do template
 dotnet new product-template -n MeuProjeto
 
-# Navegar para o projeto
+# 2. Navegar para o projeto
 cd MeuProjeto
 
-# Restaurar e compilar
+# 3. Organizar Solution Folders (IMPORTANTE!)
+pwsh ../scripts/organize-solution.ps1
+
+# 4. Restaurar e compilar
 dotnet restore
 dotnet build
 
-# Executar a API
-dotnet run --project src/Api/Api/Api.csproj
+# 5. Executar a API
+dotnet run --project src/Api/Api.csproj
 ```
 
 Acesse: `https://localhost:5001/swagger`
 
+> ⚠️ **Importante:** Por padrão, o .NET não organiza projetos em Solution Folders. Execute o script `organize-solution.ps1` para refletir a estrutura de diretórios na Solution.
+
+### Organizar Solution Folders Existente
+
+Se você já criou um projeto e quer organizá-lo:
+
+```powershell
+# Na pasta raiz do projeto
+pwsh scripts/organize-solution.ps1
+
+# Ou especificando a solution
+pwsh scripts/organize-solution.ps1 -SolutionPath "MeuProjeto.sln"
+```
+
+Isso organizará automaticamente:
+```
+Solution 'MeuProjeto'
+├── 📁 src/
+│   ├── Api.csproj
+│   ├── Kernel.Domain.csproj
+│   ├── Kernel.Application.csproj
+│   └── Kernel.Infrastructure.csproj
+└── 📁 tests/
+    ├── UnitTests.csproj
+    ├── IntegrationTests.csproj
+    ├── E2ETests.csproj
+    └── CommonTests.csproj
+```
+
 ### Desinstalar Template
 
 ```bash
-dotnet new uninstall Neuraptor.Product.Template
+dotnet new uninstall Product.Template
 ```
 
 ---

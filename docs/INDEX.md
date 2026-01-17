@@ -7,6 +7,7 @@ Bem-vindo à documentação completa do Product Template! Este índice ajuda voc
 | Documento | Descrição | Para quem? |
 |-----------|-----------|------------|
 | [README.md](../README.md) | Visão geral, instalação e início rápido | Todos |
+| **[TEMPLATE_USAGE_GUIDE.md](./TEMPLATE_USAGE_GUIDE.md)** | **Guia completo de uso do template** | **Iniciantes** |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Arquitetura detalhada do projeto | Desenvolvedores |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Como contribuir com o projeto | Contribuidores |
 | [FAQ.md](./FAQ.md) | Perguntas frequentes e troubleshooting | Todos |

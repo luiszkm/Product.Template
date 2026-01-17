@@ -2,7 +2,7 @@
 
 **Data da Revisão:** 2026-01-17  
 **Revisor:** AI Assistant  
-**Status:** ✅ Completo
+**Status:** ✅ Completo e Atualizado
 
 ---
 
@@ -18,12 +18,21 @@
 | **MIGRATION_GUIDE_v1.0_to_v1.1.md** | ✅ Criado | Guia passo a passo de migração |
 | **INDEX.md** | ✅ Criado | Índice completo de toda documentação |
 | **FAQ.md** | ✅ Criado | Perguntas frequentes e troubleshooting |
+| **TEMPLATE_USAGE_GUIDE.md** | ✅ Criado | Guia completo de uso do template e organização de Solution Folders |
+
+### 🛠️ Scripts Criados
+
+| Script | Status | Descrição |
+|--------|--------|-----------|
+| **scripts/organize-solution.ps1** | ✅ Criado | Organiza projetos em Solution Folders automaticamente |
+| **scripts/init-project.ps1** | ✅ Criado | Cria novo projeto e organiza Solution Folders automaticamente |
 
 ### 📝 Documentos Atualizados
 
 | Documento | Mudanças | Status |
 |-----------|----------|--------|
-| **README.md** | Adicionada seção "Recursos Avançados" com links | ✅ Atualizado |
+| **README.md** | Adicionada seção de criação de projetos com scripts | ✅ Atualizado |
+| **INDEX.md** | Adicionado TEMPLATE_USAGE_GUIDE.md | ✅ Atualizado |
 | **CHANGELOG.md** | Adicionada versão 1.1.0 com detalhes completos | ✅ Atualizado |
 
 ### 📚 Documentos Existentes (Mantidos)
@@ -153,6 +162,8 @@ docs/
 - [x] Links entre documentos funcionando
 - [x] Índice completo criado
 - [x] FAQ abrangente
+- [x] Guia de uso do template criado
+- [x] Scripts de automação documentados
 
 ### Clareza
 
@@ -161,13 +172,14 @@ docs/
 - [x] Troubleshooting incluído
 - [x] Passo a passo para tarefas comuns
 - [x] Glossário de termos (em ARCHITECTURE.md)
+- [x] Explicação de Solution Folders
 
 ### Atualização
 
 - [x] Versões corretas mencionadas
 - [x] Datas atualizadas
 - [x] Links válidos
-- [x] Código compatível com .NET 10
+- [x] Código compatível com .NET 8.0+
 - [x] CHANGELOG atualizado
 
 ### Acessibilidade
@@ -186,20 +198,22 @@ docs/
 
 | Tipo | Quantidade | Linhas Totais (aprox) |
 |------|------------|----------------------|
-| Novos | 6 | ~2,500 |
-| Atualizados | 2 | ~150 (mudanças) |
+| Novos | 7 | ~3,200 |
+| Atualizados | 3 | ~200 (mudanças) |
 | Mantidos | 6 | ~2,000 |
-| **Total** | **14** | **~4,650** |
+| Scripts | 2 | ~500 |
+| **Total** | **18** | **~5,900** |
 
 ### Cobertura por Recurso
 
-| Recurso | Documentação | Exemplos | Troubleshooting |
-|---------|--------------|----------|-----------------|
-| Response Compression | ✅ | ✅ | ✅ |
-| Output Caching | ✅ | ✅ | ✅ |
-| Request Deduplication | ✅ | ✅ | ✅ |
-| Feature Flags | ✅ | ✅ | ✅ |
-| Audit Trail | ✅ | ✅ | ✅ |
+| Recurso | Documentação | Exemplos | Troubleshooting | Scripts |
+|---------|--------------|----------|-----------------|---------|
+| Response Compression | ✅ | ✅ | ✅ | N/A |
+| Output Caching | ✅ | ✅ | ✅ | N/A |
+| Request Deduplication | ✅ | ✅ | ✅ | N/A |
+| Feature Flags | ✅ | ✅ | ✅ | N/A |
+| Audit Trail | ✅ | ✅ | ✅ | N/A |
+| Solution Folders | ✅ | ✅ | ✅ | ✅ |
 
 **Cobertura Geral:** 100%
 
