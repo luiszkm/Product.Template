@@ -25,12 +25,12 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+            .FirstOrDefaultAsync(u => EF.Property<string>(u.Email, "Value") == email, cancellationToken);
     }
     public async Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default)
     {
         return await _context.Users
-            .AnyAsync(u => u.Email == email, cancellationToken);
+            .AnyAsync(u => EF.Property<string>(u.Email, "Value") == email.Value, cancellationToken);
     }
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
