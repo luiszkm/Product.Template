@@ -1,10 +1,24 @@
 namespace Product.Template.Kernel.Domain.SeedWorks;
 
-public abstract class Entity<TId>
+public abstract class Entity<TId> : IAuditableEntity
 {
+    private bool IsDeleted { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTime? UpdatedAt { get; set; }
+    public string? UpdatedBy { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    public DateTime? RestoredAt { get; set; }
+    public string? RestoredBy { get; set; }
     public TId Id { get; protected set; }
+
     protected Entity(TId id)
-        => Id = id;
+    {
+        CreatedAt = DateTime.UtcNow;
+        Id = id;
+    }
     public override bool Equals(object? obj)
     {
         if (obj is not Entity<TId> other) return false;
@@ -20,5 +34,19 @@ public abstract class Entity<TId>
     }
     public static bool operator !=(Entity<TId> a, Entity<TId> b) => !(a == b);
     public override int GetHashCode() => Id?.GetHashCode() ?? 0;
+
+    public void SoftDelete(string deletedBy )
+    {
+        IsDeleted = true;
+        DeletedAt = DateTime.UtcNow;
+        DeletedBy = deletedBy;
+    }
+    public void Restore(string restoredBy)
+    {
+        IsDeleted = false;
+        DeletedAt = null;
+        RestoredAt = DateTime.UtcNow;
+        RestoredBy = restoredBy;
+    }
 }
 

@@ -1,6 +1,6 @@
 namespace Product.Template.Kernel.Domain.SeedWorks;
 
-public abstract class AggregateRoot<TId> : Entity<TId>
+public abstract class AggregateRoot<TId> :  Entity<TId>
 {
     private readonly List<IDomainEvent> _domainEvents = new();
     protected AggregateRoot(TId id) : base(id) { }

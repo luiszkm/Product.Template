@@ -1,6 +1,8 @@
+using Kernel.Domain.SeedWorks;
 using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
+using Product.Template.Kernel.Domain.SeedWorks;
 using Product.Template.Kernel.Infrastructure.Persistence;
 namespace Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 public class RoleRepository : IRoleRepository
@@ -15,17 +17,37 @@ public class RoleRepository : IRoleRepository
         return await _context.Roles
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
     }
-    public async Task<Role?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-    {
-        return await _context.Roles
-            .FirstOrDefaultAsync(r => r.Name == name, cancellationToken);
-    }
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
         await _context.Roles.AddAsync(role, cancellationToken);
     }
-    public async Task<IEnumerable<Role>> GetAllAsync(CancellationToken cancellationToken = default)
+
+    public async Task UpdateAsync(Role entity, CancellationToken cancellationToken = default)
     {
-        return await _context.Roles.ToListAsync(cancellationToken);
+        _context.Roles.Update(entity);
+        await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task DeleteAsync(Role entity, CancellationToken cancellationToken = default)
+    {
+        _context.Roles.Remove(entity);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<PaginatedListOutput<Role>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Roles.AsQueryable();
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var roles = await query
+            .Skip((listInput.PageNumber - 1) * listInput.PageSize)
+            .Take(listInput.PageSize)
+            .ToListAsync(cancellationToken);
+
+        return new PaginatedListOutput<Role>(
+            PageNumber: listInput.PageNumber,
+            PageSize: listInput.PageSize,
+            TotalCount: totalCount,
+            Data: roles);
+        }
 }

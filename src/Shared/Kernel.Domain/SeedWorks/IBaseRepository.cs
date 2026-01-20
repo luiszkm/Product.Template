@@ -10,6 +10,8 @@ public interface IBaseRepository <T>
     Task AddAsync(T entity, CancellationToken cancellationToken = default);
     Task UpdateAsync(T entity, CancellationToken cancellationToken = default);
     Task DeleteAsync(T entity, CancellationToken cancellationToken = default);
+
+
     Task<PaginatedListOutput<T>> ListAllAsync(
         ListInput listInput,
         CancellationToken cancellationToken = default);

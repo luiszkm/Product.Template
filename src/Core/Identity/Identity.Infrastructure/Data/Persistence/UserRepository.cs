@@ -27,11 +27,6 @@ public class UserRepository : IUserRepository
                 .ThenInclude(ur => ur.Role)
             .FirstOrDefaultAsync(u => EF.Property<string>(u.Email, "Value") == email, cancellationToken);
     }
-    public async Task<bool> ExistsByEmailAsync(Email email, CancellationToken cancellationToken = default)
-    {
-        return await _context.Users
-            .AnyAsync(u => EF.Property<string>(u.Email, "Value") == email.Value, cancellationToken);
-    }
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _context.Users.AddAsync(user, cancellationToken);
@@ -41,6 +36,7 @@ public class UserRepository : IUserRepository
         _context.Users.Update(user);
         return Task.CompletedTask;
     }
+
     public async Task<PaginatedListOutput<User>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
     {
         var query = _context.Users
