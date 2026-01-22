@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using System.Text;
 using Kernel.Application.Security;
 using Microsoft.Extensions.Options;
@@ -28,7 +28,6 @@ public sealed class JwtTokenService : IJwtTokenService
         IEnumerable<Claim>? extraClaims = null)
     {
         var now = DateTime.UtcNow;
-
         var expiresAt = now.AddMinutes(_settings.ExpirationMinutes);
 
         var claims = new List<Claim>
