@@ -9,16 +9,12 @@ using Product.Template.Kernel.Application.Security;
 
 namespace Kernel.Infrastructure;
 
-/// <summary>
-/// Registro de serviços da infraestrutura Kernel
-/// </summary>
 public static class DependencyInjection
 {
     public static IServiceCollection AddKernelInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // Adicionar configuração de JWT
         services.AddJwtConfiguration(configuration);
 
         // Adicionar Authentication Providers (JWT, Microsoft, Google, etc.)
@@ -32,7 +28,6 @@ public static class DependencyInjection
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
 
-        // Interceptors para auditoria
         services.AddScoped<AuditableEntityInterceptor>();
 
         return services;
