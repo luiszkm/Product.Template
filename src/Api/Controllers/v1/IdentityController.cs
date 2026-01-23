@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Kernel.Application.Security;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -32,11 +33,46 @@ public class IdentityController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<IdentityController> _logger;
+    private readonly IAuthenticationProviderFactory _authProviderFactory;
 
-    public IdentityController(IMediator mediator, ILogger<IdentityController> logger)
+    public IdentityController(
+        IMediator mediator, 
+        ILogger<IdentityController> logger,
+        IAuthenticationProviderFactory authProviderFactory)
     {
         _mediator = mediator;
         _logger = logger;
+        _authProviderFactory = authProviderFactory;
+    }
+
+    /// <summary>
+    /// 🔌 Lista os provedores de autenticação disponíveis
+    /// </summary>
+    /// <returns>Lista de provedores ativos (jwt, microsoft, google, etc.)</returns>
+    /// <remarks>
+    /// ## Exemplo de Resposta (200 OK)
+    /// ```json
+    /// {
+    ///   "providers": ["jwt", "microsoft"],
+    ///   "count": 2
+    /// }
+    /// ```
+    ///
+    /// Use este endpoint para descobrir quais métodos de autenticação estão habilitados.
+    /// </remarks>
+    /// <response code="200">✅ Lista de provedores retornada</response>
+    [HttpGet("providers")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public ActionResult<object> GetAvailableProviders()
+    {
+        var providers = _authProviderFactory.GetAvailableProviders().ToList();
+
+        return Ok(new
+        {
+            providers,
+            count = providers.Count
+        });
     }
 
     /// <summary>
@@ -184,12 +220,90 @@ public class IdentityController : ControllerBase
 
         _logger.LogInformation("Usuário registrado com sucesso: {UserId}", result.Id);
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Id, version = "1.0" }, result);
-    }
+            return CreatedAtAction(nameof(GetById), new { id = result.Id, version = "1.0" }, result);
+        }
 
-    /// <summary>
-    /// 📋 Lista todos os usuários com paginação
-    /// </summary>
+        /// <summary>
+        /// 🌐 Autenticação via provedor externo (Microsoft, Google, etc.)
+        /// </summary>
+        /// <param name="command">Dados de autenticação externa</param>
+        /// <param name="cancellationToken">Token de cancelamento</param>
+        /// <returns>Token JWT para autenticação</returns>
+        /// <remarks>
+        /// ## Provedores Suportados
+        /// - **microsoft**: Microsoft / Azure AD / Entra ID
+        /// - **google**: Google OAuth (em desenvolvimento)
+        ///
+        /// ## Fluxo de Autenticação Microsoft
+        /// 1. Redirecione o usuário para a URL de autorização do Azure AD:
+        ///    ```
+        ///    https://login.microsoftonline.com/{tenantId}/oauth2/v2.0/authorize
+        ///      ?client_id={clientId}
+        ///      &response_type=code
+        ///      &redirect_uri={redirectUri}
+        ///      &scope=openid%20profile%20email
+        ///    ```
+        /// 2. Após aprovação, o usuário é redirecionado de volta com um `code`
+        /// 3. Envie o `code` para este endpoint junto com o `provider=microsoft`
+        /// 4. Receba o token JWT para usar na API
+        ///
+        /// ## Exemplo de Requisição
+        /// ```json
+        /// {
+        ///   "provider": "microsoft",
+        ///   "code": "0.AX0A...",
+        ///   "redirectUri": "https://localhost:7254/api/v1/identity/external-callback"
+        /// }
+        /// ```
+        ///
+        /// ## Exemplo de Resposta (200 OK)
+        /// ```json
+        /// {
+        ///   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+        ///   "tokenType": "Bearer",
+        ///   "expiresIn": 3600,
+        ///   "user": {
+        ///     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        ///     "email": "usuario@outlook.com",
+        ///     "firstName": "João",
+        ///     "roles": ["User"]
+        ///   }
+        /// }
+        /// ```
+        ///
+        /// ⚠️ **Importante**: 
+        /// - Configure as credenciais do Azure AD em `appsettings.json` → `MicrosoftAuth`
+        /// - Use User Secrets em desenvolvimento para armazenar ClientSecret
+        /// - O email do Microsoft deve ser verificado
+        /// </remarks>
+        /// <response code="200">✅ Autenticação externa bem-sucedida</response>
+        /// <response code="400">⚠️ Dados de entrada inválidos ou provider não suportado</response>
+        /// <response code="401">🔒 Falha na autenticação com o provedor externo</response>
+        [HttpPost("external-login")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(AuthTokenOutput), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<AuthTokenOutput>> ExternalLogin(
+            [FromBody] ExternalLoginCommand command,
+            CancellationToken cancellationToken)
+        {
+            _logger.LogInformation(
+                "Iniciando autenticação externa com provider: {Provider}",
+                command.Provider);
+
+            var result = await _mediator.Send(command, cancellationToken);
+
+            _logger.LogInformation(
+                "Autenticação externa bem-sucedida via provider: {Provider}",
+                command.Provider);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 📋 Lista todos os usuários com paginação
+        /// </summary>
     /// <param name="pageNumber">Número da página (inicia em 1)</param>
     /// <param name="pageSize">Quantidade de itens por página (padrão: 10)</param>
     /// <param name="cancellationToken">Token de cancelamento</param>

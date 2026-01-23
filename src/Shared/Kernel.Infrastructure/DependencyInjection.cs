@@ -21,6 +21,9 @@ public static class DependencyInjection
         // Adicionar configuração de JWT
         services.AddJwtConfiguration(configuration);
 
+        // Adicionar Authentication Providers (JWT, Microsoft, Google, etc.)
+        services.AddAuthenticationProviders(configuration);
+
         // Nota: A configuração do banco de dados é feita em Identity.Infrastructure
         // via AddDatabaseConfiguration() para evitar dependência circular
 

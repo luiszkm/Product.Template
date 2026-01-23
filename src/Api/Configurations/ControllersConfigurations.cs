@@ -28,6 +28,9 @@ public static class ControllersConfigurations
 
             // ✅ JWT Bearer (igual doc) + aplica requirement em todas operações
             options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+
+            // ✅ OAuth2 Microsoft para autenticação externa
+            options.AddDocumentTransformer<OAuth2SecuritySchemeTransformer>();
         });
 
         return services;
@@ -134,14 +137,56 @@ internal sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvi
             }
         };
 
-        // 2) Requirement em todas as operações (igual exemplo da doc)
-        foreach (var operation in document.Paths.Values.SelectMany(p => p.Operations))
-        {
-            operation.Value.Security ??= [];
-            operation.Value.Security.Add(new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-            });
+                // 2) Requirement em todas as operações (igual exemplo da doc)
+                foreach (var operation in document.Paths.Values.SelectMany(p => p.Operations))
+                {
+                    operation.Value.Security ??= [];
+                    operation.Value.Security.Add(new OpenApiSecurityRequirement
+                    {
+                        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+                    });
+                }
+            }
         }
-    }
-}
+
+        /// <summary>
+        /// Adiciona suporte a OAuth2 Microsoft no Scalar
+        /// </summary>
+        internal sealed class OAuth2SecuritySchemeTransformer : IOpenApiDocumentTransformer
+        {
+            public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+            {
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
+                // Adicionar OAuth2 Microsoft
+                document.Components.SecuritySchemes["OAuth2-Microsoft"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.OAuth2,
+                    Description = "🔐 Autenticação via Microsoft / Azure AD / Entra ID\n\n" +
+                                  "**Passo a passo:**\n" +
+                                  "1. Clique em 'Authorize' e autentique com sua conta Microsoft\n" +
+                                  "2. Após aprovação, o código será trocado por um token JWT\n" +
+                                  "3. Use o token JWT no header Authorization das próximas requisições\n\n" +
+                                  "**Observação:** Esta é a autenticação via Microsoft OAuth2. " +
+                                  "O token final retornado é um JWT do sistema.",
+                    Flows = new OpenApiOAuthFlows
+                    {
+                        AuthorizationCode = new OpenApiOAuthFlow
+                        {
+                            AuthorizationUrl = new Uri("https://login.microsoftonline.com/common/oauth2/v2.0/authorize"),
+                            TokenUrl = new Uri("https://login.microsoftonline.com/common/oauth2/v2.0/token"),
+                            Scopes = new Dictionary<string, string>
+                            {
+                                ["openid"] = "OpenID Connect",
+                                ["profile"] = "Informações do perfil",
+                                ["email"] = "Endereço de email"
+                            }
+                        }
+                    }
+                };
+
+                return Task.CompletedTask;
+            }
+        }
+
