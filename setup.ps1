@@ -237,47 +237,55 @@ function Update-FileContents {
         [string]$OldName,
         [string]$NewName
     )
-    
-    Write-Step "Atualizando conteúdo dos arquivos..."
-    
+
+    Write-Step "Atualizando conteúdo dos arquivos (namespaces, usings, referências)..."
+
     # Extensões de arquivos para atualizar
-    $extensions = @("*.cs", "*.csproj", "*.sln", "*.json", "*.md", "*.yml", "*.yaml", "*.xml", "*.config")
-    
+    $extensions = @("*.cs", "*.csproj", "*.sln", "*.json", "*.md", "*.yml", "*.yaml", "*.xml", "*.config", "*.txt")
+
     $files = Get-ChildItem -Path $Path -Recurse -Include $extensions | 
-             Where-Object { $_.FullName -notlike "*\bin\*" -and $_.FullName -notlike "*\obj\*" -and $_.FullName -notlike "*\.git\*" }
-    
+             Where-Object { 
+                 $_.FullName -notlike "*\bin\*" -and 
+                 $_.FullName -notlike "*\obj\*" -and 
+                 $_.FullName -notlike "*\.git\*" -and
+                 $_.FullName -notlike "*\node_modules\*"
+             }
+
     $totalFiles = $files.Count
     $currentFile = 0
-    
+    $updatedCount = 0
+
     foreach ($file in $files) {
         $currentFile++
-        
-        if ($Verbose) {
-            Write-Progress -Activity "Atualizando arquivos" -Status "Processando: $($file.Name)" -PercentComplete (($currentFile / $totalFiles) * 100)
-        }
-        
+
+        Write-Progress -Activity "Atualizando conteúdo dos arquivos" -Status "Processando: $($file.Name)" -PercentComplete (($currentFile / $totalFiles) * 100)
+
         try {
-            $content = Get-Content -Path $file.FullName -Raw -Encoding UTF8
-            
-            if ($content -match [regex]::Escape($OldName)) {
-                $newContent = $content -replace [regex]::Escape($OldName), $NewName
-                Set-Content -Path $file.FullName -Value $newContent -Encoding UTF8 -NoNewline
-                
+            $content = Get-Content -Path $file.FullName -Raw -Encoding UTF8 -ErrorAction Stop
+
+            # Verificar se o arquivo contém o nome antigo
+            if ($null -ne $content -and $content -like "*$OldName*") {
+                # Fazer replace (usar Replace simples ao invés de -replace regex)
+                $newContent = $content.Replace($OldName, $NewName)
+
+                # Salvar o arquivo
+                [System.IO.File]::WriteAllText($file.FullName, $newContent, [System.Text.UTF8Encoding]::new($false))
+
+                $updatedCount++
+
                 if ($Verbose) {
-                    Write-Success "Atualizado: $($file.Name)"
+                    Write-Success "✓ Atualizado: $($file.Name)"
                 }
             }
         }
         catch {
-            Write-Error-Custom "Erro ao processar $($file.Name): $_"
+            Write-Error-Custom "Erro ao processar $($file.FullName): $_"
         }
     }
-    
-    if ($Verbose) {
-        Write-Progress -Activity "Atualizando arquivos" -Completed
-    }
-    
-    Write-Success "Atualizado conteúdo de $totalFiles arquivos"
+
+    Write-Progress -Activity "Atualizando conteúdo dos arquivos" -Completed
+
+    Write-Success "Atualizado conteúdo de $updatedCount de $totalFiles arquivos"
 }
 
 function Update-ReadmeFile {
@@ -462,27 +470,30 @@ function Start-Setup {
     
     # Executar setup
     Write-Header "🔧 Iniciando Setup"
-    
+
     try {
         # 1. Remover .git
         Remove-GitFolder -Path $currentPath
-        
-        # 2. Renomear arquivos
+
+        # 2. Atualizar conteúdo PRIMEIRO (antes de renomear arquivos e diretórios)
+        Write-Step "PASSO 1: Atualizando conteúdo interno dos arquivos..."
+        Update-FileContents -Path $currentPath -OldName $TemplateNamespace -NewName $ProjectName
+
+        # 3. Renomear arquivos de projeto e solução
+        Write-Step "PASSO 2: Renomeando arquivos..."
         Rename-SolutionFiles -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
         Rename-ProjectFiles -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
-        
-        # 3. Renomear diretórios
+
+        # 4. Renomear diretórios (do mais profundo para o mais raso)
+        Write-Step "PASSO 3: Renomeando diretórios..."
         Rename-Directories -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
-        
-        # 4. Atualizar conteúdo
-        Update-FileContents -Path $currentPath -OldName $TemplateNamespace -NewName $ProjectName
-        
+
         # 5. Atualizar README
         Update-ReadmeFile -Path $currentPath -ProjectName $ProjectName
-        
+
         # 6. Mover para destino final
         $finalPath = Move-Project -SourcePath $currentPath -DestinationPath $OutputPath -ProjectName $ProjectName
-        
+
         # 7. Inicializar Git
         if (-not $SkipGitInit) {
             Initialize-GitRepository -Path $finalPath

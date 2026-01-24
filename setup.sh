@@ -209,41 +209,44 @@ update_file_contents() {
     local path=$1
     local old_name=$2
     local new_name=$3
-    
-    print_step "Atualizando conteúdo dos arquivos..."
-    
+
+    print_step "Atualizando conteúdo dos arquivos (namespaces, usings, referências)..."
+
     # Extensões de arquivos para atualizar
-    local extensions=("*.cs" "*.csproj" "*.sln" "*.json" "*.md" "*.yml" "*.yaml" "*.xml" "*.config")
-    
+    local extensions=("*.cs" "*.csproj" "*.sln" "*.json" "*.md" "*.yml" "*.yaml" "*.xml" "*.config" "*.txt")
+
     local file_count=0
-    
+    local updated_count=0
+
     for ext in "${extensions[@]}"; do
-        find "$path" -type f -name "$ext" \
-            ! -path "*/bin/*" \
-            ! -path "*/obj/*" \
-            ! -path "*/.git/*" \
-            | while read -r file; do
-            
+        while IFS= read -r -d '' file; do
+            ((file_count++))
+
             if grep -q "$old_name" "$file" 2>/dev/null; then
                 # Usar sed de forma compatível com Linux e Mac
                 if [[ "$OSTYPE" == "darwin"* ]]; then
-                    # macOS
-                    sed -i '' "s/$old_name/$new_name/g" "$file"
+                    # macOS - usa sintaxe BSD
+                    sed -i '' "s|$old_name|$new_name|g" "$file"
                 else
-                    # Linux
-                    sed -i "s/$old_name/$new_name/g" "$file"
+                    # Linux - usa sintaxe GNU
+                    sed -i "s|$old_name|$new_name|g" "$file"
                 fi
-                
+
+                ((updated_count++))
+
                 if $VERBOSE; then
-                    print_success "Atualizado: $(basename "$file")"
+                    print_success "✓ Atualizado: $(basename "$file")"
                 fi
-                
-                ((file_count++))
             fi
-        done
+        done < <(find "$path" -type f -name "$ext" \
+            ! -path "*/bin/*" \
+            ! -path "*/obj/*" \
+            ! -path "*/.git/*" \
+            ! -path "*/node_modules/*" \
+            -print0 2>/dev/null)
     done
-    
-    print_success "Atualizado conteúdo de $file_count arquivos"
+
+    print_success "Atualizado conteúdo de $updated_count de $file_count arquivos"
 }
 
 update_readme_file() {
@@ -459,26 +462,29 @@ main() {
     
     # Executar setup
     print_header "🔧 Iniciando Setup"
-    
+
     # 1. Remover .git
     remove_git_folder "$current_path"
-    
-    # 2. Renomear arquivos
+
+    # 2. Atualizar conteúdo PRIMEIRO (antes de renomear arquivos e diretórios)
+    print_step "PASSO 1: Atualizando conteúdo interno dos arquivos..."
+    update_file_contents "$current_path" "$TEMPLATE_NAMESPACE" "$PROJECT_NAME"
+
+    # 3. Renomear arquivos de projeto e solução
+    print_step "PASSO 2: Renomeando arquivos..."
     rename_solution_files "$current_path" "$ORIGINAL_TEMPLATE" "$PROJECT_NAME"
     rename_project_files "$current_path" "$ORIGINAL_TEMPLATE" "$PROJECT_NAME"
-    
-    # 3. Renomear diretórios
+
+    # 4. Renomear diretórios (do mais profundo para o mais raso)
+    print_step "PASSO 3: Renomeando diretórios..."
     rename_directories "$current_path" "$ORIGINAL_TEMPLATE" "$PROJECT_NAME"
-    
-    # 4. Atualizar conteúdo
-    update_file_contents "$current_path" "$TEMPLATE_NAMESPACE" "$PROJECT_NAME"
-    
+
     # 5. Atualizar README
     update_readme_file "$current_path" "$PROJECT_NAME"
-    
+
     # 6. Mover para destino final
     local final_path=$(move_project "$current_path" "$OUTPUT_PATH" "$PROJECT_NAME")
-    
+
     # 7. Inicializar Git
     if ! $SKIP_GIT_INIT; then
         initialize_git_repository "$final_path"

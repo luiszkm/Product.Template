@@ -4,18 +4,31 @@ Scripts automatizados para configuração inicial do template após clonar o rep
 
 ---
 
-## 📋 O que os Scripts Fazem?
+## 📦 **O que os Scripts Fazem?**
 
 Os scripts de setup automatizam completamente a transformação do template no seu projeto:
 
 ✅ Remove a pasta `.git` do template  
+✅ **Atualiza namespaces e using statements em TODOS os arquivos** (.cs, .csproj, .json, etc.)  
 ✅ Renomeia arquivos `.sln` e `.csproj`  
 ✅ Renomeia diretórios (pastas do projeto)  
-✅ Atualiza namespaces em todos os arquivos `.cs`  
-✅ Atualiza referências em arquivos de configuração (`.json`, `.yml`, `.md`)  
 ✅ Cria um novo `README.md` personalizado  
 ✅ Move o projeto para o diretório de destino escolhido  
 ✅ Inicializa um novo repositório Git (opcional)  
+
+### **🔧 Ordem de Execução (Importante!)**
+
+O script executa as operações nesta ordem específica para evitar problemas:
+
+1. **Remove `.git`** do template original
+2. **Atualiza conteúdo primeiro** - Substitui `Product.Template` por `SeuProjeto` em todos os arquivos
+3. **Renomeia arquivos** - Renomeia `.sln` e `.csproj`
+4. **Renomeia diretórios** - Renomeia pastas do mais profundo para o mais raso
+5. **Atualiza README.md** - Cria versão personalizada
+6. **Move para destino** - Move o projeto para o diretório final
+7. **Inicializa Git** - Cria novo repositório (opcional)
+
+> **Por que essa ordem?** Se renomeássemos diretórios antes de atualizar arquivos, os caminhos ficariam quebrados!
 
 ---
 
@@ -213,6 +226,48 @@ graph TD
 
 ## 🔧 Troubleshooting
 
+### **❌ Problema: Namespaces ainda estão como "Product.Template"**
+
+**Sintoma:**
+```csharp
+using Product.Template.Core.Identity.Application;  // ❌ Não foi renomeado
+namespace Product.Template.Api.Controllers;         // ❌ Não foi renomeado
+```
+
+**Solução:**
+
+```powershell
+# 1. Verificar o problema
+.\verify-setup.ps1 -ProjectPath "C:\caminho\do\projeto"
+
+# 2. Se houver referências não substituídas, execute o script novamente
+# mas ANTES, delete o projeto parcialmente configurado:
+Remove-Item "C:\caminho\do\projeto" -Recurse -Force
+
+# 3. Clone novamente e execute o setup
+git clone https://github.com/luiszkm/Product.Template.git
+cd Product.Template
+.\setup.ps1
+```
+
+**Causa raiz:** Versão antiga do script que renomeava diretórios antes de atualizar conteúdo.
+
+---
+
+### **❌ Problema: Arquivos .csproj não foram renomeados**
+
+**Sintoma:**
+```
+MyProject/
+  src/
+    Api/
+      Product.Template.Api.csproj  ❌
+```
+
+**Solução:** Mesmo que acima - re-executar o setup do zero.
+
+---
+
 ### **Erro: "Execution Policy"** (PowerShell)
 
 ```powershell
@@ -309,6 +364,24 @@ MyCompany.ProductApi/        ← Novo diretório
 ---
 
 ## 🚀 Próximos Passos Após o Setup
+
+### **1️⃣ Verificar se o Setup Funcionou Corretamente**
+
+```powershell
+# Windows (PowerShell)
+.\verify-setup.ps1 -ProjectPath "C:\Projects\MeuProjeto"
+
+# Linux/Mac (em desenvolvimento)
+# ./verify-setup.sh "~/projects/MeuProjeto"
+```
+
+**O script de verificação irá:**
+- ✅ Buscar referências ao `Product.Template` que não foram substituídas
+- ✅ Listar arquivos/diretórios que não foram renomeados
+- ✅ Verificar se a estrutura está correta
+- ✅ Confirmar se o Git foi inicializado
+
+### **2️⃣ Compilar e Executar**
 
 ```bash
 # 1. Navegue até o projeto
