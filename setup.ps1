@@ -141,6 +141,48 @@ function Get-ValidOutputPath {
 # FUNÇÕES PRINCIPAIS
 # ============================================================================
 
+function Copy-Template {
+    param(
+        [string]$SourcePath,
+        [string]$TempPath
+    )
+    
+    Write-Step "Criando cópia do template (preservando original)..."
+    
+    # Criar diretório temporário se não existir
+    $tempParent = Split-Path $TempPath -Parent
+    if (-not (Test-Path $tempParent)) {
+        New-Item -Path $tempParent -ItemType Directory -Force | Out-Null
+    }
+    
+    # Remover cópia temporária anterior se existir
+    if (Test-Path $TempPath) {
+        Remove-Item -Path $TempPath -Recurse -Force
+    }
+    
+    # Copiar todo o conteúdo (excluindo .git se existir)
+    $sourceName = Split-Path $SourcePath -Leaf
+    $tempDir = Join-Path $tempParent $sourceName
+    
+    # Usar robocopy no Windows para cópia eficiente, ou Copy-Item como fallback
+    try {
+        # Tentar usar robocopy (mais rápido e confiável no Windows)
+        $null = robocopy $SourcePath $tempDir /E /XD .git /NFL /NDL /NJH /NJS 2>&1
+        if ($LASTEXITCODE -ge 8) {
+            throw "Erro ao copiar com robocopy"
+        }
+        Write-Success "Cópia criada com sucesso"
+    }
+    catch {
+        # Fallback para Copy-Item
+        Write-Info "Usando método alternativo de cópia..."
+        Copy-Item -Path $SourcePath -Destination $tempDir -Recurse -Force -Exclude ".git"
+        Write-Success "Cópia criada com sucesso"
+    }
+    
+    return $tempDir
+}
+
 function Remove-GitFolder {
     param([string]$Path)
     
@@ -373,7 +415,19 @@ function Initialize-GitRepository {
         Write-Success "Repositório Git inicializado"
         Write-Info "Para conectar a um repositório remoto, execute:"
         Write-ColorOutput "   git remote add origin <url-do-repositorio>" "White"
-        Write-ColorOutput "   git push -u origin master" "White"
+        
+        # Detectar branch padrão (main ou master)
+        $defaultBranch = git symbolic-ref --short HEAD 2>$null
+        if ([string]::IsNullOrWhiteSpace($defaultBranch)) {
+            # Tentar obter da configuração do Git, senão usar 'main' como padrão moderno
+            $initDefaultBranch = git config --global init.defaultBranch 2>$null
+            if ([string]::IsNullOrWhiteSpace($initDefaultBranch)) {
+                $defaultBranch = "main"
+            } else {
+                $defaultBranch = $initDefaultBranch
+            }
+        }
+        Write-ColorOutput "   git push -u origin $defaultBranch" "White"
     }
     catch {
         Write-Error-Custom "Erro ao inicializar Git: $_"
@@ -453,11 +507,11 @@ function Start-Setup {
     
     # Confirmar configurações
     Write-Header "📋 Configurações"
-    Write-ColorOutput "Nome do Projeto : " "White" -NoNewline
+    Write-Host "Nome do Projeto : " -NoNewline -ForegroundColor White
     Write-ColorOutput "$ProjectName" "Green"
-    Write-ColorOutput "Caminho Destino : " "White" -NoNewline
+    Write-Host "Caminho Destino : " -NoNewline -ForegroundColor White
     Write-ColorOutput "$OutputPath" "Green"
-    Write-ColorOutput "Caminho Final   : " "White" -NoNewline
+    Write-Host "Caminho Final   : " -NoNewline -ForegroundColor White
     Write-ColorOutput (Join-Path $OutputPath $ProjectName) "Green"
     
     Write-Host "`nContinuar? (S/N): " -NoNewline -ForegroundColor Yellow
@@ -471,28 +525,38 @@ function Start-Setup {
     # Executar setup
     Write-Header "🔧 Iniciando Setup"
 
+    # Criar caminho temporário para cópia
+    $tempDir = Join-Path $env:TEMP "Product.Template.Setup.$(Get-Random)"
+    $workingPath = $null
+
     try {
-        # 1. Remover .git
-        Remove-GitFolder -Path $currentPath
+        # 0. Criar cópia do template (preserva o original)
+        $workingPath = Copy-Template -SourcePath $currentPath -TempPath $tempDir
+        
+        Write-Info "Trabalhando na cópia: $workingPath"
+        Write-Info "Template original preservado em: $currentPath"
+
+        # 1. Remover .git da cópia
+        Remove-GitFolder -Path $workingPath
 
         # 2. Atualizar conteúdo PRIMEIRO (antes de renomear arquivos e diretórios)
         Write-Step "PASSO 1: Atualizando conteúdo interno dos arquivos..."
-        Update-FileContents -Path $currentPath -OldName $TemplateNamespace -NewName $ProjectName
+        Update-FileContents -Path $workingPath -OldName $TemplateNamespace -NewName $ProjectName
 
         # 3. Renomear arquivos de projeto e solução
         Write-Step "PASSO 2: Renomeando arquivos..."
-        Rename-SolutionFiles -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
-        Rename-ProjectFiles -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
+        Rename-SolutionFiles -Path $workingPath -OldName $OriginalTemplate -NewName $ProjectName
+        Rename-ProjectFiles -Path $workingPath -OldName $OriginalTemplate -NewName $ProjectName
 
         # 4. Renomear diretórios (do mais profundo para o mais raso)
         Write-Step "PASSO 3: Renomeando diretórios..."
-        Rename-Directories -Path $currentPath -OldName $OriginalTemplate -NewName $ProjectName
+        Rename-Directories -Path $workingPath -OldName $OriginalTemplate -NewName $ProjectName
 
         # 5. Atualizar README
-        Update-ReadmeFile -Path $currentPath -ProjectName $ProjectName
+        Update-ReadmeFile -Path $workingPath -ProjectName $ProjectName
 
         # 6. Mover para destino final
-        $finalPath = Move-Project -SourcePath $currentPath -DestinationPath $OutputPath -ProjectName $ProjectName
+        $finalPath = Move-Project -SourcePath $workingPath -DestinationPath $OutputPath -ProjectName $ProjectName
 
         # 7. Inicializar Git
         if (-not $SkipGitInit) {
@@ -509,19 +573,35 @@ function Start-Setup {
         Write-ColorOutput "   1. cd `"$finalPath`"" "White"
         Write-ColorOutput "   2. code . (abrir no VS Code)" "White"
         Write-ColorOutput "   3. dotnet build" "White"
-        Write-ColorOutput "   4. cd src/Api && dotnet run" "White"
+        Write-ColorOutput "   4. cd src/Api; dotnet run" "White"
         
         Write-ColorOutput "`n📚 Documentação:" "Cyan"
         Write-ColorOutput "   • README.md - Visão geral" "White"
         Write-ColorOutput "   • docs/MICROSOFT_AUTH_SETUP.md - Configurar autenticação Microsoft" "White"
         Write-ColorOutput "   • docs/AUTHENTICATION_EXTENSIBILITY.md - Adicionar novos providers" "White"
         
+        Write-ColorOutput "`n✅ Template original preservado em: $currentPath" "Green"
+        
         Write-Host "`n"
+        
+        # Limpar cópia temporária se ainda existir (não deveria, pois foi movida)
+        if ($workingPath -and (Test-Path $workingPath)) {
+            Write-Info "Limpando cópia temporária..."
+            Remove-Item -Path $workingPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
     catch {
         Write-Header "❌ Erro Durante o Setup"
         Write-Error-Custom $_.Exception.Message
         Write-Info "Stack Trace: $($_.ScriptStackTrace)"
+        
+        # Limpar cópia temporária em caso de erro
+        if ($workingPath -and (Test-Path $workingPath)) {
+            Write-Info "Limpando cópia temporária após erro..."
+            Remove-Item -Path $workingPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        
+        Write-Info "`n✅ Template original preservado em: $currentPath"
         exit 1
     }
 }

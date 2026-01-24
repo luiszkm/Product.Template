@@ -92,14 +92,44 @@ cd Product.Template
 
 ---
 
-## 🐧 Linux / macOS (Bash)
+## 🐧 Linux / macOS / Windows (Bash)
 
 ### **Pré-requisitos**
-- Bash 4.0+
+- Bash 4.0+ (Git Bash no Windows, ou WSL)
 - .NET 10 SDK instalado
 - Git (se quiser inicializar repositório)
 
-### **Preparação**
+### **Windows - Usando Git Bash ou WSL**
+
+No Windows, você pode usar o script Bash de duas formas:
+
+#### **Opção 1: Git Bash (Recomendado para Windows)**
+
+```bash
+# Abra o Git Bash (vem com o Git for Windows)
+# Clone o template
+git clone https://github.com/luiszkm/Product.Template.git
+cd Product.Template
+
+# Dar permissão de execução (não é necessário no Windows, mas não faz mal)
+chmod +x setup.sh
+
+# Execute o script
+./setup.sh
+```
+
+#### **Opção 2: WSL (Windows Subsystem for Linux)**
+
+```bash
+# No terminal WSL
+git clone https://github.com/luiszkm/Product.Template.git
+cd Product.Template
+
+chmod +x setup.sh
+./setup.sh
+```
+
+### **Linux / macOS - Preparação**
 
 ```bash
 # Clone o template
