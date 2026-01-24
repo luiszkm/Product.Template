@@ -525,7 +525,16 @@ move_project() {
     # Redirecionar mensagens para stderr para não interferir com o retorno
     print_step "Movendo projeto para destino final..." >&2
     
+    # Validar caminho de origem
+    if [[ ! -d "$source_path" ]]; then
+        print_error "Caminho de origem não existe: $source_path" >&2
+        exit 1
+    fi
+    
     local final_path="$destination_path/$project_name"
+    
+    # Normalizar caminhos (remover barras duplas, etc)
+    final_path=$(echo "$final_path" | sed 's|//|/|g')
     
     if [[ -d "$final_path" ]]; then
         echo "" >&2
@@ -538,13 +547,36 @@ move_project() {
             exit 1
         fi
         
-        rm -rf "$final_path"
+        rm -rf "$final_path" 2>/dev/null || {
+            print_error "Não foi possível remover diretório existente: $final_path" >&2
+            exit 1
+        }
     fi
     
     # Criar diretório de destino se não existir
-    mkdir -p "$destination_path"
+    if ! mkdir -p "$destination_path" 2>/dev/null; then
+        print_error "Não foi possível criar diretório de destino: $destination_path" >&2
+        exit 1
+    fi
     
-    mv "$source_path" "$final_path"
+    # Mover projeto
+    if ! mv "$source_path" "$final_path" 2>/dev/null; then
+        # Tentar método alternativo: copiar e depois remover
+        print_info "Tentando método alternativo de movimentação..." >&2
+        if cp -r "$source_path" "$final_path" 2>/dev/null; then
+            rm -rf "$source_path" 2>/dev/null || true
+        else
+            print_error "Erro ao mover projeto de '$source_path' para '$final_path'" >&2
+            print_error "Verifique permissões e espaço em disco" >&2
+            exit 1
+        fi
+    fi
+    
+    # Validar que o destino foi criado
+    if [[ ! -d "$final_path" ]]; then
+        print_error "Erro: Projeto não foi movido corretamente para: $final_path" >&2
+        exit 1
+    fi
     
     print_success "Projeto movido para: $final_path" >&2
     
