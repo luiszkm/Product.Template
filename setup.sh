@@ -166,31 +166,41 @@ copy_template() {
         rm -rf "$temp_path" 2>/dev/null
     fi
     
-    # Copiar todo o conteúdo (excluindo .git)
-    local source_name=$(basename "$source_path")
-    local temp_dir="$temp_parent/$source_name"
+    # Usar o caminho fornecido diretamente (já inclui o nome completo)
+    local temp_dir="$temp_path"
+    
+    # Se temp_parent foi ajustado, atualizar temp_dir
+    if [[ "$temp_parent" != "$(dirname "$temp_path")" ]]; then
+        temp_dir="$temp_parent/$(basename "$temp_path")"
+    fi
     
     # Criar diretório de destino primeiro
-    mkdir -p "$temp_dir" 2>/dev/null || {
+    if ! mkdir -p "$temp_dir" 2>/dev/null; then
         print_error "Não foi possível criar diretório temporário: $temp_dir" >&2
         exit 1
-    }
+    fi
     
     # Método 1: Tentar cp primeiro (mais rápido)
     if cp -r "$source_path"/* "$temp_dir/" 2>/dev/null; then
         # Remover .git se foi copiado
         rm -rf "$temp_dir/.git" 2>/dev/null
         print_success "Cópia criada com sucesso" >&2
-        echo "$temp_dir"
-        return 0
+        # Validar antes de retornar
+        if [[ -d "$temp_dir" ]]; then
+            print_info "Caminho da cópia: $temp_dir" >&2
+            echo "$temp_dir"
+            return 0
+        fi
     fi
     
     # Método 2: Tentar rsync se disponível
     if command -v rsync >/dev/null 2>&1; then
         if rsync -a --exclude='.git' "$source_path/" "$temp_dir/" 2>/dev/null; then
             print_success "Cópia criada com sucesso (via rsync)" >&2
-            echo "$temp_dir"
-            return 0
+            if [[ -d "$temp_dir" ]]; then
+                echo "$temp_dir"
+                return 0
+            fi
         fi
     fi
     
@@ -198,15 +208,23 @@ copy_template() {
     print_info "Usando método de cópia manual..." >&2
     local file_count=0
     
-    while IFS= read -r -d '' file; do
+    # Usar método mais simples e compatível
+    local temp_list=$(mktemp 2>/dev/null || echo "/tmp/file_list_$$")
+    find "$source_path" -type f 2>/dev/null > "$temp_list" || true
+    
+    while IFS= read -r file || [[ -n "$file" ]]; do
+        [[ -z "$file" ]] && continue
+        [[ ! -f "$file" ]] && continue
+        
         local rel_path="${file#$source_path/}"
-        local dest_file="$temp_dir/$rel_path"
-        local dest_dir=$(dirname "$dest_file")
         
         # Pular .git
         if [[ "$rel_path" == .git* ]]; then
             continue
         fi
+        
+        local dest_file="$temp_dir/$rel_path"
+        local dest_dir=$(dirname "$dest_file")
         
         # Criar diretório se necessário
         mkdir -p "$dest_dir" 2>/dev/null
@@ -215,10 +233,13 @@ copy_template() {
         if cp "$file" "$dest_file" 2>/dev/null; then
             ((file_count++))
         fi
-    done < <(find "$source_path" -type f -print0 2>/dev/null)
+    done < "$temp_list"
     
-    if [[ $file_count -gt 0 ]]; then
+    rm -f "$temp_list" 2>/dev/null || true
+    
+    if [[ $file_count -gt 0 ]] && [[ -d "$temp_dir" ]]; then
         print_success "Cópia criada com sucesso ($file_count arquivos)" >&2
+        print_info "Caminho da cópia: $temp_dir" >&2
         echo "$temp_dir"
         return 0
     fi
@@ -290,14 +311,21 @@ rename_directories() {
     print_step "Renomeando diretórios..."
     
     # Encontrar e renomear diretórios (do mais profundo para o mais raso)
+    # IMPORTANTE: Não renomear o diretório raiz ($path), apenas subdiretórios
     find "$path" -depth -type d -name "*$old_name*" | while read -r dir; do
+        # Pular o próprio diretório raiz
+        if [[ "$dir" == "$path" ]]; then
+            continue
+        fi
+        
         local parent=$(dirname "$dir")
         local dirname=$(basename "$dir")
         local new_dirname="${dirname//$old_name/$new_name}"
         
         if [[ "$dirname" != "$new_dirname" ]]; then
-            mv "$dir" "$parent/$new_dirname"
-            print_success "Renomeado diretório: $dirname → $new_dirname"
+            mv "$dir" "$parent/$new_dirname" 2>/dev/null && \
+                print_success "Renomeado diretório: $dirname → $new_dirname" || \
+                print_info "Pulando diretório (pode estar em uso): $dirname"
         fi
     done
 }
@@ -691,6 +719,13 @@ main() {
     # 0. Criar cópia do template (preserva o original)
     working_path=$(copy_template "$current_path" "$temp_dir")
     
+    # Validar que a cópia foi criada
+    if [[ -z "$working_path" ]] || [[ ! -d "$working_path" ]]; then
+        print_error "Erro: Cópia do template não foi criada corretamente" >&2
+        print_error "Caminho esperado: $working_path" >&2
+        exit 1
+    fi
+    
     print_info "Trabalhando na cópia: $working_path"
     print_info "Template original preservado em: $current_path"
 
@@ -712,6 +747,13 @@ main() {
 
     # 5. Atualizar README
     update_readme_file "$working_path" "$PROJECT_NAME"
+
+    # Validar que working_path ainda existe antes de mover
+    if [[ ! -d "$working_path" ]]; then
+        print_error "Erro: Cópia temporária não existe mais: $working_path" >&2
+        print_error "Isso não deveria acontecer. Verifique se há algum processo removendo arquivos temporários." >&2
+        exit 1
+    fi
 
     # 6. Mover para destino final
     local final_path=$(move_project "$working_path" "$OUTPUT_PATH" "$PROJECT_NAME")
