@@ -15,6 +15,9 @@ internal class UserRoleConfigurations : IEntityTypeConfiguration<UserRole>
         builder.Property(ur => ur.Id)
             .ValueGeneratedNever();
 
+        builder.Property(ur => ur.TenantId)
+            .IsRequired();
+
         builder.Property(ur => ur.UserId)
             .IsRequired();
 
@@ -25,7 +28,7 @@ internal class UserRoleConfigurations : IEntityTypeConfiguration<UserRole>
             .IsRequired();
 
         // Composite unique index to prevent duplicate user-role assignments
-        builder.HasIndex(ur => new { ur.UserId, ur.RoleId })
+        builder.HasIndex(ur => new { ur.TenantId, ur.UserId, ur.RoleId })
             .IsUnique();
 
         // Relationships are defined in User and Role configurations

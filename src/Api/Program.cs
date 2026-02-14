@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Middleware;
 using Product.Template.Core.Identity.Infrastructure.Data;
+using Product.Template.Kernel.Infrastructure.MultiTenancy;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
@@ -13,7 +14,7 @@ builder.Services.AddApplicationCore(builder.Configuration);
 builder.Services.AddUseCases();
 
 // Database Configuration (InMemory)
-builder.Services.AddDatabaseConfiguration();
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
 
 // Database Connections
 builder.Services.AddAppConnections(builder.Configuration);
@@ -67,6 +68,9 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 
 // Request Deduplication (previne requisições duplicadas)
 app.UseMiddleware<RequestDeduplicationMiddleware>();
+
+// Tenant resolution (header/subdomain)
+app.UseMiddleware<TenantResolutionMiddleware>();
 
 // IP Whitelist/Blacklist Validation
 app.UseMiddleware<IpWhitelistMiddleware>();

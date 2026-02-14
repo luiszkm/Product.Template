@@ -27,6 +27,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

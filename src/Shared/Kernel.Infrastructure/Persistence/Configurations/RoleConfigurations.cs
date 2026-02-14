@@ -15,12 +15,15 @@ internal class RoleConfigurations : IEntityTypeConfiguration<Role>
         builder.Property(r => r.Id)
             .ValueGeneratedNever();
 
+        builder.Property(r => r.TenantId)
+            .IsRequired();
+
+        builder.HasIndex(r => new { r.TenantId, r.Name })
+            .IsUnique();
+
         builder.Property(r => r.Name)
             .HasMaxLength(50)
             .IsRequired();
-
-        builder.HasIndex(r => r.Name)
-            .IsUnique();
 
         builder.Property(r => r.Description)
             .HasMaxLength(250);
