@@ -1082,3 +1082,33 @@ Neuraptor
 - [MediatR Implementation](./MEDIATR_IMPLEMENTATION_SUMMARY.md)
 - [Rotas Criadas](./ROTAS_CRIADAS.md)
 - [Agents Documentation](./docs/AGENTS.md)
+
+## Multi-tenancy (SharedDb / SchemaPerTenant / DedicatedDb)
+
+### Resolver por request
+- Header: `X-Tenant: <tenant-key>`
+- Subdomínio: `<tenant-key>.seudominio.com`
+- Configuração em `MultiTenancy` (`AllowPublicFallback`, `PublicTenantKey`, `HeaderName`) no `appsettings.json`.
+
+### Criar tenant por plano
+Use `ITenantProvisioningService.CreateTenantAsync(tenantKey, isolationMode)`:
+- `TenantIsolationMode.SharedDb` (Free/Standard)
+- `TenantIsolationMode.SchemaPerTenant` (Premium)
+- `TenantIsolationMode.DedicatedDb` (Enterprise)
+
+### Migrações por tenant
+Migrator em `src/Tools/Migrator`:
+
+```bash
+# todos tenants ativos
+dotnet run --project src/Tools/Migrator -- migrate --all
+
+# tenant específico
+dotnet run --project src/Tools/Migrator -- migrate --tenant acme
+```
+
+Comportamento:
+- HostDb migra sempre 1x
+- SharedDb: ignora por-tenant (já coberto pela migração base)
+- SchemaPerTenant: aplica migração por schema
+- DedicatedDb: aplica migração por database/connection string do tenant

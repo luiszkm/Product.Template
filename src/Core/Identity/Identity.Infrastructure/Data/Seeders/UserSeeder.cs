@@ -62,7 +62,7 @@ internal static class UserSeeder
         string lastName)
     {
         var user = User.Create(
-            Email.Create(email),
+            email,
             passwordHash,
             firstName,
             lastName

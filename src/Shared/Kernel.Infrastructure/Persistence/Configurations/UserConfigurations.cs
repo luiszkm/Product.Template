@@ -16,6 +16,11 @@ internal class UserConfigurations : IEntityTypeConfiguration<User>
         builder.Property(u => u.Id)
             .ValueGeneratedNever();
 
+        builder.Property(u => u.TenantId)
+            .IsRequired();
+
+        builder.HasIndex(u => new { u.TenantId, u.Id });
+
         builder.OwnsOne(u => u.Email, email =>
         {
             email.Property(e => e.Value)

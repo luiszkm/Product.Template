@@ -1,9 +1,11 @@
 using Product.Template.Kernel.Domain.SeedWorks;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class Role : Entity<Guid>
+public class Role : Entity<Guid>, IMultiTenantEntity
 {
+    public long TenantId { get; set; }
     public string Name { get; private set; }
     public string Description { get; private set; }
     public DateTime CreatedAt { get; private set; }

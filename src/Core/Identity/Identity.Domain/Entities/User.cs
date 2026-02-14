@@ -1,11 +1,13 @@
 using Product.Template.Core.Identity.Domain.Events;
 using Product.Template.Core.Identity.Domain.ValueObjects;
 using Product.Template.Kernel.Domain.SeedWorks;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class User : AggregateRoot<Guid>
+public class User : AggregateRoot<Guid>, IMultiTenantEntity
 {
+    public long TenantId { get; set; }
     public Email Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }
