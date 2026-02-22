@@ -40,6 +40,13 @@ namespace Product.Template.Api.GlobalFilter.Exceptions
                 details.Detail = exception!.Message;
 
             }
+            else if (exception is BusinessRuleException)
+            {
+                details.Title = "Business rule violation";
+                details.Status = StatusCodes.Status400BadRequest;
+                details.Type = "BusinessRuleViolation";
+                details.Detail = exception.Message;
+            }
             else
             {
                 details.Title = "An unexpected error occurred";

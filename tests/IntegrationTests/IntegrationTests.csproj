@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
+    <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
