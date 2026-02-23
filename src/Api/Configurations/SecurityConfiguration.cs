@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -6,6 +7,10 @@ namespace Product.Template.Api.Configurations;
 
 public static class SecurityConfiguration
 {
+    public const string AuthenticatedPolicy = "Authenticated";
+    public const string AdminOnlyPolicy = "AdminOnly";
+    public const string UserOnlyPolicy = "UserOnly";
+
     private const string DefaultCorsPolicyName = "DefaultCorsPolicy";
 
     public static IServiceCollection AddSecurityConfiguration(
@@ -45,7 +50,8 @@ public static class SecurityConfiguration
                     ValidAudience = jwt.Audience,
 
                     ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
+                    RoleClaimType = ClaimTypes.Role
                 };
 
                 options.Events = new JwtBearerEvents
@@ -68,9 +74,9 @@ public static class SecurityConfiguration
 
         services.AddAuthorization(options =>
         {
-            options.AddPolicy("Authenticated", policy => policy.RequireAuthenticatedUser());
-            options.AddPolicy("AdminOnly", policy => policy.RequireClaim("role", "admin"));
-            options.AddPolicy("UserOnly", policy => policy.RequireClaim("role", "user", "admin"));
+            options.AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy(AdminOnlyPolicy, policy => policy.RequireRole("Admin"));
+            options.AddPolicy(UserOnlyPolicy, policy => policy.RequireRole("User", "Admin", "Manager"));
         });
 
         return services;

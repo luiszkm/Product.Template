@@ -34,7 +34,7 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
         if (userExisits != null)
         {
             _logger.LogWarning("Tentativa de registro com email já existente: {Email}", request.Email);
-            throw new InvalidOperationException("Email já está em uso.");
+            throw new BusinessRuleException("Email já está em uso.");
         }
 
         var passwordHash = _hashServices.GeneratePasswordHash(request.Password);

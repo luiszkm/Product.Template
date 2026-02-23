@@ -18,6 +18,7 @@
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="Microsoft.OpenApi" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
@@ -29,6 +30,9 @@
     <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>

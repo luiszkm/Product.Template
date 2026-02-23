@@ -3,6 +3,7 @@ using Kernel.Application.Security;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Product.Template.Api.Configurations;
 using Product.Template.Core.Identity.Application.Handlers.Auth;
 using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Application.Handlers.User.Commands;
@@ -102,7 +103,7 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpGet("{id:guid}", Name = nameof(GetById))]
-    [Authorize] // 🔒 Endpoint protegido
+    [Authorize(Policy = SecurityConfiguration.UserOnlyPolicy)] // 🔒 Endpoint protegido com RBAC
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -393,7 +394,7 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpPut("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = SecurityConfiguration.UserOnlyPolicy)]
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -419,6 +420,52 @@ public class IdentityController : ControllerBase
     }
 
     /// <summary>
+    /// 🔐 Lista os papéis (roles) de um usuário
+    /// </summary>
+    [HttpGet("{id:guid}/roles")]
+    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IEnumerable<string>>> GetUserRoles(Guid id, CancellationToken cancellationToken)
+    {
+        var roles = await _mediator.Send(new GetUserRolesQuery(id), cancellationToken);
+        return Ok(roles);
+    }
+
+    /// <summary>
+    /// ➕ Adiciona um papel (role) a um usuário
+    /// </summary>
+    [HttpPost("{id:guid}/roles")]
+    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddUserRole(Guid id, [FromBody] ManageUserRoleRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.RoleName))
+            return BadRequest("RoleName is required.");
+
+        await _mediator.Send(new AddUserRoleCommand(id, request.RoleName), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    /// ➖ Remove um papel (role) de um usuário
+    /// </summary>
+    [HttpDelete("{id:guid}/roles/{roleName}")]
+    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RemoveUserRole(Guid id, string roleName, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new RemoveUserRoleCommand(id, roleName), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     /// 🗑️ Deleta um usuário do sistema
     /// </summary>
     /// <param name="id">ID único do usuário (GUID)</param>
@@ -440,7 +487,7 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpDelete("{id:guid}")]
-    [Authorize]
+    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -455,4 +502,6 @@ public class IdentityController : ControllerBase
 
         return NoContent();
     }
+    public sealed record ManageUserRoleRequest(string RoleName);
+
 }

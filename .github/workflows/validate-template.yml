@@ -30,6 +30,9 @@ jobs:
     - name: Run tests
       run: dotnet test --no-build --configuration Release --verbosity normal
 
+    - name: Run integration authorization tests
+      run: dotnet test tests/IntegrationTests/IntegrationTests.csproj --no-build --configuration Release --filter "FullyQualifiedName~Authorization" --verbosity normal
+
   test-template-installation:
     name: Test Template Installation
     runs-on: ubuntu-latest

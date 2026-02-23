@@ -6,6 +6,8 @@
 
 Template universal para criação rápida de aplicações .NET com Clean Architecture, DDD, CQRS e padrões de alta qualidade.
 
+> **Visão do projeto:** ser uma base universal para acelerar a criação de novos produtos, com **Multi-tenant** e **RBAC** como fundamentos desde o início.
+
 ## 🚀 Início Rápido
 
 ### Instalação do Template
@@ -116,7 +118,22 @@ dotnet new uninstall Product.Template
 
 ## Características
 
-### 🎯 Recursos Avançados (Novos!)
+### 🧱 Pilares Fundamentais
+- **Multi-tenant por padrão (implementado)**
+  - Resolução de tenant por header (`X-Tenant`) e subdomínio
+  - Estratégias de isolamento: `SharedDb`, `SchemaPerTenant` e `DedicatedDb`
+  - Contexto de tenant e roteamento dinâmico de connection string
+  - Migrações por tenant com ferramenta dedicada
+- **RBAC (base implementada, aplicação parcial)**
+  - Entidades de identidade e papéis (`User`, `Role`, `UserRole`)
+  - Seed inicial com perfis base (`Admin`, `Manager`, `User`)
+  - Geração de JWT com claims de roles
+  - ⚠️ Ainda requer evolução de uso de políticas/roles nos endpoints de negócio
+  - 📌 Diagnóstico detalhado: [RBAC_STATUS.md](./docs/RBAC_STATUS.md)
+  - 🗺️ Plano de execução: [RBAC_COMPLETION_PLAN.md](./docs/RBAC_COMPLETION_PLAN.md)
+  - 🧭 Matriz de acesso: [docs/security/RBAC_MATRIX.md](./docs/security/RBAC_MATRIX.md)
+
+### 🎯 Recursos Avançados
 - **Response Compression** (Brotli + Gzip) - Reduz respostas em até 70-80%
 - **Output Caching** - Cache de respostas HTTP com políticas configuráveis
 - **Request Deduplication** - Previne requisições duplicadas (idempotência)
