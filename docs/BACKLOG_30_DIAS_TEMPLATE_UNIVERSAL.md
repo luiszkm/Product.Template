@@ -65,7 +65,7 @@ Este backlog organiza as próximas 4 semanas para elevar o template para um pata
 **Critério de pronto:** template comprova reutilização fora do Identity.
 
 ### 8) Governança RBAC cross-módulos
-- [ ] Estender `RBAC_MATRIX.md` para novo módulo.
+- [ ] Estender [`security/RBAC_MATRIX.md`](security/RBAC_MATRIX.md) para novo módulo.
 - [ ] Replicar gate automatizado de consistência para todos controllers.
 - [ ] Definir padrão de nome de permissões (`resource.action`).
 
