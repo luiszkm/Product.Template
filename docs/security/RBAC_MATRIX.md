@@ -18,6 +18,11 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 | POST | `/api/v1/identity/register` | Público | - | Registro |
 | POST | `/api/v1/identity/external-login` | Público | - | Auth externa |
 | GET | `/api/v1/identity` | Protegido | `UsersRead` | Listagem de usuários por role/permission |
+| GET | `/api/v1/identity/roles` | Protegido | `UsersRead` | Listagem de roles |
+| GET | `/api/v1/identity/roles/{roleId}` | Protegido | `UsersRead` | Detalhe de role |
+| POST | `/api/v1/identity/roles` | Protegido | `UsersManage` | Criação de role |
+| PUT | `/api/v1/identity/roles/{roleId}` | Protegido | `UsersManage` | Atualização de role |
+| DELETE | `/api/v1/identity/roles/{roleId}` | Protegido | `UsersManage` | Remoção de role |
 | GET | `/api/v1/identity/{id}` | Protegido | `UserOnly` | Leitura de usuário |
 | PUT | `/api/v1/identity/{id}` | Protegido | `UserOnly` | Atualização de usuário |
 | DELETE | `/api/v1/identity/{id}` | Protegido | `UsersManage` | Exclusão de usuário |

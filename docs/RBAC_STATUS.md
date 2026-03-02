@@ -9,6 +9,7 @@ O template está com RBAC **implementado no nível de roles/policies para o mód
 - ✅ Policies registradas (`Authenticated`, `AdminOnly`, `UserOnly`) usando `RequireRole(...)`.
 - ✅ Policies por permissão adicionadas (`UsersRead`, `UsersManage`) com claim `permission`.
 - ✅ Endpoints administrativos de roles do usuário (`GET/POST/DELETE /identity/{id}/roles`) protegidos com `UsersManage`.
+- ✅ CRUD de roles disponível por API (`GET/GET by id/POST/PUT/DELETE /identity/roles`).
 - ✅ `GET /identity` protegido com `UsersRead`.
 - ✅ Regra de escopo no controller para endpoints `UserOnly` (`GetById` e `UpdateUser`): acesso apenas ao próprio usuário, exceto Admin.
 - ✅ Cobertura inicial de testes para política explícita e cenários de autorização no `IdentityController`.

@@ -35,4 +35,13 @@ public class Role : Entity<Guid>, IMultiTenantEntity
     {
         Description = description ?? string.Empty;
     }
+
+    public void Update(string name, string description)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Role name cannot be empty", nameof(name));
+
+        Name = name.Trim();
+        Description = description ?? string.Empty;
+    }
 }

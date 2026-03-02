@@ -17,7 +17,7 @@ public class RbacMatrixConsistencyTests
         Assert.NotEmpty(matrixEntries);
 
         var controller = typeof(IdentityController);
-        var routePrefix = "/api/v1/identity";
+        const string routePrefix = "/api/v1/identity";
 
         var protectedEndpoints = controller
             .GetMethods(BindingFlags.Instance | BindingFlags.Public)
@@ -34,7 +34,7 @@ public class RbacMatrixConsistencyTests
             .Select(x => new
             {
                 HttpMethod = x.Http!.HttpMethods.Single().ToUpperInvariant(),
-                Route = BuildRoute(routePrefix, x.Http!.Template),
+                Route = NormalizeRoute(BuildRoute(routePrefix, x.Http!.Template)),
                 Policy = x.Authorize!.Policy,
                 MethodName = x.Method.Name
             })
@@ -46,7 +46,7 @@ public class RbacMatrixConsistencyTests
         {
             var matrix = matrixEntries.FirstOrDefault(x =>
                 string.Equals(x.HttpMethod, endpoint.HttpMethod, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(x.Route, endpoint.Route, StringComparison.OrdinalIgnoreCase));
+                string.Equals(NormalizeRoute(x.Route), endpoint.Route, StringComparison.OrdinalIgnoreCase));
 
             Assert.True(matrix is not null,
                 $"Endpoint {endpoint.HttpMethod} {endpoint.Route} ({endpoint.MethodName}) is missing in docs/security/RBAC_MATRIX.md");
@@ -61,6 +61,14 @@ public class RbacMatrixConsistencyTests
             return prefix;
 
         return $"{prefix}/{template.TrimStart('/')}";
+    }
+
+    private static string NormalizeRoute(string route)
+    {
+        return route
+            .Replace(":guid", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("//", "/", StringComparison.Ordinal)
+            .TrimEnd('/');
     }
 
     private static List<RbacMatrixEntry> LoadMatrixEntries()

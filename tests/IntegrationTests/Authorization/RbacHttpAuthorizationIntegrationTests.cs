@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,6 +50,45 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
     }
 
+
+
+    [Fact]
+    public async Task ListRoles_ShouldReturn403_WhenUserHasNoUsersReadPermission()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity/roles");
+        request.Headers.Add("Authorization", "Test token");
+        request.Headers.Add("X-Test-Roles", "User");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListRoles_ShouldReturn200_WhenUserHasUsersReadPermission()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity/roles");
+        request.Headers.Add("Authorization", "Test token");
+        request.Headers.Add("X-Test-Roles", "Manager");
+        request.Headers.Add("X-Test-Permissions", "users.read");
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateRole_ShouldReturn403_WhenUserHasNoUsersManagePermission()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/identity/roles");
+        request.Headers.Add("Authorization", "Test token");
+        request.Headers.Add("X-Test-Roles", "Manager");
+        request.Content = JsonContent.Create(new { name = "Auditor", description = "Auditor role" });
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(System.Net.HttpStatusCode.Forbidden, response.StatusCode);
+    }
 
     [Fact]
     public async Task DeleteUser_ShouldReturn403_WhenUserHasNoUsersManagePermission()
