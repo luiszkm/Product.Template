@@ -7,8 +7,11 @@ using Product.Template.Api.Configurations;
 using Product.Template.Core.Identity.Application.Handlers.Auth;
 using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Application.Handlers.User.Commands;
+using Product.Template.Core.Identity.Application.Handlers.Role.Commands;
 using Product.Template.Core.Identity.Application.Queries.User;
+using Product.Template.Core.Identity.Application.Queries.Role;
 using Product.Template.Core.Identity.Application.Queries.Users;
+using Product.Template.Core.Identity.Application.Queries.Role.Commands;
 using Product.Template.Kernel.Domain.SeedWorks;
 
 
@@ -35,15 +38,18 @@ public class IdentityController : ControllerBase
     private readonly IMediator _mediator;
     private readonly ILogger<IdentityController> _logger;
     private readonly IAuthenticationProviderFactory _authProviderFactory;
+    private readonly ICurrentUserService _currentUserService;
 
     public IdentityController(
         IMediator mediator, 
         ILogger<IdentityController> logger,
-        IAuthenticationProviderFactory authProviderFactory)
+        IAuthenticationProviderFactory authProviderFactory,
+        ICurrentUserService currentUserService)
     {
         _mediator = mediator;
         _logger = logger;
         _authProviderFactory = authProviderFactory;
+        _currentUserService = currentUserService;
     }
 
     /// <summary>
@@ -106,9 +112,16 @@ public class IdentityController : ControllerBase
     [Authorize(Policy = SecurityConfiguration.UserOnlyPolicy)] // 🔒 Endpoint protegido com RBAC
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserOutput>> GetById(Guid id, CancellationToken cancellationToken)
     {
+        if (!CanAccessUser(id))
+        {
+            _logger.LogWarning("Acesso negado ao usuário {CurrentUserId} para leitura do usuário {TargetUserId}", _currentUserService.UserId, id);
+            return Forbid();
+        }
+
         _logger.LogInformation("Buscando usuário com ID: {UserId}", id);
 
         var query = new GetUserByIdQuery(id);
@@ -341,8 +354,10 @@ public class IdentityController : ControllerBase
     /// </remarks>
     /// <response code="200">✅ Lista de usuários retornada com sucesso</response>
     [HttpGet]
+    [Authorize(Policy = SecurityConfiguration.UsersReadPolicy)]
     [ProducesResponseType(typeof(PaginatedListOutput<UserOutput>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PaginatedListOutput<UserOutput>>> ListUsers(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
@@ -398,6 +413,7 @@ public class IdentityController : ControllerBase
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserOutput>> UpdateUser(
         Guid id,
@@ -410,6 +426,12 @@ public class IdentityController : ControllerBase
             return BadRequest("O ID da URL deve corresponder ao ID do usuário no corpo da requisição");
         }
 
+        if (!CanAccessUser(id))
+        {
+            _logger.LogWarning("Acesso negado ao usuário {CurrentUserId} para atualização do usuário {TargetUserId}", _currentUserService.UserId, id);
+            return Forbid();
+        }
+
         _logger.LogInformation("Atualizando usuário com ID: {UserId}", id);
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -419,11 +441,99 @@ public class IdentityController : ControllerBase
         return Ok(result);
     }
 
+
+    /// <summary>
+    /// 🧩 Lista roles cadastradas
+    /// </summary>
+    [HttpGet("roles")]
+    [Authorize(Policy = SecurityConfiguration.UsersReadPolicy)]
+    [ProducesResponseType(typeof(PaginatedListOutput<RoleOutput>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<PaginatedListOutput<RoleOutput>>> ListRoles(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new ListRolesQuery
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 🔎 Busca role por id
+    /// </summary>
+    [HttpGet("roles/{roleId:guid}")]
+    [Authorize(Policy = SecurityConfiguration.UsersReadPolicy)]
+    [ProducesResponseType(typeof(RoleOutput), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RoleOutput>> GetRoleById(Guid roleId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetRoleByIdQuery(roleId), cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// ➕ Cria nova role
+    /// </summary>
+    [HttpPost("roles")]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
+    [ProducesResponseType(typeof(RoleOutput), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<RoleOutput>> CreateRole([FromBody] CreateRoleCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetRoleById), new { roleId = result.Id, version = "1" }, result);
+    }
+
+    /// <summary>
+    /// ✏️ Atualiza role
+    /// </summary>
+    [HttpPut("roles/{roleId:guid}")]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
+    [ProducesResponseType(typeof(RoleOutput), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<RoleOutput>> UpdateRole(Guid roleId, [FromBody] UpdateRoleCommand command, CancellationToken cancellationToken)
+    {
+        if (roleId != command.RoleId)
+            return BadRequest("O ID da URL deve corresponder ao ID da role no corpo da requisição");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// 🗑️ Remove role
+    /// </summary>
+    [HttpDelete("roles/{roleId:guid}")]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteRole(Guid roleId, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new DeleteRoleCommand(roleId), cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>
     /// 🔐 Lista os papéis (roles) de um usuário
     /// </summary>
     [HttpGet("{id:guid}/roles")]
-    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -437,7 +547,7 @@ public class IdentityController : ControllerBase
     /// ➕ Adiciona um papel (role) a um usuário
     /// </summary>
     [HttpPost("{id:guid}/roles")]
-    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -455,7 +565,7 @@ public class IdentityController : ControllerBase
     /// ➖ Remove um papel (role) de um usuário
     /// </summary>
     [HttpDelete("{id:guid}/roles/{roleName}")]
-    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -487,7 +597,7 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpDelete("{id:guid}")]
-    [Authorize(Policy = SecurityConfiguration.AdminOnlyPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -503,5 +613,20 @@ public class IdentityController : ControllerBase
         return NoContent();
     }
     public sealed record ManageUserRoleRequest(string RoleName);
+
+    private bool CanAccessUser(Guid targetUserId)
+    {
+        if (IsAdmin())
+            return true;
+
+        return _currentUserService.UserId == targetUserId;
+    }
+
+    private bool IsAdmin()
+    {
+        return _currentUserService.Claims.Any(c =>
+            c.Type == System.Security.Claims.ClaimTypes.Role &&
+            string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
 
 }

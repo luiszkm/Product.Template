@@ -18,6 +18,8 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
@@ -25,6 +27,8 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
             .FirstOrDefaultAsync(u => EF.Property<string>(u.Email, "Value") == email, cancellationToken);
     }
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
@@ -42,6 +46,8 @@ public class UserRepository : IUserRepository
         var query = _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
+                    .ThenInclude(r => r.RolePermissions)
+                        .ThenInclude(rp => rp.Permission)
             .AsQueryable();
 
         var totalCount = await query.CountAsync(cancellationToken);

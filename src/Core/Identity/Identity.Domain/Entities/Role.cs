@@ -11,7 +11,10 @@ public class Role : Entity<Guid>, IMultiTenantEntity
     public DateTime CreatedAt { get; private set; }
 
     private readonly List<UserRole> _userRoles = new();
+    private readonly List<RolePermission> _rolePermissions = new();
+
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
+    public IReadOnlyCollection<RolePermission> RolePermissions => _rolePermissions.AsReadOnly();
 
     private Role(Guid id) : base(id) { }
 
@@ -30,6 +33,15 @@ public class Role : Entity<Guid>, IMultiTenantEntity
 
     public void UpdateDescription(string description)
     {
+        Description = description ?? string.Empty;
+    }
+
+    public void Update(string name, string description)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Role name cannot be empty", nameof(name));
+
+        Name = name.Trim();
         Description = description ?? string.Empty;
     }
 }

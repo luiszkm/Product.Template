@@ -27,16 +27,16 @@ public class RoleRepository : IRoleRepository
         await _context.Roles.AddAsync(role, cancellationToken);
     }
 
-    public async Task UpdateAsync(Role entity, CancellationToken cancellationToken = default)
+    public Task UpdateAsync(Role entity, CancellationToken cancellationToken = default)
     {
         _context.Roles.Update(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Role entity, CancellationToken cancellationToken = default)
+    public Task DeleteAsync(Role entity, CancellationToken cancellationToken = default)
     {
         _context.Roles.Remove(entity);
-        await _context.SaveChangesAsync(cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<PaginatedListOutput<Role>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
@@ -54,5 +54,5 @@ public class RoleRepository : IRoleRepository
             PageSize: listInput.PageSize,
             TotalCount: totalCount,
             Data: roles);
-        }
+    }
 }

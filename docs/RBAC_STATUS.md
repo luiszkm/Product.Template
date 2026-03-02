@@ -1,79 +1,26 @@
 # Status atual do RBAC
 
-## Resumo executivo
-O projeto **já possui base sólida de RBAC**, mas ainda **não está completo** para cenários de produção com governança fina.
+## Resumo executivo (validação do template)
+O template está com RBAC **implementado no nível de roles/policies para o módulo Identity**, incluindo proteção administrativa e regra de escopo para acesso a dados de usuário (self-or-admin).
 
-- ✅ Modelo de domínio de papéis e vínculo com usuário (`Role`, `UserRole`, `User.AddRole`)
-- ✅ Seed inicial de papéis (`Admin`, `User`, `Manager`)
-- ✅ JWT inclui roles como claims
-- ✅ Políticas de autorização estão registradas
-- ⚠️ Aplicação de autorização por papel/política ainda é parcial nos endpoints
-- ⚠️ Faltam casos de uso administrativos (gerenciar papel de usuário, CRUD de roles)
-- ⚠️ Falta camada de permissão granular (claims/permissões por recurso/ação)
+### Implementado
+- ✅ Claims de role no JWT (`ClaimTypes.Role`).
+- ✅ `RoleClaimType` alinhado com o token na validação JWT.
+- ✅ Policies registradas (`Authenticated`, `AdminOnly`, `UserOnly`) usando `RequireRole(...)`.
+- ✅ Policies por permissão adicionadas (`UsersRead`, `UsersManage`) com claim `permission`.
+- ✅ Endpoints administrativos de roles do usuário (`GET/POST/DELETE /identity/{id}/roles`) protegidos com `UsersManage`.
+- ✅ CRUD de roles disponível por API (`GET/GET by id/POST/PUT/DELETE /identity/roles`).
+- ✅ `GET /identity` protegido com `UsersRead`.
+- ✅ Regra de escopo no controller para endpoints `UserOnly` (`GetById` e `UpdateUser`): acesso apenas ao próprio usuário, exceto Admin.
+- ✅ Cobertura inicial de testes para política explícita e cenários de autorização no `IdentityController`.
+- ✅ Testes de integração HTTP adicionados para cenários 401/403/200/404 em endpoints críticos de RBAC (incluindo `UsersManage`).
+- ✅ Teste automatizado de consistência entre endpoints protegidos e `docs/security/RBAC_MATRIX.md` (governança).
 
-## O que já existe (implementado)
+## O que ainda falta para um RBAC “completo” de produção
+1. **Expandir governança cross-módulos**
+   - O gate de consistência já cobre Identity; aplicar o mesmo padrão para novos módulos/controllers no crescimento do template.
 
-### 1) Entidades e relacionamento RBAC
-- Entidades `Role` e `UserRole` existem e mapeiam a relação usuário ↔ papel.
-- O agregado `User` possui comportamento de `AddRole` / `RemoveRole`.
-
-### 2) Seed inicial
-- Há seed de papéis base: `Admin`, `User`, `Manager`.
-- O seed de usuários associa papéis no bootstrap.
-
-### 3) Token com role claims
-- O serviço de JWT adiciona claims de role no token.
-
-### 4) Políticas de autorização registradas
-- Existem políticas `Authenticated`, `AdminOnly` e `UserOnly`.
-
-## Lacunas para RBAC “completo”
-
-### A. Aplicar RBAC nos endpoints de negócio
-Hoje os endpoints usam majoritariamente `[Authorize]` sem papel/política específica.
-
-**Falta:**
-- aplicar `[Authorize(Policy = "AdminOnly")]` / `[Authorize(Roles = "Admin")]` onde necessário;
-- separar claramente endpoints de leitura, operação e administração.
-
-### B. Corrigir consistência de claims/policies
-As policies estão com `RequireClaim("role", "admin")` e `"user"` (minúsculo), enquanto as roles seedadas são `Admin`/`User` e o token usa `ClaimTypes.Role`.
-
-**Risco:** policy não casar com claim/valor esperado.
-
-### C. Casos de uso de administração de acesso
-Não há fluxo completo para gestão de autorização.
-
-**Falta:**
-- endpoint/command para atribuir/remover role de usuário;
-- listagem de roles por usuário;
-- CRUD/versionamento de roles (se aplicável ao produto).
-
-### D. Permissões granulares (além de role)
-Para “completo” em sistemas maiores, role-only tende a ser insuficiente.
-
-**Falta (opcional recomendado):**
-- modelo de `Permission` (ex.: `orders.read`, `orders.manage`);
-- associação `RolePermission`;
-- policies baseadas em permission claim.
-
-### E. Testes específicos de autorização
-Há testes para multi-tenant, mas não um pacote robusto de testes de autorização RBAC.
-
-**Falta:**
-- testes de integração validando 401/403 por role/policy;
-- testes para garantir coerência de claim type/valor e policies.
-
-## Definição prática de “RBAC completo” neste template
-Considere “completo” quando o template entregar minimamente:
-1. Policies/roles coerentes (claim type + valores);
-2. Endpoints críticos protegidos por role/policy específica;
-3. Fluxos de gestão de roles em usuários;
-4. Testes automatizados de autorização (sucesso e negação).
-
-## Prioridade sugerida (ordem de implementação)
-1. **Alta:** alinhar claim/policy (evitar falso positivo de segurança).
-2. **Alta:** aplicar políticas por endpoint crítico.
-3. **Média:** comandos/endpoints de gestão de roles.
-4. **Média:** testes de integração de autorização.
-5. **Baixa/Média:** evoluir para permission-based access (quando necessário).
+## Critério prático de conclusão no template atual
+1. Endpoints sensíveis do Identity com policy explícita e escopo adequado.
+2. Cobertura de testes automatizados para cenários permitidos e negados.
+3. Matriz RBAC atualizada no repositório.
