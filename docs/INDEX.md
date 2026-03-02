@@ -11,6 +11,7 @@ Bem-vindo à documentação completa do Product Template! Este índice ajuda voc
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Arquitetura detalhada do projeto | Desenvolvedores |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Como contribuir com o projeto | Contribuidores |
 | [FAQ.md](./FAQ.md) | Perguntas frequentes e troubleshooting | Todos |
+| [BACKLOG_30_DIAS_TEMPLATE_UNIVERSAL.md](./BACKLOG_30_DIAS_TEMPLATE_UNIVERSAL.md) | Backlog de 30 dias para elevar o template a nível produção | Tech leads / Arquitetura |
 
 ---
 
