@@ -148,7 +148,8 @@ Manter compatibilidade com roles atuais até completar transição.
 - [x] Adicionar auditoria para mudanças de role.
 - [x] Publicar matriz RBAC no repositório.
 - [x] Adicionar métricas de autorização (denied/assign/revoke).
-- [ ] Adicionar testes HTTP de integração (401/403/200) com host real.
+- [x] Adicionar testes HTTP de integração (401/403/200) com host real.
+- [x] Adicionar teste automatizado de consistência entre endpoints protegidos e matriz RBAC (Identity).
 
 ---
 

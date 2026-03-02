@@ -105,6 +105,7 @@ public static class DatabaseConfiguration
         await context.Database.MigrateAsync();
 
         await RoleSeeder.SeedAsync(context);
+        await PermissionSeeder.SeedAsync(context);
         await UserSeeder.SeedAsync(context);
     }
 

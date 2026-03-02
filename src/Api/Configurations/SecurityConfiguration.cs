@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Api.Configurations;
 
@@ -10,6 +11,10 @@ public static class SecurityConfiguration
     public const string AuthenticatedPolicy = "Authenticated";
     public const string AdminOnlyPolicy = "AdminOnly";
     public const string UserOnlyPolicy = "UserOnly";
+    public const string UsersReadPolicy = "UsersRead";
+    public const string UsersManagePolicy = "UsersManage";
+
+    public const string PermissionClaimType = AuthorizationClaimTypes.Permission;
 
     private const string DefaultCorsPolicyName = "DefaultCorsPolicy";
 
@@ -77,6 +82,14 @@ public static class SecurityConfiguration
             options.AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
             options.AddPolicy(AdminOnlyPolicy, policy => policy.RequireRole("Admin"));
             options.AddPolicy(UserOnlyPolicy, policy => policy.RequireRole("User", "Admin", "Manager"));
+            options.AddPolicy(UsersReadPolicy, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.IsInRole("Admin") ||
+                    context.User.HasClaim(PermissionClaimType, "users.read")));
+            options.AddPolicy(UsersManagePolicy, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.IsInRole("Admin") ||
+                    context.User.HasClaim(PermissionClaimType, "users.manage")));
         });
 
         return services;
