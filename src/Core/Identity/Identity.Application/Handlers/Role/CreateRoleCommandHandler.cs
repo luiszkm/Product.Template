@@ -1,6 +1,7 @@
+using Microsoft.Extensions.Logging;
 using Product.Template.Core.Identity.Application.Handlers.Role.Commands;
+using Product.Template.Core.Identity.Application.Mappers;
 using Product.Template.Core.Identity.Application.Queries.Role;
-using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
@@ -12,28 +13,34 @@ public class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleO
 {
     private readonly IRoleRepository _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<CreateRoleCommandHandler> _logger;
 
-    public CreateRoleCommandHandler(IRoleRepository roleRepository, IUnitOfWork unitOfWork)
+    public CreateRoleCommandHandler(
+        IRoleRepository roleRepository,
+        IUnitOfWork unitOfWork,
+        ILogger<CreateRoleCommandHandler> logger)
     {
         _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
+        _logger = logger;
     }
 
     public async Task<RoleOutput> Handle(CreateRoleCommand request, CancellationToken cancellationToken)
     {
-        var name = request.Name.Trim();
-        if (string.IsNullOrWhiteSpace(name))
-            throw new BusinessRuleException("Role name is required.");
-
-        var existing = await _roleRepository.GetByNameAsync(name, cancellationToken);
+        var existing = await _roleRepository.GetByNameAsync(request.Name.Trim(), cancellationToken);
         if (existing is not null)
-            throw new BusinessRuleException($"Role '{name}' already exists.");
+        {
+            _logger.LogWarning("Tentativa de criação de role duplicada: {RoleName}", request.Name);
+            throw new BusinessRuleException($"Role '{request.Name}' already exists.");
+        }
 
-        var role = Domain.Entities.Role.Create(name, request.Description);
+        var role = Domain.Entities.Role.Create(request.Name, request.Description);
 
         await _roleRepository.AddAsync(role, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
 
-        return new RoleOutput(role.Id, role.Name, role.Description, role.CreatedAt);
+        _logger.LogInformation("Role {RoleName} criada com sucesso: {RoleId}", role.Name, role.Id);
+
+        return role.ToOutput();
     }
 }

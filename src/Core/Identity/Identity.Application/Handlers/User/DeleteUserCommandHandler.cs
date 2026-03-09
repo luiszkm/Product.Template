@@ -24,13 +24,16 @@ public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand>
 
     public async Task Handle(DeleteUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId);
+        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken);
         if (user is null)
         {
-            _logger.LogWarning("Tentativa de atualização de usuário inexistente: {UserId}", request.UserId);
-            throw new NotFoundException("User not Found");
+            _logger.LogWarning("Tentativa de exclusão de usuário inexistente: {UserId}", request.UserId);
+            throw new NotFoundException($"User with ID {request.UserId} not found.");
         }
+
         await _userRepository.DeleteAsync(user, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
+
+        _logger.LogInformation("Usuário {UserId} excluído com sucesso", request.UserId);
     }
 }

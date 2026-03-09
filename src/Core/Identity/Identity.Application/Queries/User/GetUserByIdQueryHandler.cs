@@ -1,25 +1,34 @@
+using Microsoft.Extensions.Logging;
+using Product.Template.Core.Identity.Application.Mappers;
 using Product.Template.Core.Identity.Application.Queries.User;
+using Product.Template.Core.Identity.Domain.Repositories;
+using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 
 namespace Product.Template.Core.Identity.Application.Queries.Users;
 
 public class GetUserByIdQueryHandler : IQueryHandler<GetUserByIdQuery, UserOutput>
 {
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<GetUserByIdQueryHandler> _logger;
+
+    public GetUserByIdQueryHandler(
+        IUserRepository userRepository,
+        ILogger<GetUserByIdQueryHandler> logger)
+    {
+        _userRepository = userRepository;
+        _logger = logger;
+    }
+
     public async Task<UserOutput> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
-        // TODO: Implementar busca real no repositório
-        // Por enquanto, retorna um usuário mockado
-        await Task.Delay(50, cancellationToken); // Simula consulta no banco
+        _logger.LogInformation("Buscando usuário por ID: {UserId}", request.UserId);
 
-        return new UserOutput(
-            Id: request.UserId,
-            Email: "user@example.com",
-            FirstName: "John",
-            LastName: "Doe",
-            EmailConfirmed: true,
-            CreatedAt: DateTime.UtcNow.AddDays(-30),
-            LastLoginAt: DateTime.UtcNow.AddHours(-2),
-            Roles: new[] { "User", "Admin" }
-        );
+        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken)
+            ?? throw new NotFoundException($"User with ID {request.UserId} not found.");
+
+        _logger.LogInformation("Usuário encontrado: {UserId}", user.Id);
+
+        return user.ToOutput();
     }
 }

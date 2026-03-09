@@ -1,6 +1,7 @@
 
 
 using Microsoft.Extensions.Logging;
+using Product.Template.Core.Identity.Application.Mappers;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Product.Template.Kernel.Domain.SeedWorks;

@@ -1,6 +1,6 @@
+using Kernel.Application.Security;
 using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
-using Product.Template.Core.Identity.Domain.ValueObjects;
 using Product.Template.Kernel.Infrastructure.Persistence;
 
 namespace Product.Template.Core.Identity.Infrastructure.Data.Seeders;
@@ -8,73 +8,33 @@ namespace Product.Template.Core.Identity.Infrastructure.Data.Seeders;
 internal static class UserSeeder
 {
     public static readonly Guid AdminUserId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
-    public static readonly Guid TestUserId = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
+    public static readonly Guid TestUserId  = Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb");
 
-    public static async Task SeedAsync(AppDbContext context)
+    public static async Task SeedAsync(AppDbContext context, IHashServices hashServices)
     {
         if (await context.Users.AnyAsync())
             return;
 
-        // Note: In production, use a proper password hashing service
-        // This is a hashed version of "Admin@123" - replace with actual hashed password
-        var adminPasswordHash = "$2a$11$XYZ..."; // Replace with actual BCrypt hash
-        var userPasswordHash = "$2a$11$ABC..."; // Replace with actual BCrypt hash
+        var adminPasswordHash = hashServices.GeneratePasswordHash("Admin@123");
+        var userPasswordHash  = hashServices.GeneratePasswordHash("User@123");
 
         var adminRole = await context.Roles.FindAsync(RoleSeeder.AdminRoleId);
-        var userRole = await context.Roles.FindAsync(RoleSeeder.UserRoleId);
+        var userRole  = await context.Roles.FindAsync(RoleSeeder.UserRoleId);
 
-        var users = new[]
-        {
-            CreateUser(
-                AdminUserId, 
-                "admin@producttemplate.com", 
-                adminPasswordHash, 
-                "System", 
-                "Administrator"
-            ),
-            CreateUser(
-                TestUserId, 
-                "user@producttemplate.com", 
-                userPasswordHash, 
-                "Test", 
-                "User"
-            )
-        };
+        var admin = User.Create("admin@producttemplate.com", adminPasswordHash, "System", "Administrator");
+        admin.SetId(AdminUserId);
+        admin.ConfirmEmail();
 
-        await context.Users.AddRangeAsync(users);
+        var testUser = User.Create("user@producttemplate.com", userPasswordHash, "Test", "User");
+        testUser.SetId(TestUserId);
+        testUser.ConfirmEmail();
+
+        await context.Users.AddRangeAsync(admin, testUser);
         await context.SaveChangesAsync();
 
-        // Assign roles
-        if (adminRole != null)
-            users[0].AddRole(adminRole);
-
-        if (userRole != null)
-            users[1].AddRole(userRole);
+        if (adminRole is not null) admin.AddRole(adminRole);
+        if (userRole  is not null) testUser.AddRole(userRole);
 
         await context.SaveChangesAsync();
-    }
-
-    private static User CreateUser(
-        Guid id, 
-        string email, 
-        string passwordHash, 
-        string firstName, 
-        string lastName)
-    {
-        var user = User.Create(
-            email,
-            passwordHash,
-            firstName,
-            lastName
-        );
-
-        // Use reflection to set the Id
-        var idProperty = typeof(User).BaseType!.GetProperty("Id");
-        idProperty!.SetValue(user, id);
-
-        // Confirm email for seed users
-        user.ConfirmEmail();
-
-        return user;
     }
 }

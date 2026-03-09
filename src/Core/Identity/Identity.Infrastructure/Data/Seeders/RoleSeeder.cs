@@ -29,11 +29,7 @@ internal static class RoleSeeder
     private static Role CreateRole(Guid id, string name, string description)
     {
         var role = Role.Create(name, description);
-
-        // Use reflection to set the Id
-        var idProperty = typeof(Role).BaseType!.GetProperty("Id");
-        idProperty!.SetValue(role, id);
-
+        role.SetId(id);
         return role;
     }
 }

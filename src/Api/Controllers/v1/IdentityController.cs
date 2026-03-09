@@ -360,17 +360,11 @@ public class IdentityController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PaginatedListOutput<UserOutput>>> ListUsers(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
+        [FromQuery] ListUserQuery query,
+        CancellationToken cancellationToken)
     {
-        _logger.LogInformation("Listando usuários - Página: {PageNumber}, Tamanho: {PageSize}", pageNumber, pageSize);
+        _logger.LogInformation("Listando usuários — página {PageNumber}, tamanho {PageSize}", query.PageNumber, query.PageSize);
 
-        var query = new ListUserQuery
-        {
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
         var result = await _mediator.Send(query, cancellationToken);
 
         return Ok(result);
@@ -452,16 +446,9 @@ public class IdentityController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PaginatedListOutput<RoleOutput>>> ListRoles(
-        [FromQuery] int pageNumber = 1,
-        [FromQuery] int pageSize = 10,
-        CancellationToken cancellationToken = default)
+        [FromQuery] ListRolesQuery query,
+        CancellationToken cancellationToken)
     {
-        var query = new ListRolesQuery
-        {
-            PageNumber = pageNumber,
-            PageSize = pageSize
-        };
-
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
     }
@@ -537,6 +524,7 @@ public class IdentityController : ControllerBase
     [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<string>>> GetUserRoles(Guid id, CancellationToken cancellationToken)
     {
@@ -552,11 +540,10 @@ public class IdentityController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AddUserRole(Guid id, [FromBody] ManageUserRoleRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.RoleName))
-            return BadRequest("RoleName is required.");
 
         await _mediator.Send(new AddUserRoleCommand(id, request.RoleName), cancellationToken);
         return NoContent();
@@ -569,6 +556,7 @@ public class IdentityController : ControllerBase
     [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveUserRole(Guid id, string roleName, CancellationToken cancellationToken)
     {
@@ -601,6 +589,7 @@ public class IdentityController : ControllerBase
     [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
     {

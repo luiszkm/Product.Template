@@ -1,6 +1,8 @@
 using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Core.Identity.Domain.Entities;
 
+namespace Product.Template.Core.Identity.Application.Mappers;
+
 public static class UserMapper
 {
     public static UserOutput ToOutput(this User user)
@@ -15,7 +17,10 @@ public static class UserMapper
             user.EmailConfirmed,
             user.CreatedAt,
             user.LastLoginAt,
-            user.UserRoles.Select(r => r.Role.Name).ToArray()
+            user.UserRoles
+                .Where(r => r.Role is not null)
+                .Select(r => r.Role!.Name)
+                .ToArray()
         );
     }
 

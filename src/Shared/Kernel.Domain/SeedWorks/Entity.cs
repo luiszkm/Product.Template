@@ -48,5 +48,11 @@ public abstract class Entity : IAuditableEntity
         RestoredAt = DateTime.UtcNow;
         RestoredBy = restoredBy;
     }
+
+    /// <summary>
+    /// For use by seeders and test fixtures only.
+    /// Sets a deterministic Id without reflection.
+    /// </summary>
+    public void SetId(Guid id) => Id = id;
 }
 

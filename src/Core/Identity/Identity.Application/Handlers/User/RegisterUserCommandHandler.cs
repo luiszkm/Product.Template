@@ -1,6 +1,7 @@
 using Kernel.Application.Security;
 using Microsoft.Extensions.Logging;
 using Product.Template.Core.Identity.Application.Handlers.User.Commands;
+using Product.Template.Core.Identity.Application.Mappers;
 using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;

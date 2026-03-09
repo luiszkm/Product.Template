@@ -78,6 +78,17 @@ public class User : AggregateRoot, IMultiTenantEntity
         IsActive = true;
     }
 
+    public void UpdateProfile(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name cannot be empty.", nameof(firstName));
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name cannot be empty.", nameof(lastName));
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+    }
+
     public void AddRole(Role role)
     {
         if (_userRoles.Any(ur => ur.RoleId == role.Id))

@@ -1,3 +1,4 @@
+using Kernel.Application.Security;
 using Kernel.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -104,9 +105,11 @@ public static class DatabaseConfiguration
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await context.Database.MigrateAsync();
 
+        var hashServices = scope.ServiceProvider.GetRequiredService<IHashServices>();
+
         await RoleSeeder.SeedAsync(context);
         await PermissionSeeder.SeedAsync(context);
-        await UserSeeder.SeedAsync(context);
+        await UserSeeder.SeedAsync(context, hashServices);
     }
 
     private static bool LooksLikePostgres(string connectionString)
