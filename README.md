@@ -1,4 +1,4 @@
-﻿# Product.Template
+﻿﻿# Product.Template
 
 A production-ready .NET 10 backend template following Clean Architecture, DDD, and CQRS — designed for **AI-first development** with LLMs and coding agents.
 
@@ -98,31 +98,70 @@ X-Tenant: public
 
 ## AI-First Development
 
-This template is designed to work seamlessly with LLMs and coding agents.
+This template has a built-in **GitHub Copilot AI-first layer** — persistent instructions, specialized agents, and reusable prompts that eliminate the need to repeat architecture rules in every session.
 
-### For Agents: Before You Start
+### How it works
 
-Read these files in order:
-1. `.ai/rules/00-global.md` — Stack, principles, universal rules
-2. `.ai/rules/10-agent-behavior.md` — How to behave as an agent in this repo
-3. `.ai/rules/12-folder-structure.md` — Where to place files
-4. `.ai/rules/11-naming.md` — Naming conventions
+GitHub Copilot reads `.github/copilot-instructions.md` automatically on every interaction in this repo. It contains the complete stack, architecture rules, naming conventions, and a list of what Copilot must never do — all derived from the actual code.
 
-### For Agents: Creating a New Feature
+### GitHub Copilot Instructions
 
-1. Read `.ai/prompts/create-feature.md`
-2. Follow `.ai/checklists/new-feature.md`
-3. Use the Identity module as reference (`src/Core/Identity/`)
+```
+.github/
+├── copilot-instructions.md          → Auto-loaded by Copilot on every session
+├── instructions/
+│   ├── backend.instructions.md      → Commands, Queries, Handlers, Validators, DTOs
+│   ├── api.instructions.md          → Controllers, HTTP contracts, RBAC, error handling
+│   └── infrastructure.instructions.md → EF Core, Repositories, Multi-tenancy, DI
+└── agents/
+    ├── backend-architect.agent.md   → Architectural review & drift detection
+    ├── feature-builder.agent.md     → Scaffold complete features following the template
+    ├── query-optimizer.agent.md     → EF Core / Dapper read optimisation
+    └── code-reviewer.agent.md       → Deep review: security gaps, violations + fix proposals
+```
 
-### `.ai/` Folder Structure
+### Specialized Agents (GitHub Copilot Chat)
+
+Use these agents in Copilot Chat with `@` to get context-aware, project-specific assistance:
+
+| Agent | Activate with | Purpose |
+|-------|--------------|---------|
+| Backend Architect | `@backend-architect` | Validate architecture, detect layer violations, review new modules |
+| Feature Builder | `@feature-builder` | Scaffold a full feature (entity → handler → endpoint → tests) |
+| Query Optimizer | `@query-optimizer` | Diagnose N+1, over-fetching, missing indexes, propose Dapper read services |
+| Code Reviewer | `@code-reviewer` | Deep code review — security gaps, architecture violations, missing tests, with fix proposals |
+
+### Reusable Prompts
+
+```
+prompts/
+├── create-feature.prompt.md   → Full feature scaffold checklist + expected output format
+├── review-feature.prompt.md   → Architectural review criteria by layer
+├── optimize-query.prompt.md   → Query diagnosis + optimisation proposal template
+└── code-review.prompt.md      → Deep review: security gaps, violations, missing tests + fix proposals
+```
+
+**Usage**: Open a prompt file, copy its content into Copilot Chat, and fill in the `{MODULE}`, `{ENTITY}` and other placeholders.
+
+### Deep Rules (`.ai/`)
+
+For more detailed, layer-by-layer rules used by the `.github/instructions/` files:
 
 ```
 .ai/
-├── rules/          → 13 rule files covering every architectural concern
-├── prompts/        → 9 reusable prompts for common tasks
-├── checklists/     → 4 verification checklists
-└── examples/       → Reference implementation guide
+├── rules/          → 13 rule files (00-global → 12-folder-structure)
+├── checklists/     → new-feature, api-endpoint, persistence, pull-request
+└── examples/       → Reference implementation guide (points to Identity module)
 ```
+
+### Quick start for agents
+
+When starting a new task in Copilot Chat:
+
+1. **Copilot already has context** — `copilot-instructions.md` is loaded automatically.
+2. **Use the right agent** — `@feature-builder` for new features, `@backend-architect` for review, `@query-optimizer` for performance.
+3. **Use a prompt file** — copy from `prompts/` to get a structured, checklist-driven response.
+4. **Reference is always Identity** — any pattern question can be answered by looking at `src/Core/Identity/`.
 
 ## Key Features
 
@@ -152,8 +191,8 @@ dotnet test tests/ArchitectureTests
 ## Adding a New Module
 
 1. Create the project triple under `src/Core/{Module}/`
-2. Follow `.ai/prompts/create-feature.md`
-3. Use `.ai/checklists/new-feature.md` for validation
+2. Use `@feature-builder` in Copilot Chat — or copy `prompts/create-feature.prompt.md`
+3. Use `.ai/checklists/new-feature.md` to verify completeness
 4. See `CONTRIBUTING.md` for full guidelines
 
 ## Documentation
@@ -161,10 +200,13 @@ dotnet test tests/ArchitectureTests
 | Document | Purpose |
 |----------|---------|
 | `README.md` | This file |
-| `CONTRIBUTING.md` | How to contribute |
-| `.ai/rules/` | Architectural rules for humans and agents |
-| `.ai/prompts/` | Reusable prompts for AI-assisted development |
-| `.ai/checklists/` | Verification checklists |
+| `CONTRIBUTING.md` | How to contribute and use AI tools |
+| `.github/copilot-instructions.md` | Persistent Copilot rules (auto-loaded) |
+| `.github/instructions/` | Layer-specific instructions for Copilot |
+| `.github/agents/` | Specialized agents for Copilot Chat |
+| `prompts/` | Reusable prompt templates |
+| `.ai/rules/` | Detailed architectural rules by layer |
+| `.ai/checklists/` | Verification checklists for features and PRs |
 | `docs/security/RBAC_MATRIX.md` | Authorization matrix |
 
 ## License
