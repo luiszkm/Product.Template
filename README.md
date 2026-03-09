@@ -159,7 +159,11 @@ For more detailed, layer-by-layer rules used by the `.github/instructions/` file
 When starting a new task in Copilot Chat:
 
 1. **Copilot already has context** — `copilot-instructions.md` is loaded automatically.
-2. **Use the right agent** — `@feature-builder` for new features, `@backend-architect` for review, `@query-optimizer` for performance.
+2. **Use the right agent**:
+   - `@feature-builder` — scaffold a new feature end-to-end
+   - `@backend-architect` — validate architecture or review a new module
+   - `@query-optimizer` — diagnose and fix slow queries
+   - `@code-reviewer` — deep review with security gaps, violations, and fix proposals
 3. **Use a prompt file** — copy from `prompts/` to get a structured, checklist-driven response.
 4. **Reference is always Identity** — any pattern question can be answered by looking at `src/Core/Identity/`.
 
