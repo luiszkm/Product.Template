@@ -4,7 +4,6 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
     <!-- Assembly and package metadata -->
     <Authors>Neuraptor</Authors>
@@ -20,15 +19,20 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
   </PropertyGroup>
 
-  <!-- Common package references for all projects -->
-  <ItemGroup>
-    <!-- Add common packages here if needed -->
-  </ItemGroup>
+  <!-- Source projects: strict warnings in Release builds -->
+  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
+    <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Release'">false</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
 
   <!-- Test projects configuration -->
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
     <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 </Project>

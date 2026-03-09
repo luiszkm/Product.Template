@@ -152,6 +152,32 @@ csharp_style_unused_value_expression_statement_preference = discard_variable:sil
 # 'using' directive preferences
 csharp_using_directive_placement = outside_namespace:warning
 
+# Namespace preferences
+csharp_style_namespace_declarations = file_scoped:warning
+
+#### .NET Analyzer Diagnostics ####
+
+# CA1062: Validate arguments of public methods (covered by nullable)
+dotnet_diagnostic.CA1062.severity = none
+
+# CA1822: Mark members as static
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# CA2007: Do not directly await a Task (not relevant for ASP.NET Core)
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1848: Use LoggerMessage delegates for performance
+dotnet_diagnostic.CA1848.severity = suggestion
+
+# CA2254: Template should be a static expression (Serilog structured logging)
+dotnet_diagnostic.CA2254.severity = suggestion
+
+# IDE0005: Remove unnecessary using
+dotnet_diagnostic.IDE0005.severity = warning
+
+# IDE0161: Use file-scoped namespace
+dotnet_diagnostic.IDE0161.severity = warning
+
 #### C# Formatting Rules ####
 
 # New line preferences
