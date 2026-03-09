@@ -4,6 +4,7 @@ using Product.Template.Core.Identity.Application.Handlers.User.Commands;
 using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
+using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 
 namespace Product.Template.Core.Identity.Application.Handlers.User;
@@ -29,7 +30,7 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
 
     public async Task<UserOutput> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
-        
+
         var userExisits = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (userExisits != null)
         {

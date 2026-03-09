@@ -5,7 +5,7 @@ using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class User : AggregateRoot<Guid>, IMultiTenantEntity
+public class User : AggregateRoot, IMultiTenantEntity
 {
     public long TenantId { get; set; }
     public Email Email { get; private set; }
@@ -19,7 +19,19 @@ public class User : AggregateRoot<Guid>, IMultiTenantEntity
     private readonly List<UserRole> _userRoles = new();
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
 
-    private User(Guid id) : base(id) { }
+    private User() { }
+
+    private User(Guid id, Email email, string passwordHash, string firstName, string lastName)
+    {
+        Id = id;
+        Email = email;
+        PasswordHash = passwordHash;
+        FirstName = firstName;
+        LastName = lastName;
+        EmailConfirmed = false;
+        IsActive = true;
+        CreatedAt = DateTime.UtcNow;
+    }
 
     public static User Create(
         string email,
@@ -27,16 +39,13 @@ public class User : AggregateRoot<Guid>, IMultiTenantEntity
         string firstName,
         string lastName)
     {
-        var user = new User(Guid.NewGuid())
-        {
-            Email = Email.Create(email),
-            PasswordHash = passwordHash,
-            FirstName = firstName,
-            LastName = lastName,
-            EmailConfirmed = false,
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true
-        };
+        var emailVo = Email.Create(email);
+        var user = new User(
+            Guid.NewGuid(),
+            emailVo,
+            passwordHash,
+            firstName,
+            lastName);
 
         user.AddDomainEvent(new UserRegisteredEvent(user.Id, user.Email.Value));
 

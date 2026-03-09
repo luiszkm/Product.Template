@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Product.Template.Api.Controllers.v1;
 
 namespace UnitTests.Security;

@@ -1,6 +1,6 @@
 namespace Product.Template.Kernel.Domain.SeedWorks;
 
-public abstract class Entity<TId> : IAuditableEntity
+public abstract class Entity : IAuditableEntity
 {
     private bool IsDeleted { get; set; }
 
@@ -12,28 +12,28 @@ public abstract class Entity<TId> : IAuditableEntity
     public string? DeletedBy { get; set; }
     public DateTime? RestoredAt { get; set; }
     public string? RestoredBy { get; set; }
-    public TId Id { get; protected set; }
+    public Guid Id { get; protected set; }
+    public long LogicalId { get; protected set; }
 
-    protected Entity(TId id)
+    protected Entity()
     {
         CreatedAt = DateTime.UtcNow;
-        Id = id;
+        Id = Guid.NewGuid();
     }
     public override bool Equals(object? obj)
     {
-        if (obj is not Entity<TId> other) return false;
+        if (obj is not Entity other) return false;
         if (ReferenceEquals(this, other)) return true;
-        if (Id?.Equals(default) == true || other.Id?.Equals(default) == true) return false;
         return Id!.Equals(other.Id);
     }
-    public static bool operator ==(Entity<TId> a, Entity<TId> b)
+    public static bool operator ==(Entity a, Entity b)
     {
         if (a is null && b is null) return true;
         if (a is null || b is null) return false;
         return a.Equals(b);
     }
-    public static bool operator !=(Entity<TId> a, Entity<TId> b) => !(a == b);
-    public override int GetHashCode() => Id?.GetHashCode() ?? 0;
+    public static bool operator !=(Entity a, Entity b) => !(a == b);
+    public override int GetHashCode() => Id.GetHashCode();
 
     public void SoftDelete(string deletedBy )
     {

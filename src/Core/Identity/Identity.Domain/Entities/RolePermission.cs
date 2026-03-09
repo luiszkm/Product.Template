@@ -3,7 +3,7 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class RolePermission : Entity<Guid>, IMultiTenantEntity
+public class RolePermission : Entity, IMultiTenantEntity
 {
     public long TenantId { get; set; }
     public Guid RoleId { get; private set; }
@@ -13,15 +13,21 @@ public class RolePermission : Entity<Guid>, IMultiTenantEntity
     public Role? Role { get; private set; }
     public Permission? Permission { get; private set; }
 
-    private RolePermission(Guid id) : base(id) { }
+    private RolePermission() { }
+
+    private RolePermission(Guid id, Guid roleId, Guid permissionId)
+    {
+        Id = id;
+        RoleId = roleId;
+        PermissionId = permissionId;
+        AssignedAt = DateTime.UtcNow;
+    }
 
     public static RolePermission Create(Guid roleId, Guid permissionId)
     {
-        return new RolePermission(Guid.NewGuid())
-        {
-            RoleId = roleId,
-            PermissionId = permissionId,
-            AssignedAt = DateTime.UtcNow
-        };
+        return new RolePermission(
+            Guid.NewGuid(),
+            roleId,
+            permissionId);
     }
 }

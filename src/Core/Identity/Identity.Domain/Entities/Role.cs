@@ -3,7 +3,7 @@ using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class Role : Entity<Guid>, IMultiTenantEntity
+public class Role : Entity, IMultiTenantEntity
 {
     public long TenantId { get; set; }
     public string Name { get; private set; }
@@ -16,19 +16,25 @@ public class Role : Entity<Guid>, IMultiTenantEntity
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
     public IReadOnlyCollection<RolePermission> RolePermissions => _rolePermissions.AsReadOnly();
 
-    private Role(Guid id) : base(id) { }
+    private Role() { }
+
+    private Role(Guid id, string name, string description)
+    {
+        Id = id;
+        Name = name;
+        Description = description;
+        CreatedAt = DateTime.UtcNow;
+    }
 
     public static Role Create(string name, string description)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Role name cannot be empty", nameof(name));
 
-        return new Role(Guid.NewGuid())
-        {
-            Name = name,
-            Description = description ?? string.Empty,
-            CreatedAt = DateTime.UtcNow
-        };
+        return new Role(
+            Guid.NewGuid(),
+            name,
+            description ?? string.Empty);
     }
 
     public void UpdateDescription(string description)

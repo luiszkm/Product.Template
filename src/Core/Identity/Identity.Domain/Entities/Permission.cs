@@ -3,7 +3,7 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
-public class Permission : Entity<Guid>, IMultiTenantEntity
+public class Permission : Entity, IMultiTenantEntity
 {
     public long TenantId { get; set; }
     public string Name { get; private set; }
@@ -13,18 +13,24 @@ public class Permission : Entity<Guid>, IMultiTenantEntity
     private readonly List<RolePermission> _rolePermissions = new();
     public IReadOnlyCollection<RolePermission> RolePermissions => _rolePermissions.AsReadOnly();
 
-    private Permission(Guid id) : base(id) { }
+    private Permission() { }
+
+    private Permission(Guid id, string name, string description)
+    {
+        Id = id;
+        Name = name;
+        Description = description;
+        CreatedAt = DateTime.UtcNow;
+    }
 
     public static Permission Create(string name, string description)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Permission name cannot be empty", nameof(name));
 
-        return new Permission(Guid.NewGuid())
-        {
-            Name = name.Trim(),
-            Description = description ?? string.Empty,
-            CreatedAt = DateTime.UtcNow
-        };
+        return new Permission(
+            Guid.NewGuid(),
+            name.Trim(),
+            description ?? string.Empty);
     }
 }

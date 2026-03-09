@@ -29,7 +29,7 @@ public class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleO
         if (existing is not null)
             throw new BusinessRuleException($"Role '{name}' already exists.");
 
-        var role = Role.Create(name, request.Description);
+        var role = Domain.Entities.Role.Create(name, request.Description);
 
         await _roleRepository.AddAsync(role, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);

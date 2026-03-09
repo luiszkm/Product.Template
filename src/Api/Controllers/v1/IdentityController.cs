@@ -12,6 +12,7 @@ using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Core.Identity.Application.Queries.Role;
 using Product.Template.Core.Identity.Application.Queries.Users;
 using Product.Template.Core.Identity.Application.Queries.Role.Commands;
+using Product.Template.Kernel.Application.Security;
 using Product.Template.Kernel.Domain.SeedWorks;
 
 
@@ -41,7 +42,7 @@ public class IdentityController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
 
     public IdentityController(
-        IMediator mediator, 
+        IMediator mediator,
         ILogger<IdentityController> logger,
         IAuthenticationProviderFactory authProviderFactory,
         ICurrentUserService currentUserService)
@@ -285,7 +286,7 @@ public class IdentityController : ControllerBase
         /// }
         /// ```
         ///
-        /// ⚠️ **Importante**: 
+        /// ⚠️ **Importante**:
         /// - Configure as credenciais do Azure AD em `appsettings.json` → `MicrosoftAuth`
         /// - Use User Secrets em desenvolvimento para armazenar ClientSecret
         /// - O email do Microsoft deve ser verificado
