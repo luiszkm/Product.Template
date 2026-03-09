@@ -22,11 +22,11 @@ internal static class UserSeeder
         var userRole  = await context.Roles.FindAsync(RoleSeeder.UserRoleId);
 
         var admin = User.Create("admin@producttemplate.com", adminPasswordHash, "System", "Administrator");
-        admin.SetId(AdminUserId);
+        typeof(User).BaseType!.GetProperty("Id")!.SetValue(admin, AdminUserId);
         admin.ConfirmEmail();
 
         var testUser = User.Create("user@producttemplate.com", userPasswordHash, "Test", "User");
-        testUser.SetId(TestUserId);
+        typeof(User).BaseType!.GetProperty("Id")!.SetValue(testUser, TestUserId);
         testUser.ConfirmEmail();
 
         await context.Users.AddRangeAsync(admin, testUser);

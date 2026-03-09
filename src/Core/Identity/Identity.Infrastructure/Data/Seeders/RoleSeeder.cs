@@ -6,8 +6,8 @@ namespace Product.Template.Core.Identity.Infrastructure.Data.Seeders;
 
 internal static class RoleSeeder
 {
-    public static readonly Guid AdminRoleId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    public static readonly Guid UserRoleId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    public static readonly Guid AdminRoleId   = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    public static readonly Guid UserRoleId    = Guid.Parse("22222222-2222-2222-2222-222222222222");
     public static readonly Guid ManagerRoleId = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
     public static async Task SeedAsync(AppDbContext context)
@@ -17,8 +17,8 @@ internal static class RoleSeeder
 
         var roles = new[]
         {
-            CreateRole(AdminRoleId, "Admin", "Administrator with full system access"),
-            CreateRole(UserRoleId, "User", "Standard user with basic access"),
+            CreateRole(AdminRoleId,   "Admin",   "Administrator with full system access"),
+            CreateRole(UserRoleId,    "User",    "Standard user with basic access"),
             CreateRole(ManagerRoleId, "Manager", "Manager with elevated access")
         };
 
@@ -29,7 +29,8 @@ internal static class RoleSeeder
     private static Role CreateRole(Guid id, string name, string description)
     {
         var role = Role.Create(name, description);
-        role.SetId(id);
+        // Set deterministic Id via EF shadow state — EF respects ValueGeneratedNever
+        typeof(Role).BaseType!.GetProperty("Id")!.SetValue(role, id);
         return role;
     }
 }
