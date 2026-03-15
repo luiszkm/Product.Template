@@ -6,54 +6,67 @@ using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
+using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Auth;
 
-public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput>
+public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCommand, AuthTokenOutput>
 {
-    private readonly IUserRepository _userRepository;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
-    private readonly IHashServices _hashServices;
+    private readonly IUserRepository _userRepository;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ILogger<LoginCommandHandler> _logger;
+    private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
-    public LoginCommandHandler(
-        IUserRepository userRepository,
+    public RefreshTokenCommandHandler(
         IRefreshTokenRepository refreshTokenRepository,
-        IHashServices hashServices,
+        IUserRepository userRepository,
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
-        ILogger<LoginCommandHandler> logger)
+        ILogger<RefreshTokenCommandHandler> logger)
     {
-        _userRepository = userRepository;
         _refreshTokenRepository = refreshTokenRepository;
-        _hashServices = hashServices;
+        _userRepository = userRepository;
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
-    public async Task<AuthTokenOutput> Handle(LoginCommand request, CancellationToken cancellationToken)
+    public async Task<AuthTokenOutput> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-        if (user is null)
+        var existing = await _refreshTokenRepository.GetActiveByTokenAsync(request.RefreshToken, cancellationToken);
+
+        if (existing is null || !existing.IsActive)
         {
-            _logger.LogWarning("Login attempt failed for non-existing email: {Email}", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            _logger.LogWarning("Refresh token inválido ou expirado tentou ser usado");
+            throw new UnauthorizedAccessException("Refresh token inválido ou expirado.");
         }
 
-        var isPasswordValid = _hashServices.VerifyPassword(request.Password, user.PasswordHash);
-        if (!isPasswordValid)
+        var user = await _userRepository.GetByIdAsync(existing.UserId, cancellationToken);
+        if (user is null)
         {
-            _logger.LogWarning("Login attempt failed for email: {Email} due to invalid password", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            _logger.LogWarning("Usuário {UserId} do refresh token não encontrado", existing.UserId);
+            throw new NotFoundException(nameof(User), existing.UserId);
         }
+
+        var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        // Token rotation: revoke old, issue new
+        var newRawToken = _jwtTokenService.GenerateRefreshToken();
+        existing.Revoke(clientIp, replacedByToken: newRawToken);
+
+        var newRefreshToken = RefreshToken.Create(
+            user.Id,
+            newRawToken,
+            _jwtTokenService.GetRefreshTokenExpirationDays(),
+            clientIp);
+
+        await _refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
 
         var roles = user.UserRoles
             .Where(ur => ur.Role is not null)
@@ -70,7 +83,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
             .ToList();
 
         var permissionClaims = permissions
-            .Select(permission => new Claim(AuthorizationClaimTypes.Permission, permission));
+            .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
         var accessToken = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
@@ -78,26 +91,15 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
             roles: roles,
             extraClaims: permissionClaims);
 
-        // Generate and persist refresh token
-        var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();
-        var refreshToken = RefreshToken.Create(
-            user.Id,
-            rawRefreshToken,
-            _jwtTokenService.GetRefreshTokenExpirationDays(),
-            clientIp);
-
-        await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
-
-        user.UpdateLastLogin();
-        await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
+
+        _logger.LogInformation("Refresh token rotacionado para usuário {UserId}", user.Id);
 
         return new AuthTokenOutput(
             AccessToken: accessToken,
             TokenType: "Bearer",
             ExpiresIn: _jwtTokenService.GetExpiresInSeconds(),
-            RefreshToken: rawRefreshToken,
+            RefreshToken: newRawToken,
             User: new UserAuthOutput(
                 Id: user.Id,
                 Email: user.Email,
@@ -106,3 +108,4 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
                 Roles: roles));
     }
 }
+

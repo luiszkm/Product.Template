@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Kernel.Application.Security;
 using Microsoft.Extensions.Options;
@@ -64,4 +65,13 @@ public sealed class JwtTokenService : IJwtTokenService
 
         return token;
     }
+
+    public string GenerateRefreshToken()
+    {
+        var randomBytes = RandomNumberGenerator.GetBytes(64);
+        return Convert.ToBase64String(randomBytes);
+    }
+
+    public int GetRefreshTokenExpirationDays()
+        => _settings.RefreshTokenExpirationDays;
 }

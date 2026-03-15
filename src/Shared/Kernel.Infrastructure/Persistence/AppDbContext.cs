@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
+using Product.Template.Kernel.Domain.Audit;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.Persistence.Extensions;
 
@@ -19,6 +20,10 @@ public class AppDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
+    // Cross-cutting Tables
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     public AppDbContext(DbContextOptions<AppDbContext> options, ITenantContext tenantContext) : base(options)
     {
@@ -31,5 +36,7 @@ public class AppDbContext : DbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         modelBuilder.ApplyTenantQueryFilters(this);
+        modelBuilder.ApplySoftDeleteQueryFilters();
     }
 }
+

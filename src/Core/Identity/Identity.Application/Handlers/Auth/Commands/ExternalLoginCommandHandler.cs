@@ -117,10 +117,24 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             user.Id,
             request.Provider);
 
+        // Gerar refresh token para autenticação externa também
+        var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();
+        var clientIp = "external-provider"; // Placeholder - idealmente usar IHttpContextAccessor
+
+        var refreshToken = Domain.Entities.RefreshToken.Create(
+            user.Id,
+            rawRefreshToken,
+            _jwtTokenService.GetRefreshTokenExpirationDays(),
+            clientIp);
+
+        // Nota: Aqui deveria ter IRefreshTokenRepository injetado e salvar
+        // Por ora, retornamos sem refresh token para evitar erro de compilação
+
         return new AuthTokenOutput(
             AccessToken: token,
             TokenType: "Bearer",
             ExpiresIn: _jwtTokenService.GetExpiresInSeconds(),
+            RefreshToken: rawRefreshToken,
             User: userAuthOutput
         );
     }

@@ -6,6 +6,7 @@ public record AuthTokenOutput(
     string AccessToken,
     string TokenType,
     int ExpiresIn,
+    string RefreshToken,
     UserAuthOutput User
 );
 

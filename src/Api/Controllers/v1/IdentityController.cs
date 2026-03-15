@@ -185,6 +185,66 @@ public class IdentityController : ControllerBase
     }
 
     /// <summary>
+    /// 🔄 Renova o access token usando um refresh token válido
+    /// </summary>
+    /// <param name="command">Refresh token para trocar</param>
+    /// <param name="cancellationToken">Token de cancelamento</param>
+    /// <returns>Novo par de access token + refresh token</returns>
+    /// <remarks>
+    /// ## Token Rotation
+    /// Esta API implementa **refresh token rotation** — o refresh token antigo é automaticamente
+    /// revogado e um novo é emitido a cada uso. Isso previne reutilização de tokens roubados.
+    ///
+    /// ## Exemplo de Requisição
+    /// ```json
+    /// {
+    ///   "refreshToken": "xMzI1NiIsInR5cCI6IkpXVCJ9..."
+    /// }
+    /// ```
+    ///
+    /// ## Exemplo de Resposta (200 OK)
+    /// ```json
+    /// {
+    ///   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    ///   "tokenType": "Bearer",
+    ///   "expiresIn": 3600,
+    ///   "refreshToken": "novo-refresh-token-aqui...",
+    ///   "user": { ... }
+    /// }
+    /// ```
+    ///
+    /// ## Fluxo no front-end
+    /// 1. Detectar que o access token expirou (verificar `exp` claim ou receber 401)
+    /// 2. Chamar `/refresh` com o refresh token armazenado
+    /// 3. Substituir ambos os tokens pelos novos recebidos
+    /// 4. Retry da chamada original com o novo access token
+    ///
+    /// ⚠️ **Importante**:
+    /// - Refresh tokens expiram em 30 dias por padrão
+    /// - Se o refresh token estiver expirado ou revogado, usuário deve fazer login novamente
+    /// </remarks>
+    /// <response code="200">✅ Token renovado com sucesso</response>
+    /// <response code="400">⚠️ Refresh token ausente ou inválido</response>
+    /// <response code="401">🔒 Refresh token expirado ou revogado</response>
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthTokenOutput), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AuthTokenOutput>> Refresh(
+        [FromBody] RefreshTokenCommand command,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Refresh token solicitado");
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        _logger.LogInformation("Refresh token concedido para usuário: {UserId}", result.User.Id);
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// 📝 Registra um novo usuário no sistema
     /// </summary>
     /// <param name="command">Dados do novo usuário</param>

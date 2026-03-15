@@ -1,6 +1,6 @@
 namespace Product.Template.Kernel.Domain.SeedWorks;
 
-public abstract class Entity : IAuditableEntity
+public abstract class Entity : IAuditableEntity, ISoftDeletableEntity
 {
     private bool IsDeleted { get; set; }
 

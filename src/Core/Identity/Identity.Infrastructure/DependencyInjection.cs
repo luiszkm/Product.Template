@@ -11,18 +11,16 @@ public static class DependencyInjection
     public static IServiceCollection AddIdentityInJections(this IServiceCollection services)
     {
         services.AddRepositories();
-
         return services;
     }
-    private static IServiceCollection AddRepositories(
-        this IServiceCollection services)
+
+    private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        // Unit of Work
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        // Identity Repositories
         services.AddTransient<IUserRepository, UserRepository>();
         services.AddTransient<IRoleRepository, RoleRepository>();
+        services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
 
         return services;
     }

@@ -28,6 +28,7 @@ public static class DatabaseConfiguration
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<MultiTenantSaveChangesInterceptor>();
         services.AddScoped<SearchPathConnectionInterceptor>();
+        services.AddScoped<AuditLogInterceptor>();
 
         var hostConnection = configuration.GetConnectionString("HostDb")
             ?? configuration.GetConnectionString("AppDb")
@@ -73,7 +74,8 @@ public static class DatabaseConfiguration
             options.AddInterceptors(
                 sp.GetRequiredService<AuditableEntityInterceptor>(),
                 sp.GetRequiredService<MultiTenantSaveChangesInterceptor>(),
-                sp.GetRequiredService<SearchPathConnectionInterceptor>());
+                sp.GetRequiredService<SearchPathConnectionInterceptor>(),
+                sp.GetRequiredService<AuditLogInterceptor>());
         });
 
         return services;
