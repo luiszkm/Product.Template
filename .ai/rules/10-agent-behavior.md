@@ -72,6 +72,10 @@ When creating or modifying code, always structure your response as:
 8. ❌ Using `IQueryable<T>` in return types of repositories.
 9. ❌ Forgetting to update `RBAC_MATRIX.md` when adding protected endpoints.
 10. ❌ Forgetting to register new services in `DependencyInjection.cs`.
+11. ❌ Writing a Dockerfile without multi-stage build, HEALTHCHECK, or running as root.
+12. ❌ Creating a CI/CD workflow without `permissions:`, `timeout-minutes:`, NuGet cache, or Trivy scan.
+13. ❌ Using string interpolation in Serilog log templates.
+14. ❌ Adding a new external dependency without a corresponding health check.
 
 ## Identity Module as Reference
 
