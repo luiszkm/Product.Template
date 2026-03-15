@@ -173,7 +173,8 @@ O módulo **Identity** (`src/Core/Identity/`) é a implementação de referênci
   - `code-reviewer` — revisão de código, segurança e contratos
   - `feature-builder` — criação de features completas
   - `query-optimizer` — otimização de queries EF Core / Dapper
-  - `deploy-observer` — Docker, CI/CD e observabilidade ← **novo**
+  - `deploy-observer` — Docker, CI/CD e observabilidade
+  - `module-designer` — design de módulos DDD (bounded contexts, aggregates, eventos) ← **novo**
 - Instruções por camada: `.github/instructions/`
 - RBAC Matrix: `docs/security/RBAC_MATRIX.md`
 - Implementação de referência: `src/Core/Identity/`
