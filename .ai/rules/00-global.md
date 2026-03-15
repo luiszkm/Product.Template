@@ -19,7 +19,11 @@
 | Multi-tenancy | Custom (header/subdomain + schema-per-tenant) | — |
 | Tests | xUnit + Bogus + WebApplicationFactory | — |
 | API Docs | Scalar (OpenAPI) | — |
-| Container | Docker (Linux) | — |
+| Container | Docker (Linux / Alpine) | — |
+| CI/CD | GitHub Actions / Azure DevOps | — |
+| Image Registry | GHCR / ACR | — |
+| Security Scan | Trivy | latest |
+| Image Signing | Sigstore cosign | latest |
 
 ## Principles
 
@@ -44,4 +48,6 @@
 - **Preserve the existing code style** defined in `.editorconfig`.
 - **Use English for code, types, and file names.** Comments and user-facing docs may be bilingual (PT-BR / EN).
 - **Every change must be testable.** If you create a handler, create its test. If you create an endpoint, update `RBAC_MATRIX.md`.
+- **Docker**: follow `13-docker.md` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
+- **CI/CD**: follow `14-cicd.md` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
 

@@ -144,6 +144,26 @@ O módulo **Identity** (`src/Core/Identity/`) é a implementação de referênci
 11. Usar mocking frameworks — usar fakes/stubs inline.
 12. Usar string interpolation em log templates do Serilog.
 
+## Docker e CI/CD
+
+### Dockerfile
+- Multi-stage build obrigatório: `restore` → `publish` → `final` (apenas runtime Alpine).
+- Imagem final roda como non-root (`app`, UID 1654) — nunca como `root`.
+- `HEALTHCHECK` apontando para `/health/live` obrigatório.
+- `ARG`s para `VERSION`, `VCS_REF`, `BUILD_DATE` + labels OCI.
+- Regras completas: `.ai/rules/13-docker.md`
+
+### CI/CD (GitHub Actions / Azure DevOps)
+- Todo workflow declarado em `.github/workflows/` ou `azure-pipelines/`.
+- `permissions:` mínimas explícitas em todo workflow — nunca `write-all`.
+- `timeout-minutes:` obrigatório em todos os jobs.
+- Cache de NuGet usando hash de `packages.lock.json`.
+- Scan Trivy (HIGH/CRITICAL) antes de push de imagem Docker.
+- Deploy em produção requer `environment:` com aprovação manual.
+- `dotnet restore --locked-mode` — nunca omitir.
+- Imagem de produção nunca usa tag `latest` — sempre semver ou SHA digest.
+- Regras completas: `.ai/rules/14-cicd.md`
+
 ## Referências adicionais
 
 - Regras detalhadas por camada: `.ai/rules/`

@@ -1,30 +1,55 @@
-**/.classpath
-**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/azds.yaml
-**/bin
-**/charts
-**/docker-compose*
+# =============================================================================
+# .dockerignore — Product.Template
+# Follows .ai/rules/13-docker.md
+# =============================================================================
+
+# Build artifacts
+**/bin/
+**/obj/
+
+# Source control
+.git/
+.gitignore
+.gitattributes
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+**/*.user
+**/*.suo
+**/*.swp
+*.DotSettings
+
+# Tests (not needed in production image)
+tests/
+
+# Docs / tooling / AI rules
+docs/
+prompts/
+.ai/
+.github/
+setup.ps1
+setup.sh
+azure-pipelines/
+
+# Markdown and text files
+*.md
+*.txt
+*.http
+
+# Local config & secrets — NEVER copy into image
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.json
+!appsettings.json
+.env
+.env.*
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+
+# Docker compose files (not needed inside image)
+docker-compose*.yml
 **/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
-!**/.gitignore
-!.git/HEAD
-!.git/config
-!.git/packed-refs
-!.git/refs/heads/**
