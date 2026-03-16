@@ -1,0 +1,6 @@
+is_global = true
+
+# Disable OpenAPI source generator
+build_property.EnableOpenApiAnalyzers = false
+build_property.EnableOpenApiSourceGenerator = false
+
