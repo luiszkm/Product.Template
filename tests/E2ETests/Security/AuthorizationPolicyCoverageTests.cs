@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Product.Template.Api.Controllers.v1;
 
-namespace UnitTests.Security;
+namespace E2ETests.Security;
 
 public class AuthorizationPolicyCoverageTests
 {
@@ -43,3 +43,4 @@ public class AuthorizationPolicyCoverageTests
         Assert.True(failures.Count == 0, string.Join(Environment.NewLine, failures));
     }
 }
+

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Product.Template.Kernel.Application.Security;
 
-namespace IntegrationTests.Authorization;
+namespace E2ETests.Security;
 
 internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -57,3 +57,4 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         return Task.FromResult(AuthenticateResult.Success(ticket));
     }
 }
+

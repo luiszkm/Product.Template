@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Controllers.v1;
 
-namespace IntegrationTests.Authorization;
+namespace E2ETests.Security;
 
 public class RbacEndpointAuthorizationIntegrationTests
 {
@@ -70,3 +70,4 @@ public class RbacEndpointAuthorizationIntegrationTests
         }
     }
 }
+

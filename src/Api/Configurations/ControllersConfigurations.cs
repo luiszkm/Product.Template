@@ -7,18 +7,22 @@ namespace Product.Template.Api.Configurations;
 
 public static class ControllersConfigurations
 {
-    public static IServiceCollection AddControllersConfigurations(this IServiceCollection services)
+    public static IServiceCollection AddControllersConfigurations(this IServiceCollection services, IHostEnvironment env)
     {
         services.AddControllers(options =>
             options.Filters.Add(typeof(Product.Template.Api.GlobalFilter.Exceptions.ApiGlobalExceptionFilter)));
 
-        services.AddOpenApiDocumentation();
+        services.AddOpenApiDocumentation(env);
 
         return services;
     }
 
-    private static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services)
+    private static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services,
+        IHostEnvironment env)
     {
+        if (!env.IsDevelopment())
+            return services;
+
         services.AddEndpointsApiExplorer();
 
         services.AddOpenApi("v1", options =>
@@ -38,7 +42,7 @@ public static class ControllersConfigurations
 
     public static WebApplication UseDocumentation(this WebApplication app)
     {
-        if (app.Environment.IsDevelopment())
+        if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
         {
             app.MapOpenApi("/openapi/v1.json").AllowAnonymous();
 

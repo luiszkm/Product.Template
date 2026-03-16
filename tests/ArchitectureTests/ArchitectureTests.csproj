@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Api\Api.csproj" />
+    <!-- Removed reference to Api project as per architectural dependency rules -->
     <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Application\Kernel.Application.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />

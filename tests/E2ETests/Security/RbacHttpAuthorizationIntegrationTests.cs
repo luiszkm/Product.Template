@@ -1,9 +1,19 @@
 using System.Net.Http.Json;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Product.Template.Kernel.Domain.MultiTenancy;
+using Product.Template.Kernel.Infrastructure.Persistence;
+using Product.Template.Kernel.Infrastructure.HostDb;
+using Product.Template.Kernel.Infrastructure.MultiTenancy;
 
-namespace IntegrationTests.Authorization;
+namespace E2ETests.Security;
 
 public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplicationFactory>
 {
@@ -175,8 +185,45 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
+        builder.UseSetting("DisableDatabaseInitialization", "true");
+        builder.UseSetting("DisableTenantMiddleware", "true");
+        builder.UseDefaultServiceProvider((_, options) =>
+        {
+            options.ValidateScopes = false;
+            options.ValidateOnBuild = false;
+        });
+        builder.ConfigureAppConfiguration((_, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["DisableDatabaseInitialization"] = "true",
+                ["DisableTenantMiddleware"] = "true",
+                ["ConnectionStrings:HostDb"] = "InMemory",
+                ["ConnectionStrings:AppDb"] = "InMemory"
+            });
+        });
+
         builder.ConfigureServices(services =>
         {
+            // Swap the real SQL Server DbContexts for in-memory providers to avoid external dependencies during E2E auth tests.
+            services.RemoveAll(typeof(AppDbContext));
+            services.RemoveAll(typeof(HostDbContext));
+            services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
+            services.RemoveAll(typeof(DbContextOptions<HostDbContext>));
+
+            services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("E2E_Rbac_App"));
+            services.AddDbContext<HostDbContext>(options => options.UseInMemoryDatabase("E2E_Rbac_Host"));
+
+            // Re-wire minimal multi-tenancy services required by middleware during tests.
+            services.Configure<TenantResolutionOptions>(_ => { });
+            services.RemoveAll(typeof(ITenantResolver));
+            services.RemoveAll(typeof(ITenantStore));
+            services.RemoveAll(typeof(ITenantContext));
+
+            services.AddScoped<ITenantContext, TenantContext>();
+            services.AddSingleton<ITenantResolver, TestTenantResolver>();
+            services.AddSingleton<ITenantStore, TestTenantStore>();
+
             services
                 .AddAuthentication(options =>
                 {
@@ -193,3 +240,39 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
         });
     }
 }
+
+internal sealed class TestTenantResolver : ITenantResolver
+{
+    public string? ResolveTenantKey(HttpContext httpContext)
+    {
+        // Honor test header, otherwise fall back to default tenant.
+        if (httpContext.Request.Headers.TryGetValue("X-Tenant", out var header) && !string.IsNullOrWhiteSpace(header))
+        {
+            return header.ToString();
+        }
+
+        return "public";
+    }
+}
+
+internal sealed class TestTenantStore : ITenantStore
+{
+    private static readonly TenantConfig PublicTenant = new()
+    {
+        TenantId = 1,
+        TenantKey = "public",
+        IsolationMode = TenantIsolationMode.SharedDb,
+        IsActive = true
+    };
+
+    public Task<TenantConfig?> GetByKeyAsync(string tenantKey, CancellationToken cancellationToken = default)
+        => Task.FromResult<TenantConfig?>(PublicTenant);
+
+    public Task<IReadOnlyList<TenantConfig>> ListActiveAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<TenantConfig>>(new List<TenantConfig> { PublicTenant });
+
+    public Task UpsertAsync(TenantConfig tenantConfig, CancellationToken cancellationToken = default)
+        => Task.CompletedTask;
+}
+
+

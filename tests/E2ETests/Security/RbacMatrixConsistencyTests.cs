@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Product.Template.Api.Controllers.v1;
 
-namespace UnitTests.Security;
+namespace E2ETests.Security;
 
 public class RbacMatrixConsistencyTests
 {
@@ -121,3 +121,4 @@ public class RbacMatrixConsistencyTests
 
     private sealed record RbacMatrixEntry(string HttpMethod, string Route, string Policy);
 }
+

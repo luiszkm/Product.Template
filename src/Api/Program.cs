@@ -23,7 +23,7 @@ builder.Services.AddAppConnections(builder.Configuration);
 builder.Services.AddApiVersioningConfiguration();
 
 // Controllers and API Documentation
-builder.Services.AddControllersConfigurations();
+builder.Services.AddControllersConfigurations(builder.Environment);
 
 // Response Compression (Brotli + Gzip)
 builder.Services.AddCompressionConfiguration();
@@ -51,8 +51,11 @@ builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
 var app = builder.Build();
 
-// Initialize Database with Seeders
-await app.Services.InitializeDatabaseAsync();
+// Initialize Database with Seeders (skipped when DisableDatabaseInitialization is true)
+if (!app.Configuration.GetValue<bool>("DisableDatabaseInitialization"))
+{
+    await app.Services.InitializeDatabaseAsync();
+}
 
 // Response Compression
 app.UseResponseCompression();
@@ -70,7 +73,10 @@ app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<RequestDeduplicationMiddleware>();
 
 // Tenant resolution (header/subdomain)
-app.UseMiddleware<TenantResolutionMiddleware>();
+if (!app.Configuration.GetValue<bool>("DisableTenantMiddleware"))
+{
+    app.UseMiddleware<TenantResolutionMiddleware>();
+}
 
 // IP Whitelist/Blacklist Validation
 app.UseMiddleware<IpWhitelistMiddleware>();

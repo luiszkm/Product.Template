@@ -7,8 +7,9 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS0200</NoWarn>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
   </PropertyGroup>
 
@@ -42,11 +43,14 @@
     <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
-    <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EditorConfigFiles Remove=".globalconfig" />
   </ItemGroup>
 
 </Project>
