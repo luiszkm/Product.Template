@@ -40,6 +40,10 @@ public static class DatabaseConfiguration
             {
                 options.UseNpgsql(hostConnection);
             }
+            else if (LooksLikeSqlServer(hostConnection))
+            {
+                options.UseSqlServer(hostConnection);
+            }
             else
             {
                 options.UseSqlite(hostConnection);
@@ -60,6 +64,16 @@ public static class DatabaseConfiguration
                     if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
                     {
                         npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
+                    }
+                });
+            }
+            else if (LooksLikeSqlServer(appConnection))
+            {
+                options.UseSqlServer(appConnection, sqlServer =>
+                {
+                    if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
+                    {
+                        sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
                     }
                 });
             }
@@ -117,4 +131,9 @@ public static class DatabaseConfiguration
     private static bool LooksLikePostgres(string connectionString)
         => connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase)
            || connectionString.Contains("Username=", StringComparison.OrdinalIgnoreCase);
+
+    private static bool LooksLikeSqlServer(string connectionString)
+        => connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
+           || connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
+           || connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase);
 }

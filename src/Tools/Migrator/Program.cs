@@ -23,8 +23,12 @@ builder.Services.AddScoped<ITenantConnectionStringResolver, TenantConnectionStri
 
 builder.Services.AddDbContext<HostDbContext>(options =>
 {
-    if (hostConn.Contains("Host=", StringComparison.OrdinalIgnoreCase)) options.UseNpgsql(hostConn);
-    else options.UseSqlite(hostConn);
+    if (hostConn.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+        options.UseNpgsql(hostConn);
+    else if (hostConn.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+        options.UseSqlServer(hostConn);
+    else
+        options.UseSqlite(hostConn);
 });
 
 var app = builder.Build();
@@ -65,6 +69,16 @@ foreach (var tenant in tenants)
             if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
             {
                 npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
+            }
+        });
+    }
+    else if (conn.Contains("Server=", StringComparison.OrdinalIgnoreCase))
+    {
+        optionsBuilder.UseSqlServer(conn, sqlServer =>
+        {
+            if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
+            {
+                sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
             }
         });
     }
