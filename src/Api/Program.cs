@@ -93,12 +93,8 @@ app.UseRouting();
 
 // Security (CORS, Authentication, Authorization)
 app.UseSecurityConfiguration();
-
-if (app.Configuration.GetValue<bool>("Jwt:Enabled"))
-{
-    app.UseAuthentication();
-    app.UseAuthorization();
-}
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseRateLimiting();
 
 // Health Checks Endpoints

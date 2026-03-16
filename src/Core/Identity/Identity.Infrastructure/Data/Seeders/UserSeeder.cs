@@ -15,17 +15,19 @@ internal static class UserSeeder
         if (await context.Users.AnyAsync())
             return;
 
+        var tenantId = context.TenantIdForQueryFilter;
+
         var adminPasswordHash = hashServices.GeneratePasswordHash("Admin@123");
         var userPasswordHash  = hashServices.GeneratePasswordHash("User@123");
 
         var adminRole = await context.Roles.FindAsync(RoleSeeder.AdminRoleId);
         var userRole  = await context.Roles.FindAsync(RoleSeeder.UserRoleId);
 
-        var admin = User.Create("admin@producttemplate.com", adminPasswordHash, "System", "Administrator");
+        var admin = User.Create(tenantId, "admin@producttemplate.com", adminPasswordHash, "System", "Administrator");
         typeof(User).BaseType!.GetProperty("Id")!.SetValue(admin, AdminUserId);
         admin.ConfirmEmail();
 
-        var testUser = User.Create("user@producttemplate.com", userPasswordHash, "Test", "User");
+        var testUser = User.Create(tenantId, "user@producttemplate.com", userPasswordHash, "Test", "User");
         typeof(User).BaseType!.GetProperty("Id")!.SetValue(testUser, TestUserId);
         testUser.ConfirmEmail();
 

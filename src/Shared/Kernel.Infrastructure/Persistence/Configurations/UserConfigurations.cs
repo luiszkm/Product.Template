@@ -19,18 +19,17 @@ internal class UserConfigurations : IEntityTypeConfiguration<User>
         builder.Property(u => u.TenantId)
             .IsRequired();
 
+        builder.Property(u => u.Email)
+            .HasConversion(email => email.Value, value => Email.Create(value))
+            .HasColumnName("Email")
+            .HasMaxLength(256)
+            .IsRequired();
+
+        builder.HasIndex(u => new { u.TenantId, u.Email })
+            .IsUnique();
+
         builder.HasIndex(u => new { u.TenantId, u.Id });
 
-        builder.OwnsOne(u => u.Email, email =>
-        {
-            email.Property(e => e.Value)
-                .HasColumnName("Email")
-                .HasMaxLength(256)
-                .IsRequired();
-
-            email.HasIndex(e => e.Value)
-                .IsUnique();
-        });
 
         builder.Property(u => u.PasswordHash)
             .HasMaxLength(500)

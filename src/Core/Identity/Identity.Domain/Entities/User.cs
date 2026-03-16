@@ -1,13 +1,19 @@
 using Product.Template.Core.Identity.Domain.Events;
 using Product.Template.Core.Identity.Domain.ValueObjects;
-using Product.Template.Kernel.Domain.SeedWorks;
+using Product.Template.Kernel.Domain.Exceptions;
 using Product.Template.Kernel.Domain.MultiTenancy;
+using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
 public class User : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; set; }
+    public long TenantId { get; private set; }
+    long IMultiTenantEntity.TenantId
+    {
+        get => TenantId;
+        set => TenantId = value;
+    }
     public Email Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }
@@ -21,9 +27,10 @@ public class User : AggregateRoot, IMultiTenantEntity
 
     private User() { }
 
-    private User(Guid id, Email email, string passwordHash, string firstName, string lastName)
+    private User(Guid id, long tenantId, Email email, string passwordHash, string firstName, string lastName)
     {
         Id = id;
+        TenantId = tenantId;
         Email = email;
         PasswordHash = passwordHash;
         FirstName = firstName;
@@ -34,14 +41,19 @@ public class User : AggregateRoot, IMultiTenantEntity
     }
 
     public static User Create(
+        long tenantId,
         string email,
         string passwordHash,
         string firstName,
         string lastName)
     {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+
         var emailVo = Email.Create(email);
         var user = new User(
             Guid.NewGuid(),
+            tenantId,
             emailVo,
             passwordHash,
             firstName,
@@ -94,7 +106,7 @@ public class User : AggregateRoot, IMultiTenantEntity
         if (_userRoles.Any(ur => ur.RoleId == role.Id))
             return;
 
-        _userRoles.Add(UserRole.Create(Id, role.Id));
+        _userRoles.Add(UserRole.Create(Id, role.Id, TenantId));
     }
 
     public void RemoveRole(Guid roleId)

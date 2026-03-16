@@ -2,12 +2,14 @@ using System.Net.Http.Json;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Xunit.Sdk;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.Persistence;
 using Product.Template.Kernel.Infrastructure.HostDb;
@@ -18,9 +20,11 @@ namespace E2ETests.Security;
 public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplicationFactory>
 {
     private readonly HttpClient _client;
+    private readonly RbacWebApplicationFactory _factory;
 
     public RbacHttpAuthorizationIntegrationTests(RbacWebApplicationFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
         _client.DefaultRequestHeaders.Add("X-Tenant", "public");
     }
@@ -50,6 +54,8 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
     [Fact]
     public async Task ListUsers_ShouldReturn200_WhenUserHasUsersReadPermission()
     {
+        await AssertDefaultSchemeIsTestAsync();
+
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
@@ -57,7 +63,22 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
 
         var response = await _client.SendAsync(request);
 
+        if (response.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            throw new XunitException($"Status: {response.StatusCode} Body: {body}");
+        }
+
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private async Task AssertDefaultSchemeIsTestAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var schemeProvider = scope.ServiceProvider.GetRequiredService<IAuthenticationSchemeProvider>();
+
+        var defaultScheme = await schemeProvider.GetDefaultAuthenticateSchemeAsync();
+        Assert.Equal(TestAuthHandler.Scheme, defaultScheme?.Name);
     }
 
 
@@ -198,6 +219,7 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
             {
                 ["DisableDatabaseInitialization"] = "true",
                 ["DisableTenantMiddleware"] = "true",
+                ["Jwt:Enabled"] = "false",
                 ["ConnectionStrings:HostDb"] = "InMemory",
                 ["ConnectionStrings:AppDb"] = "InMemory"
             });
@@ -227,6 +249,7 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
             services
                 .AddAuthentication(options =>
                 {
+                    options.DefaultScheme = TestAuthHandler.Scheme;
                     options.DefaultAuthenticateScheme = TestAuthHandler.Scheme;
                     options.DefaultChallengeScheme = TestAuthHandler.Scheme;
                 })
@@ -234,9 +257,49 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 
             services.PostConfigure<AuthenticationOptions>(options =>
             {
+                options.DefaultScheme = TestAuthHandler.Scheme;
                 options.DefaultAuthenticateScheme = TestAuthHandler.Scheme;
                 options.DefaultChallengeScheme = TestAuthHandler.Scheme;
             });
+
+            services.PostConfigure<AuthorizationOptions>(options =>
+            {
+                var defaultPolicy = new AuthorizationPolicyBuilder(TestAuthHandler.Scheme)
+                    .RequireAuthenticatedUser()
+                    .Build();
+
+                options.DefaultPolicy = defaultPolicy;
+                options.FallbackPolicy = defaultPolicy;
+            });
+
+            // Ensure in-memory databases are created and seeded for tests
+            var sp = services.BuildServiceProvider();
+            using var scope = sp.CreateScope();
+            var hostDb = scope.ServiceProvider.GetRequiredService<HostDbContext>();
+            hostDb.Database.EnsureCreated();
+            if (!hostDb.Tenants.Any())
+            {
+                hostDb.Tenants.Add(new TenantConfig
+                {
+                    TenantId = 1,
+                    TenantKey = "public",
+                    IsolationMode = TenantIsolationMode.SharedDb,
+                    IsActive = true
+                });
+                hostDb.SaveChanges();
+            }
+
+            var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+            tenantContext.SetTenant(new TenantConfig
+            {
+                TenantId = 1,
+                TenantKey = "public",
+                IsolationMode = TenantIsolationMode.SharedDb,
+                IsActive = true
+            });
+
+            var appDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            appDb.Database.EnsureCreated();
         });
     }
 }
@@ -274,5 +337,4 @@ internal sealed class TestTenantStore : ITenantStore
     public Task UpsertAsync(TenantConfig tenantConfig, CancellationToken cancellationToken = default)
         => Task.CompletedTask;
 }
-
 

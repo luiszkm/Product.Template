@@ -1,11 +1,17 @@
-using Product.Template.Kernel.Domain.SeedWorks;
+using Product.Template.Kernel.Domain.Exceptions;
 using Product.Template.Kernel.Domain.MultiTenancy;
+using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Identity.Domain.Entities;
 
 public class RefreshToken : Entity, IMultiTenantEntity
 {
-    public long TenantId { get; set; }
+    public long TenantId { get; private set; }
+    long IMultiTenantEntity.TenantId
+    {
+        get => TenantId;
+        set => TenantId = value;
+    }
     public Guid UserId { get; private set; }
     public string Token { get; private set; } = string.Empty;
     public DateTime ExpiresAt { get; private set; }
@@ -21,14 +27,19 @@ public class RefreshToken : Entity, IMultiTenantEntity
     private RefreshToken() { }
 
     public static RefreshToken Create(
+        long tenantId,
         Guid userId,
         string token,
         int expirationDays,
         string createdByIp)
     {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+
         return new RefreshToken
         {
             Id = Guid.NewGuid(),
+            TenantId = tenantId,
             UserId = userId,
             Token = token,
             ExpiresAt = DateTime.UtcNow.AddDays(expirationDays),

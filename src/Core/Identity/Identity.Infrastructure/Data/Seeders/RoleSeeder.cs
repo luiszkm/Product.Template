@@ -15,20 +15,22 @@ internal static class RoleSeeder
         if (await context.Roles.AnyAsync())
             return;
 
+        var tenantId = context.TenantIdForQueryFilter;
+
         var roles = new[]
         {
-            CreateRole(AdminRoleId,   "Admin",   "Administrator with full system access"),
-            CreateRole(UserRoleId,    "User",    "Standard user with basic access"),
-            CreateRole(ManagerRoleId, "Manager", "Manager with elevated access")
+            CreateRole(AdminRoleId,   tenantId, "Admin",   "Administrator with full system access"),
+            CreateRole(UserRoleId,    tenantId, "User",    "Standard user with basic access"),
+            CreateRole(ManagerRoleId, tenantId, "Manager", "Manager with elevated access")
         };
 
         await context.Roles.AddRangeAsync(roles);
         await context.SaveChangesAsync();
     }
 
-    private static Role CreateRole(Guid id, string name, string description)
+    private static Role CreateRole(Guid id, long tenantId, string name, string description)
     {
-        var role = Role.Create(name, description);
+        var role = Role.Create(tenantId, name, description);
         // Set deterministic Id via EF shadow state — EF respects ValueGeneratedNever
         typeof(Role).BaseType!.GetProperty("Id")!.SetValue(role, id);
         return role;

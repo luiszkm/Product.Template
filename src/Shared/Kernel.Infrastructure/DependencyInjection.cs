@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Security;
+using Product.Template.Kernel.Domain.MultiTenancy;
+using Product.Template.Kernel.Infrastructure.MultiTenancy;
 
 namespace Kernel.Infrastructure;
 
@@ -22,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IHashServices, HashServices>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICurrentUserService, CurrentUserService>();
+
+        services.AddScoped<ITenantContext, TenantContext>();
 
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<AuditLogInterceptor>();

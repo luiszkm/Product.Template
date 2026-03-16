@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Kernel.Infrastructure.MultiTenancy;
@@ -9,7 +10,6 @@ public class TenantResolutionMiddleware(
     RequestDelegate next,
     ITenantResolver tenantResolver,
     ITenantStore tenantStore,
-    ITenantContext tenantContext,
     IOptions<TenantResolutionOptions> options,
     ILogger<TenantResolutionMiddleware> logger)
 {
@@ -17,6 +17,8 @@ public class TenantResolutionMiddleware(
 
     public async Task InvokeAsync(HttpContext context)
     {
+        var tenantContext = context.RequestServices.GetRequiredService<ITenantContext>();
+
         var tenantKey = tenantResolver.ResolveTenantKey(context);
 
         if (string.IsNullOrWhiteSpace(tenantKey) && _options.AllowPublicFallback)

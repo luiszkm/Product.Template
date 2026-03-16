@@ -12,13 +12,15 @@ internal static class PermissionSeeder
 
     public static async Task SeedAsync(AppDbContext context)
     {
+        var tenantId = context.TenantIdForQueryFilter;
+
         if (!await context.Permissions.AnyAsync())
         {
             var permissions = new[]
             {
-                CreatePermission(UsersReadPermissionId, "users.read", "Read users data"),
-                CreatePermission(UsersManagePermissionId, "users.manage", "Manage users data"),
-                CreatePermission(RolesManagePermissionId, "roles.manage", "Manage user roles")
+                CreatePermission(UsersReadPermissionId, tenantId, "users.read", "Read users data"),
+                CreatePermission(UsersManagePermissionId, tenantId, "users.manage", "Manage users data"),
+                CreatePermission(RolesManagePermissionId, tenantId, "roles.manage", "Manage user roles")
             };
 
             await context.Permissions.AddRangeAsync(permissions);
@@ -43,9 +45,9 @@ internal static class PermissionSeeder
         await context.SaveChangesAsync();
     }
 
-    private static Permission CreatePermission(Guid id, string name, string description)
+    private static Permission CreatePermission(Guid id, long tenantId, string name, string description)
     {
-        var permission = Permission.Create(name, description);
+        var permission = Permission.Create(tenantId, name, description);
         var idProperty = typeof(Permission).BaseType!.GetProperty("Id");
         idProperty!.SetValue(permission, id);
         return permission;
@@ -57,6 +59,7 @@ internal static class PermissionSeeder
         if (exists)
             return;
 
-        context.RolePermissions.Add(RolePermission.Create(roleId, permissionId));
+        var tenantId = context.TenantIdForQueryFilter;
+        context.RolePermissions.Add(RolePermission.Create(roleId, permissionId, tenantId));
     }
 }

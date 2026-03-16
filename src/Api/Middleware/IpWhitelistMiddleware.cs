@@ -31,6 +31,13 @@ public class IpWhitelistMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Short-circuit when IP security is disabled
+        if (!_enableWhitelist && !_enableBlacklist)
+        {
+            await _next(context);
+            return;
+        }
+
         var remoteIp = GetRemoteIpAddress(context);
 
         if (remoteIp == null)

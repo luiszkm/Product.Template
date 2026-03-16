@@ -110,19 +110,13 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpGet("{id:guid}", Name = nameof(GetById))]
-    [Authorize(Policy = SecurityConfiguration.UserOnlyPolicy)] // 🔒 Endpoint protegido com RBAC
+    [Authorize(Policy = SecurityConfiguration.UserReadOrSelfPolicy)] // 🔒 Endpoint protegido com RBAC
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserOutput>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        if (!CanAccessUser(id))
-        {
-            _logger.LogWarning("Acesso negado ao usuário {CurrentUserId} para leitura do usuário {TargetUserId}", _currentUserService.UserId, id);
-            return Forbid();
-        }
-
         _logger.LogInformation("Buscando usuário com ID: {UserId}", id);
 
         var query = new GetUserByIdQuery(id);
@@ -464,7 +458,7 @@ public class IdentityController : ControllerBase
     /// <response code="401">🔒 Token JWT inválido ou ausente</response>
     /// <response code="404">❌ Usuário não encontrado</response>
     [HttpPut("{id:guid}")]
-    [Authorize(Policy = SecurityConfiguration.UserOnlyPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UserManageOrSelfPolicy)]
     [ProducesResponseType(typeof(UserOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -481,11 +475,6 @@ public class IdentityController : ControllerBase
             return BadRequest("O ID da URL deve corresponder ao ID do usuário no corpo da requisição");
         }
 
-        if (!CanAccessUser(id))
-        {
-            _logger.LogWarning("Acesso negado ao usuário {CurrentUserId} para atualização do usuário {TargetUserId}", _currentUserService.UserId, id);
-            return Forbid();
-        }
 
         _logger.LogInformation("Atualizando usuário com ID: {UserId}", id);
 
@@ -664,19 +653,5 @@ public class IdentityController : ControllerBase
     }
     public sealed record ManageUserRoleRequest(string RoleName);
 
-    private bool CanAccessUser(Guid targetUserId)
-    {
-        if (IsAdmin())
-            return true;
-
-        return _currentUserService.UserId == targetUserId;
-    }
-
-    private bool IsAdmin()
-    {
-        return _currentUserService.Claims.Any(c =>
-            c.Type == System.Security.Claims.ClaimTypes.Role &&
-            string.Equals(c.Value, "Admin", StringComparison.OrdinalIgnoreCase));
-    }
 
 }

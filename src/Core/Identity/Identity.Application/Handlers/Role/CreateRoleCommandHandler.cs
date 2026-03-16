@@ -6,6 +6,7 @@ using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Role;
 
@@ -13,15 +14,18 @@ public class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleO
 {
     private readonly IRoleRepository _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<CreateRoleCommandHandler> _logger;
 
     public CreateRoleCommandHandler(
         IRoleRepository roleRepository,
         IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<CreateRoleCommandHandler> logger)
     {
         _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -34,7 +38,14 @@ public class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleO
             throw new BusinessRuleException($"Role '{request.Name}' already exists.");
         }
 
-        var role = Domain.Entities.Role.Create(request.Name, request.Description);
+        var tenantId = _tenantContext.TenantId ?? 0;
+        if (tenantId <= 0)
+        {
+            _logger.LogWarning("Tentativa de criação de role sem tenant resolvido");
+            throw new BusinessRuleException("Tenant must be resolved before creating roles.");
+        }
+
+        var role = Domain.Entities.Role.Create(tenantId, request.Name, request.Description);
 
         await _roleRepository.AddAsync(role, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);

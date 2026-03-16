@@ -42,7 +42,8 @@ public class SharedDbFilterTests
         await using var context = new AppDbContext(options, tenantContext);
         if (!await context.Users.AnyAsync(x => x.TenantId == tenantId))
         {
-            context.Users.Add(User.Create(email, "hash", "n", "l"));
+            var user = User.Create(tenantId, email, "hash", "n", "l");
+            context.Users.Add(user);
             await context.SaveChangesAsync();
         }
     }

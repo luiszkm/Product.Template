@@ -9,6 +9,7 @@ using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Product.Template.Kernel.Application.Security;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Auth;
 
@@ -19,6 +20,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
@@ -27,6 +29,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _refreshTokenRepository = refreshTokenRepository;
@@ -34,17 +37,31 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     public async Task<AuthTokenOutput> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
+        var tenantId = _tenantContext.TenantId ?? 0;
+        if (tenantId <= 0)
+        {
+            _logger.LogWarning("Tentativa de refresh sem tenant resolvido");
+            throw new BusinessRuleException("Tenant must be resolved before refreshing tokens.");
+        }
+
         var existing = await _refreshTokenRepository.GetActiveByTokenAsync(request.RefreshToken, cancellationToken);
 
         if (existing is null || !existing.IsActive)
         {
             _logger.LogWarning("Refresh token inválido ou expirado tentou ser usado");
             throw new UnauthorizedAccessException("Refresh token inválido ou expirado.");
+        }
+
+        if (existing.TenantId != tenantId)
+        {
+            _logger.LogWarning("Tenant mismatch para refresh token do usuário {UserId}", existing.UserId);
+            throw new UnauthorizedAccessException("Refresh token pertence a outro tenant.");
         }
 
         var user = await _userRepository.GetByIdAsync(existing.UserId, cancellationToken);
@@ -61,6 +78,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         existing.Revoke(clientIp, replacedByToken: newRawToken);
 
         var newRefreshToken = RefreshToken.Create(
+            tenantId,
             user.Id,
             newRawToken,
             _jwtTokenService.GetRefreshTokenExpirationDays(),

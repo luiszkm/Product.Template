@@ -6,8 +6,10 @@ using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
+using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Product.Template.Kernel.Application.Security;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Auth;
 
@@ -19,6 +21,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<LoginCommandHandler> _logger;
 
     public LoginCommandHandler(
@@ -28,6 +31,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
+        ITenantContext tenantContext,
         ILogger<LoginCommandHandler> logger)
     {
         _userRepository = userRepository;
@@ -36,11 +40,19 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
     public async Task<AuthTokenOutput> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
+        var tenantId = _tenantContext.TenantId ?? 0;
+        if (tenantId <= 0)
+        {
+            _logger.LogWarning("Tentativa de login sem tenant resolvido");
+            throw new BusinessRuleException("Tenant must be resolved before login.");
+        }
+
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (user is null)
         {
@@ -82,6 +94,7 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
         var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();
         var refreshToken = RefreshToken.Create(
+            tenantId,
             user.Id,
             rawRefreshToken,
             _jwtTokenService.GetRefreshTokenExpirationDays(),

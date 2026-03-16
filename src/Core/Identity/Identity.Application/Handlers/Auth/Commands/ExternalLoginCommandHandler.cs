@@ -4,6 +4,8 @@ using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Exceptions;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Auth;
 
@@ -14,21 +16,27 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
 {
     private readonly IAuthenticationProviderFactory _providerFactory;
     private readonly IUserRepository _userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ITenantContext _tenantContext;
     private readonly ILogger<ExternalLoginCommandHandler> _logger;
 
     public ExternalLoginCommandHandler(
         IAuthenticationProviderFactory providerFactory,
         IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository,
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
+        ITenantContext tenantContext,
         ILogger<ExternalLoginCommandHandler> logger)
     {
         _providerFactory = providerFactory;
         _userRepository = userRepository;
+        _refreshTokenRepository = refreshTokenRepository;
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
+        _tenantContext = tenantContext;
         _logger = logger;
     }
 
@@ -36,12 +44,24 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         ExternalLoginCommand request,
         CancellationToken cancellationToken)
     {
+        var tenantId = _tenantContext.TenantId ?? 0;
+        if (tenantId <= 0)
+        {
+            _logger.LogWarning("Tentativa de external login sem tenant resolvido");
+            throw new BusinessRuleException("Tenant must be resolved before external login.");
+        }
+
         _logger.LogInformation(
             "Iniciando autenticação externa com provider: {Provider}",
             request.Provider);
 
         // 1. Obter o provider específico
         var provider = _providerFactory.GetProvider(request.Provider);
+        if (provider is null)
+        {
+            _logger.LogWarning("Provider externo desconhecido: {Provider}", request.Provider);
+            throw new UnauthorizedAccessException("Authentication provider is not supported.");
+        }
 
         // 2. Preparar credenciais para o provider
         var credentials = new Dictionary<string, string>
@@ -65,7 +85,11 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         }
 
         // 4. Obter ou criar usuário no sistema
-        var email = authResult.UserInfo["email"];
+        if (!authResult.UserInfo.TryGetValue("email", out var email) || string.IsNullOrWhiteSpace(email))
+        {
+            _logger.LogWarning("Provider externo {Provider} não retornou email", request.Provider);
+            throw new UnauthorizedAccessException("External provider did not supply a valid email.");
+        }
         var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
 
         if (user == null)
@@ -75,6 +99,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             var lastName = authResult.UserInfo.GetValueOrDefault("lastName", "");
 
             user = Domain.Entities.User.Create(
+                tenantId,
                 email: email,
                 passwordHash: Guid.NewGuid().ToString(), // Password aleatório para contas externas
                 firstName: string.IsNullOrEmpty(firstName) ? email.Split('@')[0] : firstName,
@@ -98,10 +123,16 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         await _unitOfWork.Commit(cancellationToken);
 
         // 6. Gerar token JWT interno
+        var roles = user.UserRoles
+            .Where(ur => ur.Role is not null)
+            .Select(ur => ur.Role!.Name)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
         var token = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
-            roles: user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            roles: roles
         );
 
         var userAuthOutput = new UserAuthOutput(
@@ -109,7 +140,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             Email: user.Email,
             FirstName: user.FirstName,
             LastLoginAt: user.LastLoginAt,
-            Roles: user.UserRoles.Select(ur => ur.Role.Name).ToList()
+            Roles: roles
         );
 
         _logger.LogInformation(
@@ -122,13 +153,14 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         var clientIp = "external-provider"; // Placeholder - idealmente usar IHttpContextAccessor
 
         var refreshToken = Domain.Entities.RefreshToken.Create(
+            tenantId,
             user.Id,
             rawRefreshToken,
             _jwtTokenService.GetRefreshTokenExpirationDays(),
             clientIp);
 
-        // Nota: Aqui deveria ter IRefreshTokenRepository injetado e salvar
-        // Por ora, retornamos sem refresh token para evitar erro de compilação
+        await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+        await _unitOfWork.Commit(cancellationToken);
 
         return new AuthTokenOutput(
             AccessToken: token,

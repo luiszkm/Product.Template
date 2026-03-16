@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Product.Template.Kernel.Application.Security;
 
@@ -13,6 +14,8 @@ public static class SecurityConfiguration
     public const string UserOnlyPolicy = "UserOnly";
     public const string UsersReadPolicy = "UsersRead";
     public const string UsersManagePolicy = "UsersManage";
+    public const string UserReadOrSelfPolicy = "UserReadOrSelf";
+    public const string UserManageOrSelfPolicy = "UserManageOrSelf";
 
     public const string PermissionClaimType = AuthorizationClaimTypes.Permission;
 
@@ -24,6 +27,29 @@ public static class SecurityConfiguration
         IHostEnvironment env)
     {
         services.AddCorsFromConfiguration(configuration);
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
+            options.AddPolicy(AdminOnlyPolicy, policy => policy.RequireRole("Admin"));
+            options.AddPolicy(UserOnlyPolicy, policy => policy.RequireRole("User", "Admin", "Manager"));
+            options.AddPolicy(UsersReadPolicy, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.IsInRole("Admin") ||
+                    context.User.HasClaim(PermissionClaimType, "users.read")));
+            options.AddPolicy(UsersManagePolicy, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.IsInRole("Admin") ||
+                    context.User.HasClaim(PermissionClaimType, "users.manage")));
+
+            options.AddPolicy(UserReadOrSelfPolicy, policy =>
+                policy.AddRequirements(new Authorization.UserOwnershipRequirement("users.read")));
+
+            options.AddPolicy(UserManageOrSelfPolicy, policy =>
+                policy.AddRequirements(new Authorization.UserOwnershipRequirement("users.manage")));
+        });
+
+        services.AddSingleton<IAuthorizationHandler, Authorization.UserOwnershipHandler>();
 
         if (!configuration.GetValue<bool>("Jwt:Enabled"))
             return services;
@@ -55,6 +81,7 @@ public static class SecurityConfiguration
                     ValidAudience = jwt.Audience,
 
                     ValidateLifetime = true,
+
                     ClockSkew = TimeSpan.Zero,
                     RoleClaimType = ClaimTypes.Role
                 };
@@ -77,20 +104,6 @@ public static class SecurityConfiguration
                 };
             });
 
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
-            options.AddPolicy(AdminOnlyPolicy, policy => policy.RequireRole("Admin"));
-            options.AddPolicy(UserOnlyPolicy, policy => policy.RequireRole("User", "Admin", "Manager"));
-            options.AddPolicy(UsersReadPolicy, policy =>
-                policy.RequireAssertion(context =>
-                    context.User.IsInRole("Admin") ||
-                    context.User.HasClaim(PermissionClaimType, "users.read")));
-            options.AddPolicy(UsersManagePolicy, policy =>
-                policy.RequireAssertion(context =>
-                    context.User.IsInRole("Admin") ||
-                    context.User.HasClaim(PermissionClaimType, "users.manage")));
-        });
 
         return services;
     }
@@ -99,11 +112,6 @@ public static class SecurityConfiguration
     {
         app.UseCors(DefaultCorsPolicyName);
 
-        if (app.Configuration.GetValue<bool>("Jwt:Enabled"))
-        {
-            app.UseAuthentication();
-            app.UseAuthorization();
-        }
 
         return app;
     }

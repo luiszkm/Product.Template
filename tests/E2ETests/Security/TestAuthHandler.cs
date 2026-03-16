@@ -22,9 +22,9 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.TryGetValue("Authorization", out var authHeader) ||
-            !authHeader.ToString().StartsWith("Test ", StringComparison.OrdinalIgnoreCase))
+            !IsSupportedHeader(authHeader))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Missing test auth header."));
+            return Task.FromResult(AuthenticateResult.NoResult());
         }
 
         var userId = Request.Headers.TryGetValue("X-Test-UserId", out var userIdHeader)
@@ -54,7 +54,14 @@ internal sealed class TestAuthHandler : AuthenticationHandler<AuthenticationSche
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, Scheme);
 
+        Logger.LogInformation("TestAuthHandler succeeded for user {UserId}", userId);
+
         return Task.FromResult(AuthenticateResult.Success(ticket));
+    }
+
+    private static bool IsSupportedHeader(string authHeader)
+    {
+        return authHeader.StartsWith("Test ", StringComparison.OrdinalIgnoreCase);
     }
 }
 

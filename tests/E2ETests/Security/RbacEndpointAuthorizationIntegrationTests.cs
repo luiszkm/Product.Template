@@ -32,21 +32,27 @@ public class RbacEndpointAuthorizationIntegrationTests
     public void IdentityProtectedUserEndpoints_ShouldUseUserOnlyPolicy()
     {
         var controller = typeof(IdentityController);
-        var methods = controller.GetMethods(BindingFlags.Instance | BindingFlags.Public)
-            .Where(m => m.Name is "GetById" or "UpdateUser")
-            .ToList();
+        var getById = controller.GetMethod("GetById", BindingFlags.Instance | BindingFlags.Public);
+        var updateUser = controller.GetMethod("UpdateUser", BindingFlags.Instance | BindingFlags.Public);
 
-        Assert.NotEmpty(methods);
+        Assert.NotNull(getById);
+        Assert.NotNull(updateUser);
 
-        foreach (var method in methods)
-        {
-            var authorize = method.GetCustomAttributes(typeof(AuthorizeAttribute), true)
-                .Cast<AuthorizeAttribute>()
-                .FirstOrDefault();
+        var getByIdAuthorize = getById!
+            .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
 
-            Assert.NotNull(authorize);
-            Assert.Equal(SecurityConfiguration.UserOnlyPolicy, authorize!.Policy);
-        }
+        var updateAuthorize = updateUser!
+            .GetCustomAttributes(typeof(AuthorizeAttribute), true)
+            .Cast<AuthorizeAttribute>()
+            .FirstOrDefault();
+
+        Assert.NotNull(getByIdAuthorize);
+        Assert.Equal(SecurityConfiguration.UserReadOrSelfPolicy, getByIdAuthorize!.Policy);
+
+        Assert.NotNull(updateAuthorize);
+        Assert.Equal(SecurityConfiguration.UserManageOrSelfPolicy, updateAuthorize!.Policy);
     }
 
     [Fact]
