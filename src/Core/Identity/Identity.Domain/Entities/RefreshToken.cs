@@ -7,11 +7,6 @@ namespace Product.Template.Core.Identity.Domain.Entities;
 public class RefreshToken : Entity, IMultiTenantEntity
 {
     public long TenantId { get; private set; }
-    long IMultiTenantEntity.TenantId
-    {
-        get => TenantId;
-        set => TenantId = value;
-    }
     public Guid UserId { get; private set; }
     public string Token { get; private set; } = string.Empty;
     public DateTime ExpiresAt { get; private set; }
@@ -36,10 +31,9 @@ public class RefreshToken : Entity, IMultiTenantEntity
         if (tenantId <= 0)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
 
-        return new RefreshToken
+        var refreshToken = new RefreshToken
         {
             Id = Guid.NewGuid(),
-            TenantId = tenantId,
             UserId = userId,
             Token = token,
             ExpiresAt = DateTime.UtcNow.AddDays(expirationDays),
@@ -47,6 +41,10 @@ public class RefreshToken : Entity, IMultiTenantEntity
             CreatedByIp = createdByIp,
             CreatedAt = DateTime.UtcNow
         };
+
+        refreshToken.SetTenant(tenantId);
+
+        return refreshToken;
     }
 
     public void Revoke(string revokedByIp, string? replacedByToken = null)
@@ -56,5 +54,16 @@ public class RefreshToken : Entity, IMultiTenantEntity
         RevokedByIp = revokedByIp;
         ReplacedByToken = replacedByToken;
     }
+
+    private void SetTenant(long tenantId)
+    {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+        if (TenantId != 0 && TenantId != tenantId)
+            throw new DomainException("TenantId cannot be changed once set.");
+        TenantId = tenantId;
+    }
+
+    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
 }
 

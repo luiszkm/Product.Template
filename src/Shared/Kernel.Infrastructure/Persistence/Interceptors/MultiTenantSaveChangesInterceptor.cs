@@ -33,7 +33,7 @@ public class MultiTenantSaveChangesInterceptor(ITenantContext tenantContext) : S
         {
             if (entry.State == EntityState.Added)
             {
-                entry.Entity.TenantId = tenant.TenantId;
+                entry.Entity.AssignTenant(tenant.TenantId);
             }
         }
     }

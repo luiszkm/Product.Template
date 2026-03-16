@@ -7,11 +7,6 @@ namespace Product.Template.Core.Identity.Domain.Entities;
 public class RolePermission : Entity, IMultiTenantEntity
 {
     public long TenantId { get; private set; }
-    long IMultiTenantEntity.TenantId
-    {
-        get => TenantId;
-        set => TenantId = value;
-    }
     public Guid RoleId { get; private set; }
     public Guid PermissionId { get; private set; }
     public DateTime AssignedAt { get; private set; }
@@ -26,7 +21,7 @@ public class RolePermission : Entity, IMultiTenantEntity
         Id = id;
         RoleId = roleId;
         PermissionId = permissionId;
-        TenantId = tenantId;
+        SetTenant(tenantId);
         AssignedAt = DateTime.UtcNow;
     }
 
@@ -35,10 +30,23 @@ public class RolePermission : Entity, IMultiTenantEntity
         if (tenantId <= 0)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
 
-        return new RolePermission(
+        var rolePermission = new RolePermission(
             Guid.NewGuid(),
             roleId,
             permissionId,
             tenantId);
+
+        return rolePermission;
     }
+
+    private void SetTenant(long tenantId)
+    {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+        if (TenantId != 0 && TenantId != tenantId)
+            throw new DomainException("TenantId cannot be changed once set.");
+        TenantId = tenantId;
+    }
+
+    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
 }

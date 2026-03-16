@@ -9,11 +9,6 @@ namespace Product.Template.Core.Identity.Domain.Entities;
 public class User : AggregateRoot, IMultiTenantEntity
 {
     public long TenantId { get; private set; }
-    long IMultiTenantEntity.TenantId
-    {
-        get => TenantId;
-        set => TenantId = value;
-    }
     public Email Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }
@@ -30,7 +25,7 @@ public class User : AggregateRoot, IMultiTenantEntity
     private User(Guid id, long tenantId, Email email, string passwordHash, string firstName, string lastName)
     {
         Id = id;
-        TenantId = tenantId;
+        SetTenant(tenantId);
         Email = email;
         PasswordHash = passwordHash;
         FirstName = firstName;
@@ -47,9 +42,6 @@ public class User : AggregateRoot, IMultiTenantEntity
         string firstName,
         string lastName)
     {
-        if (tenantId <= 0)
-            throw new DomainException("TenantId must be provided for multi-tenant entities.");
-
         var emailVo = Email.Create(email);
         var user = new User(
             Guid.NewGuid(),
@@ -121,4 +113,14 @@ public class User : AggregateRoot, IMultiTenantEntity
         return _userRoles.Any(ur => ur.Role?.Name == roleName);
     }
 
+    private void SetTenant(long tenantId)
+    {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+        if (TenantId != 0 && TenantId != tenantId)
+            throw new DomainException("TenantId cannot be changed once set.");
+        TenantId = tenantId;
+    }
+
+    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
 }

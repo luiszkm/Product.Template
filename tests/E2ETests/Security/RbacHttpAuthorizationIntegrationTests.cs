@@ -9,7 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Xunit.Sdk;
+using Product.Template.Core.Identity.Application.Permissions;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.Persistence;
 using Product.Template.Kernel.Infrastructure.HostDb;
@@ -59,7 +61,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
-        request.Headers.Add("X-Test-Permissions", "users.read");
+        request.Headers.Add("X-Test-Permissions", IdentityPermissions.UserRead);
 
         var response = await _client.SendAsync(request);
 
@@ -101,7 +103,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity/roles");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
-        request.Headers.Add("X-Test-Permissions", "users.read");
+        request.Headers.Add("X-Test-Permissions", IdentityPermissions.UserRead);
 
         var response = await _client.SendAsync(request);
 
@@ -139,7 +141,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
         using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/identity/{Guid.NewGuid()}");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
-        request.Headers.Add("X-Test-Permissions", "users.manage");
+        request.Headers.Add("X-Test-Permissions", IdentityPermissions.UserManage);
 
         var response = await _client.SendAsync(request);
 
@@ -164,7 +166,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/identity/{Guid.NewGuid()}/roles");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
-        request.Headers.Add("X-Test-Permissions", "users.manage");
+        request.Headers.Add("X-Test-Permissions", IdentityPermissions.UserManage);
 
         var response = await _client.SendAsync(request);
 
@@ -227,11 +229,9 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Swap the real SQL Server DbContexts for in-memory providers to avoid external dependencies during E2E auth tests.
-            services.RemoveAll(typeof(AppDbContext));
-            services.RemoveAll(typeof(HostDbContext));
-            services.RemoveAll(typeof(DbContextOptions<AppDbContext>));
-            services.RemoveAll(typeof(DbContextOptions<HostDbContext>));
+            // Swap the real SQL/SQLite DbContexts for in-memory providers to avoid external dependencies during E2E auth tests.
+            RemoveDbContextRegistrations<AppDbContext>(services);
+            RemoveDbContextRegistrations<HostDbContext>(services);
 
             services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("E2E_Rbac_App"));
             services.AddDbContext<HostDbContext>(options => options.UseInMemoryDatabase("E2E_Rbac_Host"));
@@ -301,6 +301,15 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
             var appDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             appDb.Database.EnsureCreated();
         });
+    }
+    private static void RemoveDbContextRegistrations<TContext>(IServiceCollection services)
+        where TContext : DbContext
+    {
+        services.RemoveAll(typeof(TContext));
+        services.RemoveAll(typeof(DbContextOptions<TContext>));
+        services.RemoveAll(typeof(IDbContextFactory<TContext>));
+        services.RemoveAll(typeof(IConfigureOptions<DbContextOptions<TContext>>));
+        services.RemoveAll(typeof(IPostConfigureOptions<DbContextOptions<TContext>>));
     }
 }
 

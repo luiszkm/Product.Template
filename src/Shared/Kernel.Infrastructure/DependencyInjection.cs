@@ -18,8 +18,20 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services.AddJwtConfiguration(configuration);
-
         services.AddAuthenticationProviders(configuration);
+
+        services.AddSingleton<PermissionCatalog>();
+        services.AddSingleton<IPermissionCatalog>(sp =>
+        {
+            var catalog = sp.GetRequiredService<PermissionCatalog>();
+            var seeders = sp.GetServices<IPermissionCatalogSeeder>();
+            foreach (var seeder in seeders)
+            {
+                seeder.Register(catalog);
+            }
+
+            return catalog;
+        });
 
         services.AddScoped<IHashServices, HashServices>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();

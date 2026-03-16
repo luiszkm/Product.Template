@@ -7,11 +7,6 @@ namespace Product.Template.Core.Identity.Domain.Entities;
 public class Role : Entity, IMultiTenantEntity
 {
     public long TenantId { get; private set; }
-    long IMultiTenantEntity.TenantId
-    {
-        get => TenantId;
-        set => TenantId = value;
-    }
     public string Name { get; private set; }
     public string Description { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -27,7 +22,7 @@ public class Role : Entity, IMultiTenantEntity
     private Role(Guid id, long tenantId, string name, string description)
     {
         Id = id;
-        TenantId = tenantId;
+        SetTenant(tenantId);
         Name = name;
         Description = description;
         CreatedAt = DateTime.UtcNow;
@@ -41,11 +36,13 @@ public class Role : Entity, IMultiTenantEntity
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Role name cannot be empty", nameof(name));
 
-        return new Role(
+        var role = new Role(
             Guid.NewGuid(),
             tenantId,
             name,
             description ?? string.Empty);
+
+        return role;
     }
 
     public void UpdateDescription(string description)
@@ -61,4 +58,15 @@ public class Role : Entity, IMultiTenantEntity
         Name = name.Trim();
         Description = description ?? string.Empty;
     }
+
+    private void SetTenant(long tenantId)
+    {
+        if (tenantId <= 0)
+            throw new DomainException("TenantId must be provided for multi-tenant entities.");
+        if (TenantId != 0 && TenantId != tenantId)
+            throw new DomainException("TenantId cannot be changed once set.");
+        TenantId = tenantId;
+    }
+
+    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
 }

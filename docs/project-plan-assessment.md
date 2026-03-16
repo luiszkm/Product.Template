@@ -10,6 +10,7 @@ Base: .github/copilot-instructions.md, ADR-003, TENANCY_HARDENING_PLAN.md, ADR-0
 - API: `src/Api/` com `IdentityController` v1; pipeline de middleware, Serilog, OpenTelemetry, versionamento.
 - Testes: projetos de arquitetura, unit, integration, e2e presentes, mas cobertura por feature precisa ser consolidada.
 - Docs relevantes: `docs/security/RBAC_MATRIX.md`, ADR-003 (tenancy), ADR-004..007 (RBAC, módulos, observabilidade, governança), TENANCY_HARDENING_PLAN.md, CONTRATOS_FUNDACAO.md.
+- "Tenancy Hardening" parcialmente aplicado: entidades multi-tenant atualizadas com `TenantId` imutável e seeds configuráveis de tenants já disponíveis no `appsettings`.
 
 ## 2) Estado atual por eixo
 ### 2.1 Arquitetura e módulos
@@ -20,13 +21,15 @@ Base: .github/copilot-instructions.md, ADR-003, TENANCY_HARDENING_PLAN.md, ADR-0
 ### 2.2 Multi-tenancy
 - `AppDbContext` aplica filtro global para `IMultiTenantEntity` via `ModelBuilderTenantExtensions`.
 - Interceptor `MultiTenantSaveChangesInterceptor` injeta TenantId em entidades novas quando isolation SharedDb.
-- Entidades multi-tenant do Identity (`User`, `Role`, `Permission`, `RolePermission`, `UserRole`, `RefreshToken`) ainda expõem `TenantId` com setter público e factories não recebem TenantId (gap apontado no TENANCY_HARDENING_PLAN).
-- Middleware/resolução de tenant já existente (`ITenantContext`), porém ausência de guard explícito para bloquear requisições sem tenant resolvido (gap).
+- Entidades multi-tenant do Identity (`User`, `Role`, `Permission`, `RolePermission`, `UserRole`, `RefreshToken`) **já expõem `TenantId` somente-leitura e factories recebem `tenantId`** (ação concluída).
+- Guard explícito adicionado (`TenantGuardMiddleware`) para bloquear requisições sem tenant resolvido; comportamento complementar ao pipeline MediatR.
+- Seeds de tenants configuráveis via seção `Tenants` em `appsettings`; rotina de inicialização já provisiona e seed por tenant ativo.
 
 ### 2.3 Autenticação/RBAC
 - Policies atuais: Authenticated, AdminOnly, UserOnly, UsersRead, UsersManage, UserReadOrSelf/UserManageOrSelf (IdentityController).
-- RBAC_MATRIX cobre endpoints do Identity, mas permissions ainda no formato legado (`users.read`, `users.manage`, `roles.manage`) — ADR-004 pede convergência para `{module}.{resource}.{action}`.
-- Ownership-check contextual (UserReadOrSelf/UserManageOrSelf) implementado mas ainda não movido para policy canônica.
+- RBAC_MATRIX cobre endpoints do Identity e agora usa permissões canônicas (`identity.user.read`, `identity.user.manage`, etc.).
+- Catalogação inicial implementada (`IPermissionCatalog`, `IdentityPermissions` + seeder). A API agora configura as policies via `PermissionCatalogAuthorizationConfigurator`, que valida se cada permission code existe no catálogo antes de concluir o boot.
+- Ownership-check contextual (UserReadOrSelf/UserManageOrSelf) permanece vigente e deve ser incorporado à estratégia canônica de policies.
 
 ### 2.4 Observabilidade
 - Serilog + OTEL configurados no API pipeline; RequestLoggingMiddleware adiciona CorrelationId.
@@ -35,8 +38,9 @@ Base: .github/copilot-instructions.md, ADR-003, TENANCY_HARDENING_PLAN.md, ADR-0
 
 ### 2.5 Persistência
 - Configurações EF centralizadas na Kernel.Infrastructure com AppDbContext e interceptors.
+- Entidades multi-tenant atualizadas para `TenantId` imutável; `MultiTenantSaveChangesInterceptor` usa `AssignTenant` e garante carimbo único por insert.
 - Falta checar se todas entidades multi-tenant têm `IEntityTypeConfiguration` e índices contendo TenantId; provável ajuste necessário ao endurecer tenancy.
-- Seeds: Identity provavelmente popula permissões/roles/usuários, mas não há seed de tenants/catalogo de módulos/features (gap ADR-003/005).
+- Seeds: Identity popula permissões/roles/usuários; agora também há seed configurável de tenants, mas ainda não existe catálogo de módulos/features (gap ADR-003/005).
 
 ### 2.6 CI/CD e Docker
 - Dockerfile multi-stage presente em `src/Api/Dockerfile` (revisão detalhada pendente contra regra .ai/rules/13-docker.md).
@@ -48,53 +52,36 @@ Base: .github/copilot-instructions.md, ADR-003, TENANCY_HARDENING_PLAN.md, ADR-0
 - Arquitetura: sugerido teste para garantir TenantId setter privado em IMultiTenantEntity e policy fora do catálogo (conforme ADR-004/TENANCY_HARDENING_PLAN).
 
 ## 3) Lacunas principais a endereçar
-1. **Tenancy invariants**
-   - Tornar `TenantId` setter privado em todas entidades multi-tenant; factories devem receber `tenantId` e atribuir.
-   - Bloquear operações sem tenant resolvido (middleware ou behavior) exceto endpoints públicos explícitos.
-   - Seeds de tenants iniciais e associação a permissões/módulos/features.
+1. **Tenancy invariants (em andamento)**
+   - ✅ Entidades multi-tenant com setter privado e factories exigindo `tenantId`.
+   - ✅ Interceptor atualizado + guard middleware para tenant obrigatório.
+   - 🔜 Seeds adicionais de tenants/módulos/features e testes arquiteturais para garantir invariantes.
 2. **RBAC canônico**
-   - Migrar permissions para formato `{module}.{resource}.{action}`; alinhar policies e `RBAC_MATRIX`.
-   - Criar `IPermissionCatalog` + enforcement (testes de arquitetura para policies fora do catálogo).
-   - Ajustar endpoints `UserReadOrSelf/UserManageOrSelf` para policy/pipeline canônica (owner-check configurável).
+- ✅ Permissions já seguem `{module}.{resource}.{action}` e `RBAC_MATRIX` está alinhada.
+- ✅ Policies da API agora dependem do catálogo via `PermissionCatalogAuthorizationConfigurator`, impedindo códigos fora do inventário canônico.
+- 🔜 Criar teste arquitetural para policies fora do catálogo e expandir o catálogo para futuros módulos.
+- 🔜 Ajustar endpoints `UserReadOrSelf/UserManageOrSelf` para policy/pipeline canônica (owner-check configurável, reutilizável).
 3. **Observabilidade reforçada**
    - Enriquecer logs/traces/métricas com TenantId/Module/Product/Operation consistentemente.
    - Health checks: incluir validação de tenant resolver + catálogo de módulos/features.
 4. **Persistência e EF**
-   - Verificar/add `IEntityTypeConfiguration` por entidade (incluindo índices com TenantId, `ValueGeneratedNever`, ignore DomainEvents).
-   - Garantir `DbSet` para novas entidades (quando surgirem) e `DependencyInjection` registrations por módulo.
-   - Paginação/Include revisados para evitar N+1; confirmar em repositórios existentes.
-5. **CI/CD e Docker compliance**
-   - Auditar workflows para `permissions`, `timeout-minutes`, `dotnet restore --locked-mode`, Trivy scan, tag não-latest, deploy com environment.
-   - Auditar Dockerfile para saúde (HEALTHCHECK /health/live, user non-root UID 1654, labels OCI, stages restore/publish/final).
-6. **Testes faltantes**
-   - Handlers/validators novos e críticos com happy/failure path.
-   - Integração de authz: 401/403/200 e header `X-Tenant` obrigatório.
-   - Arquitetura: testes para TenantId setter privado em IMultiTenantEntity, policies dentro do catálogo, commands com validators.
-
-## 4) Plano de execução (ordem sugerida)
-1. **Tenancy Hardening (Sprint 1)**
-   - Atualizar entidades multi-tenant (Identity) para setter privado + factory com `tenantId`.
-   - Ajustar interceptors/tests para cobrir atribuição; adicionar guard em pipeline/middleware para tenant obrigatório.
-   - Criar seeds de tenants básicos e ajustar seeds existentes para preencher TenantId.
-2. **RBAC Catalogação (Sprint 1-2)**
-   - Implementar `IPermissionCatalog` + policies derivadas; migrar seeds para códigos canônicos.
-   - Atualizar `docs/security/RBAC_MATRIX.md` para formato canônico e gerar teste de arquitetura de consistência.
-3. **Observabilidade (Sprint 2)**
-   - Adicionar enricher de TenantId/Module/Product/Operation em Serilog + OTEL; revisar pontos de log para dados sensíveis.
-   - Expandir health checks para resolver tenant e verificar catálogos.
-4. **Infra/EF e Seeds (Sprint 2)**
-   - Revisar configurações EF por entidade; garantir índices com TenantId e ignorar DomainEvents.
-   - Ajustar repositórios para Include/ThenInclude do aggregate e evitar IQueryable na superfície.
+- Revisar configurações EF por entidade; garantir índices com TenantId, `ValueGeneratedNever`, ignore DomainEvents.
+- Ajustar repositórios para Include/ThenInclude do aggregate e evitar IQueryable na superfície.
+- Garantir que seeds multi-tenant propaguem dados específicos por tenant além do baseline Identity.
 5. **CI/CD & Docker (Sprint 3)**
    - Auditar workflows para requisitos mínimos, adicionar Trivy scan e restore locked-mode.
    - Revisar Dockerfile: multi-stage, non-root UID 1654, HEALTHCHECK /health/live, labels OCI, args (VERSION, VCS_REF, BUILD_DATE), tag sem latest.
 6. **Testes (contínuo)**
-   - Cobertura mínima para cada handler/validator; integração de authz + tenancy headers; arquitetura para policies/tenant invariants.
+   - Handlers/validators novos e críticos com happy/failure path.
+   - Integração de authz: 401/403/200, header `X-Tenant: public` obrigatório e cobertura do novo `TenantGuardMiddleware`.
+   - Arquitetura: testes para TenantId setter privado em IMultiTenantEntity, policies dentro do catálogo, commands com validators.
 
 ## 5) Próximas ações imediatas
-- Confirmar inventário de endpoints e policies no `IdentityController` e refleti-los no `RBAC_MATRIX` com nomes canônicos.
+- Confirmar inventário de endpoints e policies no `IdentityController` e refleti-los no `RBAC_MATRIX` com nomes canônicos (agora bloqueado em runtime pelo configurador, mas ainda precisa de arquitetura/teste).
 - Elaborar backlog técnico por estória incluindo testes e ajustes de DI/EF para tenancy.
 - Preparar checklist de revisão para PRs conforme `.ai/checklists/pull-request.md` e ADRs citados.
+- Implementar teste arquitetural para validar uso exclusivo de permissões registradas e publicar guia de adoção do catálogo para novos módulos.
+- **Planejar sprint focada em RBAC canônico + observabilidade após o hardening de tenancy (seção 3.2 e 3.3).**
 
 ## 6) Referências
 - ADR-003_isolamento_dados_multitenant.md
@@ -104,4 +91,3 @@ Base: .github/copilot-instructions.md, ADR-003, TENANCY_HARDENING_PLAN.md, ADR-0
 - ADR-006_extensibilidade_e_governanca.md
 - ADR-007_observabilidade_e_operacao.md
 - .github/copilot-instructions.md, backend/api/infrastructure instructions
-

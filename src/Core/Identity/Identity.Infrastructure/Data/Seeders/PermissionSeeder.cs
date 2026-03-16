@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Product.Template.Core.Identity.Application.Permissions;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Kernel.Infrastructure.Persistence;
 
@@ -8,7 +9,8 @@ internal static class PermissionSeeder
 {
     public static readonly Guid UsersReadPermissionId = Guid.Parse("44444444-4444-4444-4444-444444444444");
     public static readonly Guid UsersManagePermissionId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-    public static readonly Guid RolesManagePermissionId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+    public static readonly Guid RolesReadPermissionId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+    public static readonly Guid RolesManagePermissionId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     public static async Task SeedAsync(AppDbContext context)
     {
@@ -18,9 +20,10 @@ internal static class PermissionSeeder
         {
             var permissions = new[]
             {
-                CreatePermission(UsersReadPermissionId, tenantId, "users.read", "Read users data"),
-                CreatePermission(UsersManagePermissionId, tenantId, "users.manage", "Manage users data"),
-                CreatePermission(RolesManagePermissionId, tenantId, "roles.manage", "Manage user roles")
+                CreatePermission(UsersReadPermissionId, tenantId, IdentityPermissions.UserRead, "Read users data"),
+                CreatePermission(UsersManagePermissionId, tenantId, IdentityPermissions.UserManage, "Manage users data"),
+                CreatePermission(RolesReadPermissionId, tenantId, IdentityPermissions.RoleRead, "Read roles data"),
+                CreatePermission(RolesManagePermissionId, tenantId, IdentityPermissions.RoleManage, "Manage user roles")
             };
 
             await context.Permissions.AddRangeAsync(permissions);
@@ -35,11 +38,13 @@ internal static class PermissionSeeder
 
         await EnsureRolePermission(context, adminRole.Id, UsersReadPermissionId);
         await EnsureRolePermission(context, adminRole.Id, UsersManagePermissionId);
+        await EnsureRolePermission(context, adminRole.Id, RolesReadPermissionId);
         await EnsureRolePermission(context, adminRole.Id, RolesManagePermissionId);
 
         if (managerRole is not null)
         {
             await EnsureRolePermission(context, managerRole.Id, UsersReadPermissionId);
+            await EnsureRolePermission(context, managerRole.Id, RolesReadPermissionId);
         }
 
         await context.SaveChangesAsync();

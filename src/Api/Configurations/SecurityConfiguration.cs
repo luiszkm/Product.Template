@@ -3,6 +3,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
+using Product.Template.Api.Authorization;
 using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Api.Configurations;
@@ -28,26 +30,9 @@ public static class SecurityConfiguration
     {
         services.AddCorsFromConfiguration(configuration);
 
-        services.AddAuthorization(options =>
-        {
-            options.AddPolicy(AuthenticatedPolicy, policy => policy.RequireAuthenticatedUser());
-            options.AddPolicy(AdminOnlyPolicy, policy => policy.RequireRole("Admin"));
-            options.AddPolicy(UserOnlyPolicy, policy => policy.RequireRole("User", "Admin", "Manager"));
-            options.AddPolicy(UsersReadPolicy, policy =>
-                policy.RequireAssertion(context =>
-                    context.User.IsInRole("Admin") ||
-                    context.User.HasClaim(PermissionClaimType, "users.read")));
-            options.AddPolicy(UsersManagePolicy, policy =>
-                policy.RequireAssertion(context =>
-                    context.User.IsInRole("Admin") ||
-                    context.User.HasClaim(PermissionClaimType, "users.manage")));
+        services.AddAuthorization();
 
-            options.AddPolicy(UserReadOrSelfPolicy, policy =>
-                policy.AddRequirements(new Authorization.UserOwnershipRequirement("users.read")));
-
-            options.AddPolicy(UserManageOrSelfPolicy, policy =>
-                policy.AddRequirements(new Authorization.UserOwnershipRequirement("users.manage")));
-        });
+        services.AddSingleton<IConfigureOptions<AuthorizationOptions>, PermissionCatalogAuthorizationConfigurator>();
 
         services.AddSingleton<IAuthorizationHandler, Authorization.UserOwnershipHandler>();
 

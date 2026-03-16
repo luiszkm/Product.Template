@@ -78,6 +78,8 @@ if (!app.Configuration.GetValue<bool>("DisableTenantMiddleware"))
     app.UseMiddleware<TenantResolutionMiddleware>();
 }
 
+app.UseMiddleware<TenantGuardMiddleware>();
+
 // IP Whitelist/Blacklist Validation
 app.UseMiddleware<IpWhitelistMiddleware>();
 
