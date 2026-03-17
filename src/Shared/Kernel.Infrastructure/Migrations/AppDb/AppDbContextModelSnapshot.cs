@@ -368,6 +368,11 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("SecurityStamp")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("RestoredAt")
                         .HasColumnType("TEXT");
 

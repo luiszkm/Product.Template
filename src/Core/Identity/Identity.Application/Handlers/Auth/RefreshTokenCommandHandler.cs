@@ -93,11 +93,14 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         var permissionClaims = rolesData.Permissions
             .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
+        var extraClaims = permissionClaims
+            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp));
+
         var accessToken = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
             roles: rolesData.Roles,
-            extraClaims: permissionClaims);
+            extraClaims: extraClaims);
 
         await _unitOfWork.Commit(cancellationToken);
 

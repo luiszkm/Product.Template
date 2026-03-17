@@ -18,6 +18,12 @@ public class NamingConventionTests
         typeof(Product.Template.Core.Identity.Domain.Entities.User).Assembly,
         typeof(Product.Template.Core.Identity.Application.Handlers.Auth.LoginCommandHandler).Assembly,
         typeof(Product.Template.Core.Identity.Infrastructure.DependencyInjection).Assembly,
+        typeof(Product.Template.Core.Authorization.Domain.Entities.Role).Assembly,
+        typeof(Product.Template.Core.Authorization.Application.Permissions.AuthorizationPermissions).Assembly,
+        typeof(Product.Template.Core.Authorization.Infrastructure.DependencyInjection).Assembly,
+        typeof(Product.Template.Core.Tenants.Domain.Entities.Tenant).Assembly,
+        typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly,
+        typeof(Product.Template.Core.Tenants.Infrastructure.DependencyInjection).Assembly,
         typeof(Product.Template.Api.Configurations.SecurityConfiguration).Assembly,
     ];
 
@@ -71,6 +77,8 @@ public class NamingConventionTests
         var domainAssemblies = new[]
         {
             typeof(Product.Template.Core.Identity.Domain.Entities.User).Assembly,
+            typeof(Product.Template.Core.Authorization.Domain.Entities.Role).Assembly,
+            typeof(Product.Template.Core.Tenants.Domain.Entities.Tenant).Assembly,
         };
 
         var result = Types.InAssemblies(domainAssemblies)

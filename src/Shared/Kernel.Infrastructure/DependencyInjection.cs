@@ -17,6 +17,7 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddMemoryCache();
         services.AddJwtConfiguration(configuration);
         services.AddAuthenticationProviders(configuration);
 

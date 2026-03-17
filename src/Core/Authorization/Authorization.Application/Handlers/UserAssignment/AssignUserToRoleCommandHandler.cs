@@ -4,6 +4,7 @@ using Product.Template.Core.Authorization.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Security;
 using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Authorization.Application.Handlers.UserAssignment;
@@ -14,6 +15,7 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
     private readonly IRoleRepository _roleRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly ISecurityStampService _securityStampService;
     private readonly ILogger<AssignUserToRoleCommandHandler> _logger;
 
     public AssignUserToRoleCommandHandler(
@@ -21,12 +23,14 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
         IRoleRepository roleRepository,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        ISecurityStampService securityStampService,
         ILogger<AssignUserToRoleCommandHandler> logger)
     {
         _assignmentRepository = assignmentRepository;
         _roleRepository = roleRepository;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _securityStampService = securityStampService;
         _logger = logger;
     }
 
@@ -50,6 +54,8 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
 
         await _assignmentRepository.AddAsync(assignment, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
+
+        await _securityStampService.RegenerateAsync(request.UserId, cancellationToken);
 
         _logger.LogInformation("User {UserId} assigned to role {RoleName}", request.UserId, role.Name);
     }

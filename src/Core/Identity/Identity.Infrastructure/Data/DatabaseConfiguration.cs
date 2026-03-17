@@ -31,13 +31,18 @@ public static class DatabaseConfiguration
         services.AddScoped<SearchPathConnectionInterceptor>();
         services.AddScoped<AuditLogInterceptor>();
 
-        var hostConnection = configuration.GetConnectionString("HostDb")
-            ?? configuration.GetConnectionString("AppDb")
-            ?? "Data Source=host.db";
-
-        services.AddDbContext<HostDbContext>(options =>
+        services.AddDbContext<HostDbContext>((sp, options) =>
         {
-            if (LooksLikePostgres(hostConnection))
+            var cfg = sp.GetRequiredService<IConfiguration>();
+            var hostConnection = cfg.GetConnectionString("HostDb")
+                ?? cfg.GetConnectionString("AppDb")
+                ?? "Data Source=host.db";
+
+            if (IsInMemory(hostConnection))
+            {
+                options.UseInMemoryDatabase("host_db");
+            }
+            else if (LooksLikePostgres(hostConnection))
             {
                 options.UseNpgsql(hostConnection);
             }
@@ -58,7 +63,11 @@ public static class DatabaseConfiguration
             var tenant = tenantContext.Tenant ?? new TenantConfig { IsolationMode = TenantIsolationMode.SharedDb };
             var appConnection = resolver.ResolveAppConnection(tenant);
 
-            if (LooksLikePostgres(appConnection))
+            if (IsInMemory(appConnection))
+            {
+                options.UseInMemoryDatabase("app_db");
+            }
+            else if (LooksLikePostgres(appConnection))
             {
                 options.UseNpgsql(appConnection, npgsql =>
                 {
@@ -67,6 +76,7 @@ public static class DatabaseConfiguration
                         npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
                     }
                 });
+                options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();
             }
             else if (LooksLikeSqlServer(appConnection))
             {
@@ -77,13 +87,14 @@ public static class DatabaseConfiguration
                         sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
                     }
                 });
+                options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();
             }
             else
             {
                 options.UseSqlite(appConnection);
+                options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();
             }
 
-            options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
             options.AddInterceptors(
@@ -185,8 +196,12 @@ public static class DatabaseConfiguration
         => connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase)
            || connectionString.Contains("Username=", StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsInMemory(string connectionString)
+        => connectionString.Equals("InMemory", StringComparison.OrdinalIgnoreCase);
+
     private static bool LooksLikeSqlServer(string connectionString)
         => connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
-           || connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
-           || connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase);
+           || connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase)
+           || (connectionString.Contains("Data Source=", StringComparison.OrdinalIgnoreCase)
+               && !connectionString.Contains(".db", StringComparison.OrdinalIgnoreCase));
 }

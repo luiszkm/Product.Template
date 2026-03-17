@@ -11,7 +11,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Xunit.Sdk;
+using Product.Template.Core.Authorization.Application.Permissions;
 using Product.Template.Core.Identity.Application.Permissions;
+using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.Persistence;
 using Product.Template.Kernel.Infrastructure.HostDb;
@@ -88,7 +90,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
     [Fact]
     public async Task ListRoles_ShouldReturn403_WhenUserHasNoUsersReadPermission()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity/roles");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/authorization/roles");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "User");
 
@@ -100,10 +102,10 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
     [Fact]
     public async Task ListRoles_ShouldReturn200_WhenUserHasUsersReadPermission()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity/roles");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/authorization/roles");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
-        request.Headers.Add("X-Test-Permissions", IdentityPermissions.UserRead);
+        request.Headers.Add("X-Test-Permissions", AuthorizationPermissions.RoleRead);
 
         var response = await _client.SendAsync(request);
 
@@ -113,7 +115,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
     [Fact]
     public async Task CreateRole_ShouldReturn403_WhenUserHasNoUsersManagePermission()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/identity/roles");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/authorization/roles");
         request.Headers.Add("Authorization", "Test token");
         request.Headers.Add("X-Test-Roles", "Manager");
         request.Content = JsonContent.Create(new { name = "Auditor", description = "Auditor role" });
@@ -191,7 +193,7 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
     [Fact]
     public async Task GetById_ShouldReturn200_WhenUserIsOwner()
     {
-        var userId = Guid.NewGuid();
+        var userId = RbacWebApplicationFactory.SeededOwnerId;
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/identity/{userId}");
         request.Headers.Add("Authorization", "Test token");
@@ -206,10 +208,11 @@ public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplic
 
 public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public static readonly Guid SeededOwnerId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
+
     protected override void ConfigureWebHost(Microsoft.AspNetCore.Hosting.IWebHostBuilder builder)
     {
         builder.UseSetting("DisableDatabaseInitialization", "true");
-        builder.UseSetting("DisableTenantMiddleware", "true");
         builder.UseDefaultServiceProvider((_, options) =>
         {
             options.ValidateScopes = false;
@@ -220,7 +223,6 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
             config.AddInMemoryCollection(new Dictionary<string, string>
             {
                 ["DisableDatabaseInitialization"] = "true",
-                ["DisableTenantMiddleware"] = "true",
                 ["Jwt:Enabled"] = "false",
                 ["ConnectionStrings:HostDb"] = "InMemory",
                 ["ConnectionStrings:AppDb"] = "InMemory"
@@ -300,6 +302,11 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 
             var appDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             appDb.Database.EnsureCreated();
+
+            var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
+            typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
+            appDb.Set<User>().Add(owner);
+            appDb.SaveChanges();
         });
     }
     private static void RemoveDbContextRegistrations<TContext>(IServiceCollection services)

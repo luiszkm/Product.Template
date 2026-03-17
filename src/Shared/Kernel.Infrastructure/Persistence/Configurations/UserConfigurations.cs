@@ -55,6 +55,10 @@ internal sealed class UserConfigurations : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasDefaultValue(true);
 
+        builder.Property(u => u.SecurityStamp)
+            .HasMaxLength(64)
+            .IsRequired();
+
         // Ignore domain events
         builder.Ignore(u => u.DomainEvents);
     }

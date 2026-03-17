@@ -13,6 +13,8 @@ public class CqrsConventionTests
     [
         typeof(Product.Template.Kernel.Application.DependencyInjection).Assembly,
         typeof(Product.Template.Core.Identity.Application.Handlers.Auth.LoginCommandHandler).Assembly,
+        typeof(Product.Template.Core.Authorization.Application.Permissions.AuthorizationPermissions).Assembly,
+        typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly,
     ];
 
     [Fact]

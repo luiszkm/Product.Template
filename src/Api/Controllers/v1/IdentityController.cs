@@ -65,7 +65,7 @@ public class IdentityController : ControllerBase
     }
 
     [HttpGet("{id:guid}/roles")]
-    [Authorize(Policy = SecurityConfiguration.UsersReadPolicy)]
+    [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

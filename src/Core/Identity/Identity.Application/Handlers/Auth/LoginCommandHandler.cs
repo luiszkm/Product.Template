@@ -75,11 +75,14 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
         var permissionClaims = rolesData.Permissions
             .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
+        var extraClaims = permissionClaims
+            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp));
+
         var accessToken = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
             roles: rolesData.Roles,
-            extraClaims: permissionClaims);
+            extraClaims: extraClaims);
 
         var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();

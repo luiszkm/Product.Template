@@ -16,8 +16,9 @@ public class User : AggregateRoot, IMultiTenantEntity
     public bool EmailConfirmed { get; private set; }
     public DateTime? LastLoginAt { get; private set; }
     public bool IsActive { get; private set; }
+    public string SecurityStamp { get; private set; }
 
-    private User() { Email = null!; PasswordHash = null!; FirstName = null!; LastName = null!; }
+    private User() { Email = null!; PasswordHash = null!; FirstName = null!; LastName = null!; SecurityStamp = null!; }
 
     private User(Guid id, long tenantId, Email email, string passwordHash, string firstName, string lastName)
     {
@@ -29,6 +30,7 @@ public class User : AggregateRoot, IMultiTenantEntity
         LastName = lastName;
         EmailConfirmed = false;
         IsActive = true;
+        SecurityStamp = Guid.NewGuid().ToString("N");
         CreatedAt = DateTime.UtcNow;
     }
 
@@ -77,6 +79,11 @@ public class User : AggregateRoot, IMultiTenantEntity
     public void Activate()
     {
         IsActive = true;
+    }
+
+    public void RegenerateSecurityStamp()
+    {
+        SecurityStamp = Guid.NewGuid().ToString("N");
     }
 
     public void UpdateProfile(string firstName, string lastName)

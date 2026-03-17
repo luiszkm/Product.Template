@@ -2,8 +2,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Product.Template.Api.Authorization;
 using Product.Template.Kernel.Application.Security;
 
@@ -89,12 +89,26 @@ public static class SecurityConfiguration
                         logger.LogWarning("JWT Authentication failed: {Error}", context.Exception.Message);
                         return Task.CompletedTask;
                     },
-                    OnTokenValidated = context =>
+                    OnTokenValidated = async context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                        var userId = context.Principal?.Identity?.Name;
-                        logger.LogInformation("JWT Token validated for user: {UserId}", userId);
-                        return Task.CompletedTask;
+                        var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+                        var stampClaim = context.Principal?.FindFirst(AuthorizationClaimTypes.SecurityStamp);
+
+                        if (userIdClaim is null || stampClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                        {
+                            logger.LogInformation("JWT Token validated for user: {UserId}", userIdClaim?.Value);
+                            return;
+                        }
+
+                        var stampService = context.HttpContext.RequestServices.GetRequiredService<ISecurityStampService>();
+                        var isValid = await stampService.ValidateAsync(userId, stampClaim.Value, context.HttpContext.RequestAborted);
+
+                        if (!isValid)
+                        {
+                            logger.LogWarning("Security stamp mismatch for user {UserId} — token revoked", userId);
+                            context.Fail("Security stamp validation failed.");
+                        }
                     }
                 };
             });

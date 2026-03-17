@@ -4,6 +4,7 @@ using Product.Template.Core.Authorization.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Authorization.Application.Handlers.UserAssignment;
 
@@ -11,15 +12,18 @@ public class RevokeUserFromRoleCommandHandler : ICommandHandler<RevokeUserFromRo
 {
     private readonly IUserAssignmentRepository _assignmentRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ISecurityStampService _securityStampService;
     private readonly ILogger<RevokeUserFromRoleCommandHandler> _logger;
 
     public RevokeUserFromRoleCommandHandler(
         IUserAssignmentRepository assignmentRepository,
         IUnitOfWork unitOfWork,
+        ISecurityStampService securityStampService,
         ILogger<RevokeUserFromRoleCommandHandler> logger)
     {
         _assignmentRepository = assignmentRepository;
         _unitOfWork = unitOfWork;
+        _securityStampService = securityStampService;
         _logger = logger;
     }
 
@@ -30,6 +34,8 @@ public class RevokeUserFromRoleCommandHandler : ICommandHandler<RevokeUserFromRo
 
         await _assignmentRepository.DeleteAsync(assignment, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
+
+        await _securityStampService.RegenerateAsync(request.UserId, cancellationToken);
 
         _logger.LogInformation("User {UserId} revoked from role {RoleId}", request.UserId, request.RoleId);
     }
