@@ -1,0 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Product.Template.Core.Authorization.Domain.Entities;
+
+namespace Product.Template.Core.Authorization.Infrastructure.Data.Configurations;
+
+internal sealed class RoleConfigurations : IEntityTypeConfiguration<Role>
+{
+    public void Configure(EntityTypeBuilder<Role> builder)
+    {
+        builder.ToTable("Roles");
+
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.Id)
+            .ValueGeneratedNever();
+
+        builder.Property(r => r.TenantId)
+            .IsRequired();
+
+        builder.HasIndex(r => new { r.TenantId, r.Name })
+            .IsUnique();
+
+        builder.Property(r => r.Name)
+            .HasMaxLength(50)
+            .IsRequired();
+
+        builder.Property(r => r.Description)
+            .HasMaxLength(250);
+
+        builder.Property(r => r.CreatedAt)
+            .IsRequired();
+
+        builder.HasMany(r => r.RolePermissions)
+            .WithOne(rp => rp.Role)
+            .HasForeignKey(rp => rp.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Ignore(r => r.DomainEvents);
+    }
+}

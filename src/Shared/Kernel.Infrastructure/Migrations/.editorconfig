@@ -1,0 +1,3 @@
+# Auto-generated EF migration files — disable all Roslyn analysis
+[*.cs]
+generated_code = true

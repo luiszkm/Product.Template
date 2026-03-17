@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Product.Template.Core.Authorization.Domain</RootNamespace>
+    <!-- CA1711: Domain entities Permission and RolePermission are intentionally named after their domain concepts -->
+    <NoWarn>$(NoWarn);CA1711</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Kernel.Domain\Kernel.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
