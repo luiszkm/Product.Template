@@ -163,6 +163,16 @@ public class IdentityController : ControllerBase
         return Ok(result);
     }
 
+    [HttpPost("{id:guid}/confirm-email")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ConfirmEmail(Guid id, CancellationToken cancellationToken)
+    {
+        await _mediator.Send(new ConfirmEmailCommand(id), cancellationToken);
+        return NoContent();
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = SecurityConfiguration.UsersManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
