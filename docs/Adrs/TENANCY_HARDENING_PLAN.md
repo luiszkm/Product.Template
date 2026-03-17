@@ -1,56 +1,54 @@
 Tenancy Hardening — Plano de Execução
-Status: Draft
+Status: Implementado
 Data: 2026-03-16
+Atualizado: 2026-03-17
 Base: ADR-002, ADR-003
 
 ## Objetivo
 Preparar a fundação para tenancy forte sem alterar a estrutura atual, listando ações por camada.
 
-## Inventário de entidades multi-tenant (Identity)
-- `User`, `Role`, `Permission`, `RolePermission`, `UserRole`, `RefreshToken`.
-- Ação: `TenantId` com setter privado; atribuição em factories; validar ausência de TenantId.
+## Inventário de entidades multi-tenant
 
-## Plano por camada
-- Dominio: reforçar invariantes (factory exige TenantId, setters privados, validação de tenant nulo).
-- Infra/EF:
-  - Filtro global para `IMultiTenantEntity` no `AppDbContext`.
-  - Auditoria de TenantId em inserts/updates; impedir salvar sem TenantId resolvido.
-  - Seeds: tenants + vinculação inicial a módulos/features/permissões.
-- Aplicação:
-  - Pipeline (behavior) pode validar TenantId presente no `ITenantContext` antes de handlers.
-  - Commands/queries recebem TenantId implicitamente via contexto; evitar parâmetros diretos salvo quando necessário.
-- API/Middleware:
-  - `ITenantResolver` (header `X-Tenant` + subdomínio) → `ITenantContext` injetado.
-  - Bloquear requests sem tenant resolvido (exceto endpoints públicos permitidos por regra explícita).
+| Módulo | Entidade | TenantId privado | Factory recebe tenantId |
+|--------|----------|:----------------:|:----------------------:|
+| Identity | `User` | ✅ | ✅ |
+| Identity | `RefreshToken` | ✅ | ✅ |
+| Authorization | `Role` | ✅ | ✅ |
+| Authorization | `Permission` | ✅ | ✅ |
+| Authorization | `RolePermission` | ✅ | ✅ |
+| Authorization | `UserAssignment` | ✅ | ✅ |
+
+> Nota: `Role`, `Permission`, `RolePermission` e `UserAssignment` foram movidos para o módulo `Authorization`. O módulo `Identity` mantém apenas `User` e `RefreshToken`.
+
+## Status por camada
+
+### Domínio ✅
+- `TenantId` com setter privado em todas as entidades multi-tenant.
+- Factories (`Create(...)`) exigem `tenantId` como parâmetro obrigatório.
+- `AssignTenant(tenantId)` adicionado a `Entity` base para atribuição controlada.
+
+### Infra/EF ✅
+- Filtro global `HasQueryFilter(e => e.TenantId == TenantIdForQueryFilter)` em `ModelBuilderTenantExtensions`.
+- `MultiTenantSaveChangesInterceptor` usa `AssignTenant()` para stampar TenantId em inserts.
+- Seeds: tenants configuráveis em `appsettings` via seção `Tenants`; seed de permissões/roles/usuários propaga `TenantId`.
+- `EfModelAssemblyRegistry` compõe configurações EF por módulo no `AppDbContext`.
+
+### Aplicação ✅
+- `TenantContextBehavior` (MediatR pipeline) valida que `ITenantContext` está resolvido antes dos handlers.
+- Commands/queries recebem `TenantId` implicitamente via `ITenantContext`; handlers leem via injeção.
+
+### API/Middleware ✅
+- `TenantResolverMiddleware`: resolve tenant via header `X-Tenant` ou subdomínio → `ITenantContext`.
+- `TenantGuardMiddleware`: bloqueia requests sem tenant resolvido (exceto endpoints públicos).
 
 ## Observabilidade e Operação
-- Métricas por tenant: throughput, erros, latência p95/p99, falhas de login/authz.
-- Logs/trace: enriquecer com TenantId obrigatório.
-- Health check: validar resolução de tenant + acesso ao catálogo de tenant.
+- ✅ Logs enriquecidos com `CorrelationId` via `RequestLoggingMiddleware`.
+- 🔜 Enriquecer todos os traces/logs com `TenantId` obrigatório (ADR-007).
+- 🔜 Métricas por tenant: throughput, erros, latência p95/p99, falhas de login/authz.
+- 🔜 Health check com validação de `TenantResolver` + conectividade ao catálogo de tenant.
 
-## Próximos passos
-- Listar por entidade os pontos de factory a ajustar (documentar antes de alterar código).
-- Definir a interface do filtro global e pontos de teste (unit/integration) para bloqueio sem TenantId.
-- Criar teste de arquitetura para garantir setter privado em `TenantId` e implementação de `IMultiTenantEntity` com filtro ativo.
-
-## Pontos de ajuste por entidade (Identity)
-- `User.Create(...)`: receber `tenantId` e atribuir no factory; `TenantId` setter privado.
-- `Role.Create(...)`: idem.
-- `Permission.Create(...)`: idem.
-- `RolePermission.Create(...)`: idem.
-- `UserRole.Create(...)`: idem.
-- `RefreshToken.Create(...)`: idem.
-- Checklist adicional:
-  - Verificar repositórios para garantir que consultas e mutações sempre passam pelo filtro de tenant.
-  - Garantir que seeds de roles/permissões/usuários atribuem `TenantId` consistentemente.
-
-## Filtro global e testes
-- Filtro EF: aplicar `HasQueryFilter(e => e.TenantId == _tenantContext.TenantId)` para todo `IMultiTenantEntity` no `OnModelCreating`.
-- Guard rails:
-  - Tests unitários para verificar que o filtro é aplicado em cada entity type multi-tenant.
-  - Testes de integração: consulta sem tenant deve falhar; com tenant deve aplicar o filtro.
-- Arquitetura/testes automatizados:
-  - Verificar via reflexão que `TenantId` tem setter não público.
-  - Verificar que toda entity multi-tenant implementa `IMultiTenantEntity`.
-  - Opcional: validar presença do filtro global configurado no DbContext (ex.: inspecionando `Model.GetEntityTypes()`).
-
+## Testes de arquitetura implementados
+- ✅ Validação de dependências por camada (Domain ← Application ← Infrastructure ← Api).
+- ✅ Invariantes de tenancy: `TenantId` setter privado, toda entidade multi-tenant implementa `IMultiTenantEntity`.
+- ✅ Commands têm validators correspondentes.
+- 🔜 Architecture test para garantir que `[Authorize(Policy=...)]` só referencia políticas registradas no catálogo.

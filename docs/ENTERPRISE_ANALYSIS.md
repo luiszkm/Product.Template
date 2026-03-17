@@ -244,23 +244,26 @@ options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =
 
 ---
 
-## Impacto nos testes
+## Cobertura de testes atual
 
-### Testes que precisam ser criados
+**IntegrationTests (15 testes — todos verdes):**
+- ✅ Identity: RegisterUser, DeleteUser, GetUserById (happy path + not found)
+- ✅ Authorization: CreateRole, DeleteRole (happy path + erros de negócio)
+- ✅ Tenants: CreateTenant (happy path + key duplicada + persistência)
 
-**UnitTests:**
-- `RefreshTokenCommandHandlerTests.cs`
-- `RefreshTokenCommandValidatorTests.cs`
-- `AuditLogInterceptorTests.cs`
-- `SoftDeleteQueryFilterTests.cs`
+**ArchitectureTests (27 testes — todos verdes):**
+- ✅ Dependências de camada (Domain ← Application ← Infrastructure ← Api)
+- ✅ Invariantes de tenancy: `TenantId` setter privado, `IMultiTenantEntity`
+- ✅ Commands têm validators correspondentes
 
-**IntegrationTests:**
-- `POST /identity/refresh` → happy path + token expirado + token revogado
-- Verificar audit log entries criados após mutações
-- Verificar soft delete invisível em queries normais
+**E2ETests (17 testes — todos verdes):**
+- ✅ Autenticação e refresh token
+- ✅ RBAC: 401/403/200 para endpoints de Identity, Authorization, Tenants
 
-**ArchitectureTests:**
-- Validar que toda entidade implementa `IMultiTenantEntity` e `ISoftDeletableEntity`
+**Testes pendentes de valor (sem blockers de produção):**
+- `AuditLogInterceptorTests` — verificar entradas criadas após mutações
+- `SoftDeleteQueryFilterTests` — confirmar invisibilidade em queries normais
+- `POST /identity/refresh` com token expirado/revogado (cobertura de branch)
 
 ---
 

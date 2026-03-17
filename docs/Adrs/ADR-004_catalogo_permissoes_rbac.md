@@ -1,6 +1,7 @@
 ADR-004 — Catálogo de Permissões RBAC
-Status: Proposta
+Status: Implementado
 Data: 2026-03-16
+Atualizado: 2026-03-17
 Relacionada: ADR-002 — Plataforma Base SaaS Multi-Tenant
 
 ## 1. Contexto
@@ -36,18 +37,35 @@ Relacionada: ADR-002 — Plataforma Base SaaS Multi-Tenant
   - Definir catálogo inicial para módulos ERP (finance, sales, inventory, purchasing).
   - Atualizar RBAC_MATRIX com o novo formato e criar teste de arquitetura correspondente.
 
-## 5. Inventário atual — Identity
-- Permissões seed atuais (Infrastructure):
-  - `users.read` → alvo canônico: `identity.user.read`
-  - `users.manage` → alvo canônico: `identity.user.manage`
-  - `roles.manage` → alvo canônico: `identity.role.manage`
-- Policies atuais:
-  - `UsersRead` (role Admin ou claim `permission=users.read`) → alinhar para policy derivada de `identity.user.read`.
-  - `UsersManage` (role Admin ou claim `permission=users.manage`) → alinhar para policy derivada de `identity.user.manage` e `identity.role.manage`.
-- Ações necessárias:
-  - Refletir os códigos canônicos na seed e nas policies (quando for a fase de implementação).
-  - Atualizar RBAC_MATRIX para usar os códigos canônicos (rascunho já incluído).
-  - Criar teste de arquitetura para garantir que toda policy referencie permissão catalogada.
+## 5. Inventário implementado
+
+### Identity (`IdentityPermissions`)
+| Código canônico | Policy |
+|----------------|--------|
+| `identity.user.read` | `UsersRead`, `UserReadOrSelf` |
+| `identity.user.manage` | `UsersManage`, `UserManageOrSelf` |
+
+### Authorization (`AuthorizationPermissions`)
+| Código canônico | Policy |
+|----------------|--------|
+| `authorization.role.read` | `AuthorizationRolesRead` |
+| `authorization.role.manage` | `AuthorizationRolesManage` |
+| `authorization.permission.read` | `AuthorizationPermissionsRead` |
+| `authorization.permission.manage` | `AuthorizationPermissionsManage` |
+
+### Tenants (`TenantPermissions`)
+| Código canônico | Policy |
+|----------------|--------|
+| `tenants.read` | `TenantsRead` |
+| `tenants.manage` | `TenantsManage` |
+
+### Implementação
+- ✅ `IPermissionCatalog` + `PermissionDescriptor` implementados em `Kernel.Application`.
+- ✅ Cada módulo registra seu catálogo via `IPermissionCatalogSeeder` no bootstrap.
+- ✅ `PermissionCatalogAuthorizationConfigurator` valida no boot que toda policy usa código registrado.
+- ✅ `RBAC_MATRIX.md` atualizada com todos os endpoints e permissões canônicas.
+- ✅ Architecture tests validam que commands têm validators e camadas respeitam dependências.
+- 🔜 Architecture test específico para garantir que `[Authorize(Policy=...)]` só referencia políticas derivadas do catálogo.
 
 
 

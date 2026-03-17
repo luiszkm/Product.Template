@@ -19,15 +19,17 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 
 | Método | Rota | Acesso | Policy atual | Permissão canônica | Observação |
 |---|---|---|---|---|---|
-| GET | `/api/v1/identity/providers` | Público | - | - | Descoberta de providers |
-| POST | `/api/v1/identity/login` | Público | - | - | Login JWT |
-| POST | `/api/v1/identity/register` | Público | - | - | Registro |
-| POST | `/api/v1/identity/external-login` | Público | - | - | Auth externa |
-| GET | `/api/v1/identity` | Protegido | `UsersRead` | `identity.user.read` | Alinhado |
+| GET | `/api/v1/identity/providers` | Público | - | - | Descoberta de providers OAuth |
+| POST | `/api/v1/identity/login` | Público | - | - | Login JWT + refresh token |
+| POST | `/api/v1/identity/refresh` | Público | - | - | Rotação de refresh token |
+| POST | `/api/v1/identity/register` | Público | - | - | Auto-registro de usuário |
+| POST | `/api/v1/identity/external-login` | Público | - | - | Auth via provider externo |
+| GET | `/api/v1/identity` | Protegido | `UsersRead` | `identity.user.read` | Lista paginada |
 | GET | `/api/v1/identity/{id}` | Protegido | `UserReadOrSelf` | `identity.user.read` | Owner-check via requirement |
-| PUT | `/api/v1/identity/{id}` | Protegido | `UserManageOrSelf` | `identity.user.manage` | Owner-check via requirement |
-| DELETE | `/api/v1/identity/{id}` | Protegido | `UsersManage` | `identity.user.manage` | |
 | GET | `/api/v1/identity/{id}/roles` | Protegido | `UsersManage` | `identity.user.manage` | |
+| PUT | `/api/v1/identity/{id}` | Protegido | `UserManageOrSelf` | `identity.user.manage` | Owner-check via requirement |
+| POST | `/api/v1/identity/{id}/confirm-email` | Público | - | - | Confirmação de e-mail; idempotente |
+| DELETE | `/api/v1/identity/{id}` | Protegido | `UsersManage` | `identity.user.manage` | Soft-delete |
 
 ## API v1 - AuthorizationController
 
@@ -40,7 +42,7 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 | DELETE | `/api/v1/authorization/roles/{id}` | Protegido | `AuthorizationRolesManage` | `authorization.role.manage` | |
 | GET | `/api/v1/authorization/roles/{id}/permissions` | Protegido | `AuthorizationRolesRead` | `authorization.role.read` | |
 | POST | `/api/v1/authorization/roles/{id}/permissions` | Protegido | `AuthorizationRolesManage` | `authorization.role.manage` | |
-| DELETE | `/api/v1/authorization/roles/{id}/permissions/{code}` | Protegido | `AuthorizationRolesManage` | `authorization.role.manage` | |
+| DELETE | `/api/v1/authorization/roles/{id}/permissions/{permissionId}` | Protegido | `AuthorizationRolesManage` | `authorization.role.manage` | |
 | GET | `/api/v1/authorization/permissions` | Protegido | `AuthorizationPermissionsRead` | `authorization.permission.read` | |
 | POST | `/api/v1/authorization/permissions` | Protegido | `AuthorizationPermissionsManage` | `authorization.permission.manage` | |
 | PUT | `/api/v1/authorization/permissions/{id}` | Protegido | `AuthorizationPermissionsManage` | `authorization.permission.manage` | |

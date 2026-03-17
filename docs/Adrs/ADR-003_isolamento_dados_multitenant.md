@@ -1,6 +1,7 @@
 ADR-003 — Isolamento de Dados Multi-Tenant
-Status: Proposta
+Status: Implementado
 Data: 2026-03-16
+Atualizado: 2026-03-17
 Relacionada: ADR-002 — Plataforma Base SaaS Multi-Tenant
 
 ## 1. Contexto
@@ -33,6 +34,9 @@ Relacionada: ADR-002 — Plataforma Base SaaS Multi-Tenant
 - Observabilidade/operabilidade:
   - Métricas/alertas por tenant: throughput, erros, latência p95/p99, login failures.
   - Health check inclui verificação de `TenantResolver` + conectividade ao catálogo de tenant.
-- Inventário inicial de entidades multi-tenant (Identity): `User`, `Role`, `Permission`, `RolePermission`, `UserRole`, `RefreshToken`. Todas devem ter `TenantId` com setter privado e atribuição em factory.
+- Inventário de entidades multi-tenant por módulo:
+  - **Identity**: `User`, `RefreshToken`
+  - **Authorization**: `Role`, `Permission`, `RolePermission`, `UserAssignment`
+  - Todas têm `TenantId` com setter privado; atribuição obrigatória nas factories. ✅ Implementado.
 
 
