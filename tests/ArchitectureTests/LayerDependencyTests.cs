@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using NetArchTest.Rules;
 
 namespace ArchitectureTests;
@@ -16,6 +16,12 @@ public class LayerDependencyTests
     private static readonly Assembly IdentityDomainAssembly = typeof(Product.Template.Core.Identity.Domain.Entities.User).Assembly;
     private static readonly Assembly IdentityApplicationAssembly = typeof(Product.Template.Core.Identity.Application.Handlers.Auth.LoginCommandHandler).Assembly;
     private static readonly Assembly IdentityInfrastructureAssembly = typeof(Product.Template.Core.Identity.Infrastructure.DependencyInjection).Assembly;
+    private static readonly Assembly AuthorizationDomainAssembly = typeof(Product.Template.Core.Authorization.Domain.Entities.Role).Assembly;
+    private static readonly Assembly AuthorizationApplicationAssembly = typeof(Product.Template.Core.Authorization.Application.Permissions.AuthorizationPermissions).Assembly;
+    private static readonly Assembly AuthorizationInfrastructureAssembly = typeof(Product.Template.Core.Authorization.Infrastructure.DependencyInjection).Assembly;
+    private static readonly Assembly TenantsDomainAssembly = typeof(Product.Template.Core.Tenants.Domain.Entities.Tenant).Assembly;
+    private static readonly Assembly TenantsApplicationAssembly = typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly;
+    private static readonly Assembly TenantsInfrastructureAssembly = typeof(Product.Template.Core.Tenants.Infrastructure.DependencyInjection).Assembly;
     private static readonly Assembly ApiAssembly = typeof(Product.Template.Api.Configurations.SecurityConfiguration).Assembly;
 
     // Namespace constants
@@ -25,6 +31,12 @@ public class LayerDependencyTests
     private const string IdentityDomainNamespace = "Product.Template.Core.Identity.Domain";
     private const string IdentityApplicationNamespace = "Product.Template.Core.Identity.Application";
     private const string IdentityInfrastructureNamespace = "Product.Template.Core.Identity.Infrastructure";
+    private const string AuthorizationDomainNamespace = "Product.Template.Core.Authorization.Domain";
+    private const string AuthorizationApplicationNamespace = "Product.Template.Core.Authorization.Application";
+    private const string AuthorizationInfrastructureNamespace = "Product.Template.Core.Authorization.Infrastructure";
+    private const string TenantsDomainNamespace = "Product.Template.Core.Tenants.Domain";
+    private const string TenantsApplicationNamespace = "Product.Template.Core.Tenants.Application";
+    private const string TenantsInfrastructureNamespace = "Product.Template.Core.Tenants.Infrastructure";
     private const string ApiNamespace = "Product.Template.Api";
 
     [Fact]
@@ -147,6 +159,102 @@ public class LayerDependencyTests
             $"Kernel.Infrastructure should not depend on Api. Violations: {FormatFailures(result)}");
     }
 
+    [Fact]
+    public void AuthorizationDomain_ShouldNotDependOn_Application()
+    {
+        var result = Types.InAssembly(AuthorizationDomainAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(AuthorizationApplicationNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Authorization.Domain should not depend on Authorization.Application. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void AuthorizationDomain_ShouldNotDependOn_Infrastructure()
+    {
+        var result = Types.InAssembly(AuthorizationDomainAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(AuthorizationInfrastructureNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Authorization.Domain should not depend on Infrastructure. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void AuthorizationApplication_ShouldNotDependOn_Infrastructure()
+    {
+        var result = Types.InAssembly(AuthorizationApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(AuthorizationInfrastructureNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Authorization.Application should not depend on Infrastructure. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void AuthorizationApplication_ShouldNotDependOn_Api()
+    {
+        var result = Types.InAssembly(AuthorizationApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(ApiNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Authorization.Application should not depend on Api. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void TenantsDomain_ShouldNotDependOn_Application()
+    {
+        var result = Types.InAssembly(TenantsDomainAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(TenantsApplicationNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Tenants.Domain should not depend on Tenants.Application. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void TenantsDomain_ShouldNotDependOn_Infrastructure()
+    {
+        var result = Types.InAssembly(TenantsDomainAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(TenantsInfrastructureNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Tenants.Domain should not depend on Infrastructure. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void TenantsApplication_ShouldNotDependOn_Infrastructure()
+    {
+        var result = Types.InAssembly(TenantsApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(TenantsInfrastructureNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Tenants.Application should not depend on Infrastructure. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void TenantsApplication_ShouldNotDependOn_Api()
+    {
+        var result = Types.InAssembly(TenantsApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(ApiNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Tenants.Application should not depend on Api. Violations: {FormatFailures(result)}");
+    }
+
     private static string FormatFailures(TestResult result)
     {
         if (result.FailingTypes is null || !result.FailingTypes.Any())
@@ -155,4 +263,3 @@ public class LayerDependencyTests
         return string.Join(", ", result.FailingTypes.Select(t => t.FullName));
     }
 }
-

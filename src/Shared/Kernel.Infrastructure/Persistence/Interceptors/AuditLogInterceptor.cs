@@ -56,10 +56,6 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
             if (entry.State is not (EntityState.Added or EntityState.Modified or EntityState.Deleted))
                 continue;
 
-            // Skip AuditLog itself to avoid infinite loop
-            if (entry.Entity is AuditLog)
-                continue;
-
             var action = entry.State switch
             {
                 EntityState.Added => "Created",

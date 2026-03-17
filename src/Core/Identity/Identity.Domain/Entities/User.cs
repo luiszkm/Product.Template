@@ -17,10 +17,7 @@ public class User : AggregateRoot, IMultiTenantEntity
     public DateTime? LastLoginAt { get; private set; }
     public bool IsActive { get; private set; }
 
-    private readonly List<UserRole> _userRoles = new();
-    public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
-
-    private User() { }
+    private User() { Email = null!; PasswordHash = null!; FirstName = null!; LastName = null!; }
 
     private User(Guid id, long tenantId, Email email, string passwordHash, string firstName, string lastName)
     {
@@ -91,26 +88,6 @@ public class User : AggregateRoot, IMultiTenantEntity
 
         FirstName = firstName.Trim();
         LastName = lastName.Trim();
-    }
-
-    public void AddRole(Role role)
-    {
-        if (_userRoles.Any(ur => ur.RoleId == role.Id))
-            return;
-
-        _userRoles.Add(UserRole.Create(Id, role.Id, TenantId));
-    }
-
-    public void RemoveRole(Guid roleId)
-    {
-        var userRole = _userRoles.FirstOrDefault(ur => ur.RoleId == roleId);
-        if (userRole != null)
-            _userRoles.Remove(userRole);
-    }
-
-    public bool HasRole(string roleName)
-    {
-        return _userRoles.Any(ur => ur.Role?.Name == roleName);
     }
 
     private void SetTenant(long tenantId)

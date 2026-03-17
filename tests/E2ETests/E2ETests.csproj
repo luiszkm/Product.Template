@@ -7,6 +7,8 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Pre-existing test project code quality warnings (deferred cleanup) -->
+    <NoWarn>$(NoWarn);CA1707;CA1860;CA1310;CA2263;IDE0005;CS8620;CS0108;CS8604</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

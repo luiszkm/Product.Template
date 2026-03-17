@@ -4,10 +4,10 @@ using Kernel.Infrastructure.Persistence.Interceptors;
 using Kernel.Infrastructure.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Security;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.MultiTenancy;
+using Product.Template.Kernel.Infrastructure.Persistence;
 
 namespace Kernel.Infrastructure;
 
@@ -41,6 +41,9 @@ public static class DependencyInjection
 
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<AuditLogInterceptor>();
+
+        // Register Kernel.Infrastructure's own EF configurations
+        services.GetOrCreateEfRegistry().Register(typeof(AppDbContext).Assembly);
 
         return services;
     }

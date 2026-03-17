@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- CA1707: Test method names use {Method}_{Scenario}_{Result} convention with underscores -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,6 +27,12 @@
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Domain\Authorization.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Application\Authorization.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Infrastructure\Authorization.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Domain\Tenants.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Infrastructure\Tenants.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 

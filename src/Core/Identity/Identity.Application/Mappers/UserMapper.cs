@@ -16,12 +16,7 @@ public static class UserMapper
             user.LastName,
             user.EmailConfirmed,
             user.CreatedAt,
-            user.LastLoginAt,
-            user.UserRoles
-                .Where(r => r.Role is not null)
-                .Select(r => r.Role!.Name)
-                .ToArray()
-        );
+            user.LastLoginAt);
     }
 
     public static IEnumerable<UserOutput> ToOutputList(this IEnumerable<User> users)

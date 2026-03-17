@@ -5,6 +5,7 @@ using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 using Product.Template.Kernel.Application.Exceptions;
+using Product.Template.Kernel.Application.Security;
 using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Auth;
@@ -20,6 +21,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly IUserRolesProvider _userRolesProvider;
     private readonly ILogger<ExternalLoginCommandHandler> _logger;
 
     public ExternalLoginCommandHandler(
@@ -29,6 +31,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         IJwtTokenService jwtTokenService,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        IUserRolesProvider userRolesProvider,
         ILogger<ExternalLoginCommandHandler> logger)
     {
         _providerFactory = providerFactory;
@@ -37,6 +40,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         _jwtTokenService = jwtTokenService;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _userRolesProvider = userRolesProvider;
         _logger = logger;
     }
 
@@ -51,11 +55,8 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             throw new BusinessRuleException("Tenant must be resolved before external login.");
         }
 
-        _logger.LogInformation(
-            "Iniciando autenticação externa com provider: {Provider}",
-            request.Provider);
+        _logger.LogInformation("Iniciando autenticação externa com provider: {Provider}", request.Provider);
 
-        // 1. Obter o provider específico
         var provider = _providerFactory.GetProvider(request.Provider);
         if (provider is null)
         {
@@ -63,111 +64,82 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             throw new UnauthorizedAccessException("Authentication provider is not supported.");
         }
 
-        // 2. Preparar credenciais para o provider
-        var credentials = new Dictionary<string, string>
-        {
-            ["code"] = request.Code
-        };
-
+        var credentials = new Dictionary<string, string> { ["code"] = request.Code };
         if (!string.IsNullOrEmpty(request.RedirectUri))
             credentials["redirectUri"] = request.RedirectUri;
 
-        // 3. Autenticar via provider externo
         var authRequest = new AuthenticationRequest(request.Provider, credentials);
         var authResult = await provider.AuthenticateAsync(authRequest, cancellationToken);
 
         if (!authResult.Success || authResult.UserInfo == null)
         {
-            _logger.LogWarning(
-                "Falha na autenticação externa: {Error}",
-                authResult.Error);
+            _logger.LogWarning("Falha na autenticação externa: {Error}", authResult.Error);
             throw new UnauthorizedAccessException(authResult.Error ?? "Autenticação externa falhou");
         }
 
-        // 4. Obter ou criar usuário no sistema
         if (!authResult.UserInfo.TryGetValue("email", out var email) || string.IsNullOrWhiteSpace(email))
         {
             _logger.LogWarning("Provider externo {Provider} não retornou email", request.Provider);
             throw new UnauthorizedAccessException("External provider did not supply a valid email.");
         }
+
         var user = await _userRepository.GetByEmailAsync(email, cancellationToken);
 
-        if (user == null)
+        if (user is null)
         {
-            // Criar novo usuário a partir dos dados do provider externo
             var firstName = authResult.UserInfo.GetValueOrDefault("firstName", "");
             var lastName = authResult.UserInfo.GetValueOrDefault("lastName", "");
 
             user = Domain.Entities.User.Create(
                 tenantId,
                 email: email,
-                passwordHash: Guid.NewGuid().ToString(), // Password aleatório para contas externas
+                passwordHash: Guid.NewGuid().ToString(),
                 firstName: string.IsNullOrEmpty(firstName) ? email.Split('@')[0] : firstName,
-                lastName: string.IsNullOrEmpty(lastName) ? "External" : lastName
-            );
+                lastName: string.IsNullOrEmpty(lastName) ? "External" : lastName);
 
-            user.ConfirmEmail(); // Auto-confirmar email de providers confiáveis
-
+            user.ConfirmEmail();
             await _userRepository.AddAsync(user, cancellationToken);
             await _unitOfWork.Commit(cancellationToken);
 
             _logger.LogInformation(
                 "Novo usuário criado via autenticação externa: {Email}, Provider: {Provider}",
-                email,
-                request.Provider);
+                email, request.Provider);
         }
 
-        // 5. Atualizar último login
         user.UpdateLastLogin();
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
 
-        // 6. Gerar token JWT interno
-        var roles = user.UserRoles
-            .Where(ur => ur.Role is not null)
-            .Select(ur => ur.Role!.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var rolesData = await _userRolesProvider.GetUserRolesAndPermissionsAsync(user.Id, cancellationToken);
 
         var token = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
-            roles: roles
-        );
+            roles: rolesData.Roles);
 
-        var userAuthOutput = new UserAuthOutput(
-            Id: user.Id,
-            Email: user.Email,
-            FirstName: user.FirstName,
-            LastLoginAt: user.LastLoginAt,
-            Roles: roles
-        );
-
-        _logger.LogInformation(
-            "Autenticação externa bem-sucedida para usuário: {UserId}, Provider: {Provider}",
-            user.Id,
-            request.Provider);
-
-        // Gerar refresh token para autenticação externa também
         var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();
-        var clientIp = "external-provider"; // Placeholder - idealmente usar IHttpContextAccessor
-
         var refreshToken = Domain.Entities.RefreshToken.Create(
-            tenantId,
-            user.Id,
-            rawRefreshToken,
+            tenantId, user.Id, rawRefreshToken,
             _jwtTokenService.GetRefreshTokenExpirationDays(),
-            clientIp);
+            "external-provider");
 
         await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
+
+        _logger.LogInformation(
+            "Autenticação externa bem-sucedida para usuário: {UserId}, Provider: {Provider}",
+            user.Id, request.Provider);
 
         return new AuthTokenOutput(
             AccessToken: token,
             TokenType: "Bearer",
             ExpiresIn: _jwtTokenService.GetExpiresInSeconds(),
             RefreshToken: rawRefreshToken,
-            User: userAuthOutput
-        );
+            User: new UserAuthOutput(
+                Id: user.Id,
+                Email: user.Email,
+                FirstName: user.FirstName,
+                LastLoginAt: user.LastLoginAt,
+                Roles: rolesData.Roles.ToList()));
     }
 }

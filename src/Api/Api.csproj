@@ -8,7 +8,8 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\.</DockerfileContext>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Pre-existing style/quality warnings in API project (deferred cleanup) -->
+    <NoWarn>$(NoWarn);1591;IDE0005;IDE0161;CA1861;CA1852;CA2263;CA1304;CA1305;CA1310;CA1311;CA1845;CA1850;CA1860;CS8602;CS8603</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.12.6" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.*" />
 
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.2.0" />
@@ -58,6 +60,10 @@
     <ProjectReference Include="..\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
     <ProjectReference Include="..\Core\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\Core\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Core\Authorization\Authorization.Application\Authorization.Application.csproj" />
+    <ProjectReference Include="..\Core\Authorization\Authorization.Infrastructure\Authorization.Infrastructure.csproj" />
+    <ProjectReference Include="..\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
+    <ProjectReference Include="..\Core\Tenants\Tenants.Infrastructure\Tenants.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

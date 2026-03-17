@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Product.Template.Kernel.Application.Security;
 
 public interface IPermissionCatalog

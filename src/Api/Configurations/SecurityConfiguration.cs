@@ -19,6 +19,16 @@ public static class SecurityConfiguration
     public const string UserReadOrSelfPolicy = "UserReadOrSelf";
     public const string UserManageOrSelfPolicy = "UserManageOrSelf";
 
+    // Authorization module policies
+    public const string AuthorizationRolesReadPolicy = "AuthorizationRolesRead";
+    public const string AuthorizationRolesManagePolicy = "AuthorizationRolesManage";
+    public const string AuthorizationPermissionsReadPolicy = "AuthorizationPermissionsRead";
+    public const string AuthorizationPermissionsManagePolicy = "AuthorizationPermissionsManage";
+
+    // Tenants module policies
+    public const string TenantsReadPolicy = "TenantsRead";
+    public const string TenantsManagePolicy = "TenantsManage";
+
     public const string PermissionClaimType = AuthorizationClaimTypes.Permission;
 
     private const string DefaultCorsPolicyName = "DefaultCorsPolicy";

@@ -7,6 +7,5 @@ public record UserOutput(
     string LastName,
     bool EmailConfirmed,
     DateTime CreatedAt,
-    DateTime? LastLoginAt,
-    IEnumerable<string> Roles
+    DateTime? LastLoginAt
 );

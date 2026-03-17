@@ -1,28 +1,20 @@
-using Product.Template.Core.Identity.Domain.Repositories;
-using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Identity.Application.Queries.Users;
 
 public class GetUserRolesQueryHandler : IQueryHandler<GetUserRolesQuery, IReadOnlyCollection<string>>
 {
-    private readonly IUserRepository _userRepository;
+    private readonly IUserRolesProvider _userRolesProvider;
 
-    public GetUserRolesQueryHandler(IUserRepository userRepository)
+    public GetUserRolesQueryHandler(IUserRolesProvider userRolesProvider)
     {
-        _userRepository = userRepository;
+        _userRolesProvider = userRolesProvider;
     }
 
     public async Task<IReadOnlyCollection<string>> Handle(GetUserRolesQuery request, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(request.UserId, cancellationToken)
-            ?? throw new NotFoundException("User not Found");
-
-        return user.UserRoles
-            .Where(x => x.Role is not null)
-            .Select(x => x.Role!.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x)
-            .ToArray();
+        var rolesData = await _userRolesProvider.GetUserRolesAndPermissionsAsync(request.UserId, cancellationToken);
+        return rolesData.Roles.OrderBy(x => x).ToArray();
     }
 }

@@ -21,6 +21,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ITenantContext _tenantContext;
+    private readonly IUserRolesProvider _userRolesProvider;
     private readonly ILogger<RefreshTokenCommandHandler> _logger;
 
     public RefreshTokenCommandHandler(
@@ -30,6 +31,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         IUnitOfWork unitOfWork,
         IHttpContextAccessor httpContextAccessor,
         ITenantContext tenantContext,
+        IUserRolesProvider userRolesProvider,
         ILogger<RefreshTokenCommandHandler> logger)
     {
         _refreshTokenRepository = refreshTokenRepository;
@@ -38,6 +40,7 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         _unitOfWork = unitOfWork;
         _httpContextAccessor = httpContextAccessor;
         _tenantContext = tenantContext;
+        _userRolesProvider = userRolesProvider;
         _logger = logger;
     }
 
@@ -73,7 +76,6 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
 
         var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        // Token rotation: revoke old, issue new
         var newRawToken = _jwtTokenService.GenerateRefreshToken();
         existing.Revoke(clientIp, replacedByToken: newRawToken);
 
@@ -86,27 +88,15 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
 
         await _refreshTokenRepository.AddAsync(newRefreshToken, cancellationToken);
 
-        var roles = user.UserRoles
-            .Where(ur => ur.Role is not null)
-            .Select(ur => ur.Role!.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var rolesData = await _userRolesProvider.GetUserRolesAndPermissionsAsync(user.Id, cancellationToken);
 
-        var permissions = user.UserRoles
-            .Where(ur => ur.Role is not null)
-            .SelectMany(ur => ur.Role!.RolePermissions)
-            .Where(rp => rp.Permission is not null)
-            .Select(rp => rp.Permission!.Name)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var permissionClaims = permissions
+        var permissionClaims = rolesData.Permissions
             .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
         var accessToken = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
-            roles: roles,
+            roles: rolesData.Roles,
             extraClaims: permissionClaims);
 
         await _unitOfWork.Commit(cancellationToken);
@@ -123,7 +113,6 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
                 Email: user.Email,
                 FirstName: user.FirstName,
                 LastLoginAt: user.LastLoginAt,
-                Roles: roles));
+                Roles: rolesData.Roles.ToList()));
     }
 }
-

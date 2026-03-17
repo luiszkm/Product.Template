@@ -33,6 +33,6 @@ public sealed class TenantContextBehavior<TRequest, TResponse> : IPipelineBehavi
             throw new BusinessRuleException("Tenant must be resolved before handling the request.");
         }
 
-        return await next();
+        return await next(cancellationToken);
     }
 }

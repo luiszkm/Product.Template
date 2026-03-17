@@ -23,7 +23,7 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     {
         var stopwatch = Stopwatch.StartNew();
 
-        var response = await next();
+        var response = await next(cancellationToken);
 
         stopwatch.Stop();
 

@@ -1,5 +1,3 @@
-using System;
-
 namespace Product.Template.Kernel.Application.Security;
 
 public sealed class PermissionDescriptor

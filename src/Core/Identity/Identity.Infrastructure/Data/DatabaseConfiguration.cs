@@ -1,5 +1,3 @@
-using System.Linq;
-using System.Collections.Generic;
 using Kernel.Application.Security;
 using Kernel.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
@@ -139,8 +137,6 @@ public static class DatabaseConfiguration
 
             var hashServices = tenantScope.ServiceProvider.GetRequiredService<IHashServices>();
 
-            await RoleSeeder.SeedAsync(context);
-            await PermissionSeeder.SeedAsync(context);
             await UserSeeder.SeedAsync(context, hashServices);
         }
     }
@@ -148,7 +144,7 @@ public static class DatabaseConfiguration
     private static async Task EnsureTenantsAsync(HostDbContext hostDbContext, IEnumerable<TenantSeedDefinition> tenantSeeds)
     {
         var existingTenants = await hostDbContext.Tenants.ToListAsync();
-        var nextTenantId = existingTenants.Any() ? existingTenants.Max(x => x.TenantId) + 1 : 1;
+        var nextTenantId = existingTenants.Count > 0 ? existingTenants.Max(x => x.TenantId) + 1 : 1;
 
         foreach (var seed in tenantSeeds)
         {

@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Core.Identity.Application.Permissions;
 using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Core.Identity.Infrastructure.Data.Persistence;
@@ -22,7 +22,6 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         services.AddTransient<IUserRepository, UserRepository>();
-        services.AddTransient<IRoleRepository, RoleRepository>();
         services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
 
         return services;

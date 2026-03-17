@@ -1,6 +1,4 @@
 using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
 using Kernel.Application.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -165,14 +163,14 @@ public sealed class MicrosoftAuthenticationProvider : IAuthenticationProvider
     }
 
     // DTOs internos
-    private record TokenResponse(
+    private sealed record TokenResponse(
         string AccessToken,
         string TokenType,
         int ExpiresIn,
         string? RefreshToken,
         string Scope);
 
-    private record MicrosoftUserInfo(
+    private sealed record MicrosoftUserInfo(
         string Id,
         string? Email,
         string? Name,

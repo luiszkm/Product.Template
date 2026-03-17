@@ -1,4 +1,6 @@
+using Product.Template.Core.Authorization.Infrastructure;
 using Product.Template.Core.Identity.Infrastructure;
+using Product.Template.Core.Tenants.Infrastructure;
 
 namespace Product.Template.Api.Configurations
 {
@@ -8,10 +10,10 @@ namespace Product.Template.Api.Configurations
             this IServiceCollection services)
         {
             services.AddIdentityInJections();
-            // HttpContextAccessor para CurrentUserService
+            services.AddAuthorizationModule();
+            services.AddTenantsModule();
             services.AddHttpContextAccessor();
             return services;
         }
     }
 }
-

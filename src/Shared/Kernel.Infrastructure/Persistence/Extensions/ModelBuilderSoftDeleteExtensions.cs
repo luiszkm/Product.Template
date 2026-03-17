@@ -32,7 +32,9 @@ internal static class ModelBuilderSoftDeleteExtensions
 
     private static LambdaExpression CombineWithExistingFilter(IMutableEntityType entityType, LambdaExpression newFilter)
     {
+#pragma warning disable CS0618
         var existingFilter = entityType.GetQueryFilter();
+#pragma warning restore CS0618
         if (existingFilter is null)
         {
             return newFilter;

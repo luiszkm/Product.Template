@@ -1,5 +1,7 @@
 using System.Reflection;
+using Product.Template.Core.Authorization.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Entities;
+using Product.Template.Core.Tenants.Domain.Entities;
 using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace ArchitectureTests;
@@ -9,8 +11,12 @@ public class TenancyInvariantTests
     private static readonly Assembly[] TenantAssemblies =
     [
         typeof(IMultiTenantEntity).Assembly,
-        typeof(User).Assembly
+        typeof(User).Assembly,
+        typeof(Role).Assembly,
     ];
+
+    // Tenant entity is intentionally excluded — tenants are not tenant-scoped
+    private static readonly HashSet<Type> ExcludedTypes = [typeof(Tenant)];
 
     [Fact]
     public void MultiTenantEntities_ShouldExposeTenantIdWithNonPublicSetter()
@@ -18,6 +24,7 @@ public class TenancyInvariantTests
         var multiTenantTypes = TenantAssemblies
             .SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && !t.IsAbstract && typeof(IMultiTenantEntity).IsAssignableFrom(t))
+            .Where(t => !ExcludedTypes.Contains(t))
             .Distinct()
             .ToList();
 
@@ -49,4 +56,3 @@ public class TenancyInvariantTests
             $"Tenant invariants violated:\n - {string.Join("\n - ", violations)}");
     }
 }
-

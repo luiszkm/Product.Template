@@ -5,7 +5,7 @@ using Product.Template.Core.Identity.Domain.ValueObjects;
 
 namespace Product.Template.Kernel.Infrastructure.Persistence.Configurations;
 
-internal class UserConfigurations : IEntityTypeConfiguration<User>
+internal sealed class UserConfigurations : IEntityTypeConfiguration<User>
 {
     public void Configure(EntityTypeBuilder<User> builder)
     {
@@ -54,12 +54,6 @@ internal class UserConfigurations : IEntityTypeConfiguration<User>
         builder.Property(u => u.IsActive)
             .IsRequired()
             .HasDefaultValue(true);
-
-        // Relationship with UserRole
-        builder.HasMany(u => u.UserRoles)
-            .WithOne(ur => ur.User)
-            .HasForeignKey(ur => ur.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
 
         // Ignore domain events
         builder.Ignore(u => u.DomainEvents);

@@ -1,8 +1,9 @@
-using System;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Product.Template.Api.Configurations;
+using Product.Template.Core.Authorization.Application.Permissions;
 using Product.Template.Core.Identity.Application.Permissions;
+using Product.Template.Core.Tenants.Application.Permissions;
 using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Api.Authorization;
@@ -31,10 +32,9 @@ internal sealed class PermissionCatalogAuthorizationConfigurator : IConfigureOpt
 
     private void ConfigurePermissionPolicies(AuthorizationOptions options)
     {
+        // Identity
         EnsurePermissionRegistered(IdentityPermissions.UserRead);
         EnsurePermissionRegistered(IdentityPermissions.UserManage);
-        EnsurePermissionRegistered(IdentityPermissions.RoleRead);
-        EnsurePermissionRegistered(IdentityPermissions.RoleManage);
 
         options.AddPolicy(SecurityConfiguration.UsersReadPolicy, policy =>
             policy.RequireAssertion(context =>
@@ -51,6 +51,46 @@ internal sealed class PermissionCatalogAuthorizationConfigurator : IConfigureOpt
 
         options.AddPolicy(SecurityConfiguration.UserManageOrSelfPolicy, policy =>
             policy.AddRequirements(new UserOwnershipRequirement(IdentityPermissions.UserManage)));
+
+        // Authorization module
+        EnsurePermissionRegistered(AuthorizationPermissions.RoleRead);
+        EnsurePermissionRegistered(AuthorizationPermissions.RoleManage);
+        EnsurePermissionRegistered(AuthorizationPermissions.PermissionRead);
+        EnsurePermissionRegistered(AuthorizationPermissions.PermissionManage);
+
+        options.AddPolicy(SecurityConfiguration.AuthorizationRolesReadPolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, AuthorizationPermissions.RoleRead)));
+
+        options.AddPolicy(SecurityConfiguration.AuthorizationRolesManagePolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, AuthorizationPermissions.RoleManage)));
+
+        options.AddPolicy(SecurityConfiguration.AuthorizationPermissionsReadPolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, AuthorizationPermissions.PermissionRead)));
+
+        options.AddPolicy(SecurityConfiguration.AuthorizationPermissionsManagePolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, AuthorizationPermissions.PermissionManage)));
+
+        // Tenants module
+        EnsurePermissionRegistered(TenantsPermissions.Read);
+        EnsurePermissionRegistered(TenantsPermissions.Manage);
+
+        options.AddPolicy(SecurityConfiguration.TenantsReadPolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, TenantsPermissions.Read)));
+
+        options.AddPolicy(SecurityConfiguration.TenantsManagePolicy, policy =>
+            policy.RequireAssertion(context =>
+                context.User.IsInRole("Admin") ||
+                context.User.HasClaim(SecurityConfiguration.PermissionClaimType, TenantsPermissions.Manage)));
     }
 
     private void EnsurePermissionRegistered(string permissionCode)

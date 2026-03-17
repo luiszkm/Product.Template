@@ -1,4 +1,4 @@
-﻿# 12 — Folder Structure
+# 12 — Folder Structure
 
 ## Root
 
@@ -16,14 +16,17 @@ Product.Template/
 ├── src/
 │   ├── Api/                      # ASP.NET Core host
 │   ├── Core/                     # Bounded contexts (modules)
-│   │   └── {Module}/
-│   │       ├── {Module}.Domain/
-│   │       ├── {Module}.Application/
-│   │       └── {Module}.Infrastructure/
+│   │   ├── Identity/             # Users + Authentication
+│   │   ├── Authorization/        # Roles, Permissions, UserAssignments
+│   │   └── Tenants/              # Tenant domain entity + management
+│   │       └── {Module}/
+│   │           ├── {Module}.Domain/
+│   │           ├── {Module}.Application/
+│   │           └── {Module}.Infrastructure/
 │   ├── Shared/
 │   │   ├── Kernel.Domain/        # Base types (Entity, AggregateRoot, SeedWorks)
 │   │   ├── Kernel.Application/   # CQRS interfaces, Behaviors, Exceptions
-│   │   └── Kernel.Infrastructure/ # EF Core, Security, MultiTenancy
+│   │   └── Kernel.Infrastructure/ # EF Core, Security, MultiTenancy, Migrations
 │   └── Tools/
 │       └── Migrator/             # Database migration tool
 ├── tests/
@@ -47,10 +50,7 @@ src/Core/Identity/
 ├── Identity.Domain/
 │   ├── Entities/
 │   │   ├── User.cs               # AggregateRoot
-│   │   ├── Role.cs               # Entity
-│   │   ├── Permission.cs         # Entity
-│   │   ├── UserRole.cs           # Join entity
-│   │   └── RolePermission.cs     # Join entity
+│   │   └── RefreshToken.cs       # Entity
 │   ├── ValueObjects/
 │   │   ├── Email.cs
 │   │   └── Password.cs
@@ -59,7 +59,7 @@ src/Core/Identity/
 │   │   └── UserLoggedInEvent.cs
 │   ├── Repositories/
 │   │   ├── IUserRepository.cs
-│   │   └── IRoleRepository.cs
+│   │   └── IRefreshTokenRepository.cs
 │   └── Identity.Domain.csproj
 │
 ├── Identity.Application/
@@ -71,34 +71,15 @@ src/Core/Identity/
 │   │   │   ├── LoginCommandHandler.cs
 │   │   │   ├── ExternalLoginCommandHandler.cs
 │   │   │   └── AuthTokenOutput.cs
-│   │   ├── Role/
-│   │   │   ├── Commands/
-│   │   │   │   ├── CreateRoleCommand.cs
-│   │   │   │   ├── UpdateRoleCommand.cs
-│   │   │   │   └── DeleteRoleCommand.cs
-│   │   │   ├── CreateRoleCommandHandler.cs
-│   │   │   ├── UpdateRoleCommandHandler.cs
-│   │   │   └── DeleteRoleCommandHandler.cs
 │   │   └── User/
 │   │       ├── Commands/
 │   │       │   ├── RegisterUserCommand.cs
 │   │       │   ├── UpdateUserCommand.cs
-│   │       │   ├── DeleteUserCommand.cs
-│   │       │   ├── AddUserRoleCommand.cs
-│   │       │   └── RemoveUserRoleCommand.cs
+│   │       │   └── DeleteUserCommand.cs
 │   │       ├── RegisterUserCommandHandler.cs
 │   │       ├── UpdateUserCommandHandler.cs
-│   │       ├── DeleteUserCommandHandler.cs
-│   │       ├── AddUserRoleCommandHandler.cs
-│   │       └── RemoveUserRoleCommandHandler.cs
+│   │       └── DeleteUserCommandHandler.cs
 │   ├── Queries/
-│   │   ├── Role/
-│   │   │   ├── Commands/        # (query definitions)
-│   │   │   │   ├── GetRoleByIdQuery.cs
-│   │   │   │   └── ListRolesQuery.cs
-│   │   │   ├── GetRoleByIdQueryHandler.cs
-│   │   │   ├── ListRolesQueryHandler.cs
-│   │   │   └── RoleOutput.cs
 │   │   └── User/
 │   │       ├── Commands/
 │   │       │   ├── GetUserByIdQuery.cs
@@ -113,22 +94,99 @@ src/Core/Identity/
 │   │   └── RegisterUserCommandValidator.cs
 │   ├── Mappers/
 │   │   └── UserMapper.cs
-│   ├── Security/
-│   │   └── RbacMetrics.cs
+│   ├── Permissions/
+│   │   ├── IdentityPermissions.cs
+│   │   └── IdentityPermissionCatalogSeeder.cs
 │   └── Identity.Application.csproj
 │
 └── Identity.Infrastructure/
     ├── Data/
     │   ├── DatabaseConfiguration.cs
     │   ├── Persistence/
-    │   │   ├── UserRepository.cs
-    │   │   └── RoleRepository.cs
+    │   │   └── UserRepository.cs
     │   └── Seeders/
-    │       ├── RoleSeeder.cs
-    │       ├── PermissionSeeder.cs
     │       └── UserSeeder.cs
     ├── DependencyInjection.cs
     └── Identity.Infrastructure.csproj
+```
+
+## Authorization Module Structure
+
+```
+src/Core/Authorization/
+├── Authorization.Domain/
+│   ├── Entities/
+│   │   ├── Role.cs               # AggregateRoot
+│   │   ├── Permission.cs         # Entity
+│   │   ├── UserAssignment.cs     # Join entity (UserId Guid — no User nav ref)
+│   │   └── RolePermission.cs     # Join entity
+│   ├── Events/
+│   │   ├── RoleCreatedEvent.cs
+│   │   └── UserAssignedToRoleEvent.cs
+│   ├── Repositories/
+│   │   ├── IRoleRepository.cs
+│   │   └── IPermissionRepository.cs
+│   └── Authorization.Domain.csproj
+│
+├── Authorization.Application/
+│   ├── Handlers/
+│   │   ├── Role/         # CreateRole, UpdateRole, DeleteRole, AssignPermission, etc.
+│   │   ├── Permission/   # CreatePermission, UpdatePermission, DeletePermission
+│   │   └── UserAssignment/ # AssignUserToRole, RevokeUserFromRole
+│   ├── Queries/
+│   │   ├── Role/         # GetRoleById, ListRoles
+│   │   ├── Permission/   # ListPermissions
+│   │   └── UserAssignment/ # GetUserAssignments
+│   ├── Permissions/
+│   │   ├── AuthorizationPermissions.cs
+│   │   └── AuthorizationPermissionCatalogSeeder.cs
+│   └── Authorization.Application.csproj
+│
+└── Authorization.Infrastructure/
+    ├── Data/
+    │   ├── Persistence/
+    │   │   ├── RoleRepository.cs
+    │   │   ├── PermissionRepository.cs
+    │   │   └── UserAssignmentRepository.cs
+    │   └── Configurations/
+    │       ├── RoleConfigurations.cs
+    │       ├── PermissionConfigurations.cs
+    │       ├── RolePermissionConfigurations.cs
+    │       └── UserAssignmentConfigurations.cs
+    ├── DependencyInjection.cs
+    └── Authorization.Infrastructure.csproj
+```
+
+## Tenants Module Structure
+
+```
+src/Core/Tenants/
+├── Tenants.Domain/
+│   ├── Entities/
+│   │   └── Tenant.cs             # AggregateRoot (NOT IMultiTenantEntity)
+│   ├── Events/
+│   │   ├── TenantCreatedEvent.cs
+│   │   └── TenantDeactivatedEvent.cs
+│   ├── Repositories/
+│   │   └── ITenantRepository.cs
+│   └── Tenants.Domain.csproj
+│
+├── Tenants.Application/
+│   ├── Handlers/
+│   │   └── Tenant/   # CreateTenant, UpdateTenant, ActivateTenant, DeactivateTenant
+│   ├── Queries/
+│   │   └── Tenant/   # GetTenantById, GetTenantByKey, ListTenants
+│   ├── Permissions/
+│   │   ├── TenantsPermissions.cs
+│   │   └── TenantsPermissionCatalogSeeder.cs
+│   └── Tenants.Application.csproj
+│
+└── Tenants.Infrastructure/
+    ├── Data/
+    │   └── Persistence/
+    │       └── TenantRepository.cs   # Maps TenantConfig ↔ Tenant (HostDbContext)
+    ├── DependencyInjection.cs
+    └── Tenants.Infrastructure.csproj
 ```
 
 ## API Structure
@@ -137,7 +195,9 @@ src/Core/Identity/
 src/Api/
 ├── Controllers/
 │   └── v1/
-│       └── IdentityController.cs
+│       ├── IdentityController.cs
+│       ├── AuthorizationController.cs
+│       └── TenantsController.cs
 ├── Configurations/
 │   ├── ApiVersioningConfiguration.cs
 │   ├── CachingConfiguration.cs
@@ -169,6 +229,7 @@ src/Api/
 │       └── ApiResponseListMeta.cs
 ├── Attributes/
 │   └── FeatureGateAttribute.cs
+├── AppDbContextDesignTimeFactory.cs  # EF design-time factory (all module assemblies)
 ├── Program.cs
 └── Api.csproj
 ```
@@ -180,6 +241,7 @@ tests/
 ├── ArchitectureTests/
 │   ├── LayerDependencyTests.cs
 │   ├── NamingConventionTests.cs
+│   ├── TenancyInvariantTests.cs
 │   └── CqrsConventionTests.cs
 ├── UnitTests/
 │   ├── Security/
@@ -209,4 +271,6 @@ tests/
 3. **New controller** → `src/Api/Controllers/v1/{Module}Controller.cs`.
 4. **New configuration** → `src/Api/Configurations/{Feature}Configuration.cs`.
 5. **New test** → place in the correct test project and subfolder matching the feature.
-
+6. **Authorization entities** (Role, Permission, RolePermission, UserAssignment) live in `Authorization.Domain`, not Identity.
+7. **Tenant domain entity** (`Tenant`) lives in `Tenants.Domain`; does NOT implement `IMultiTenantEntity`.
+8. **Design-time factory** for `AppDbContext` lives in `src/Api/` so it can reference all module Infrastructure assemblies.

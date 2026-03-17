@@ -37,7 +37,7 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
     {
 
         var userExisits = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-        if (userExisits != null)
+        if (userExisits is not null)
         {
             _logger.LogWarning("Tentativa de registro com email já existente: {Email}", request.Email);
             throw new BusinessRuleException("Email já está em uso.");

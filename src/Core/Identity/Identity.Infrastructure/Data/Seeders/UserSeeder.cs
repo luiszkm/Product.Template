@@ -20,9 +20,6 @@ internal static class UserSeeder
         var adminPasswordHash = hashServices.GeneratePasswordHash("Admin@123");
         var userPasswordHash  = hashServices.GeneratePasswordHash("User@123");
 
-        var adminRole = await context.Roles.FindAsync(RoleSeeder.AdminRoleId);
-        var userRole  = await context.Roles.FindAsync(RoleSeeder.UserRoleId);
-
         var admin = User.Create(tenantId, "admin@producttemplate.com", adminPasswordHash, "System", "Administrator");
         typeof(User).BaseType!.GetProperty("Id")!.SetValue(admin, AdminUserId);
         admin.ConfirmEmail();
@@ -32,11 +29,6 @@ internal static class UserSeeder
         testUser.ConfirmEmail();
 
         await context.Users.AddRangeAsync(admin, testUser);
-        await context.SaveChangesAsync();
-
-        if (adminRole is not null) admin.AddRole(adminRole);
-        if (userRole  is not null) testUser.AddRole(userRole);
-
         await context.SaveChangesAsync();
     }
 }
