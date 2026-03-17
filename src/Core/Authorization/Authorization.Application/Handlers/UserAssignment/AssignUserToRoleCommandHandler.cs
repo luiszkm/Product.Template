@@ -50,7 +50,7 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
         if (tenantId <= 0)
             throw new BusinessRuleException("Tenant must be resolved before assigning roles.");
 
-        var assignment = Domain.Entities.UserAssignment.Create(request.UserId, request.RoleId, tenantId);
+        var assignment = Domain.Entities.UserAssignment.Create(request.UserId, request.RoleId, tenantId, role.Name);
 
         await _assignmentRepository.AddAsync(assignment, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);

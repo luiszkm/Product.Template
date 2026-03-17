@@ -2,6 +2,7 @@ using Kernel.Domain.SeedWorks;
 using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Domain.Repositories;
+using Product.Template.Core.Identity.Domain.ValueObjects;
 using Product.Template.Kernel.Domain.SeedWorks;
 using Product.Template.Kernel.Infrastructure.Persistence;
 
@@ -24,8 +25,9 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
+        var emailVo = Email.Create(email);
         return await _context.Users
-            .FirstOrDefaultAsync(u => EF.Property<string>(u.Email, "Value") == email, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == emailVo, cancellationToken);
     }
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)

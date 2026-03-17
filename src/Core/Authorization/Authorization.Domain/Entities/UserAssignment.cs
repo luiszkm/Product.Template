@@ -1,3 +1,4 @@
+using Product.Template.Core.Authorization.Domain.Events;
 using Product.Template.Kernel.Domain.Exceptions;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Domain.SeedWorks;
@@ -8,7 +9,7 @@ namespace Product.Template.Core.Authorization.Domain.Entities;
 /// Represents the assignment of a user (by UserId) to a Role within a tenant.
 /// References users by UserId (Guid) only — no navigation to User entity, keeping modules decoupled.
 /// </summary>
-public class UserAssignment : Entity, IMultiTenantEntity
+public class UserAssignment : AggregateRoot, IMultiTenantEntity
 {
     public long TenantId { get; private set; }
     public Guid UserId { get; private set; }
@@ -28,7 +29,7 @@ public class UserAssignment : Entity, IMultiTenantEntity
         AssignedAt = DateTime.UtcNow;
     }
 
-    public static UserAssignment Create(Guid userId, Guid roleId, long tenantId)
+    public static UserAssignment Create(Guid userId, Guid roleId, long tenantId, string roleName)
     {
         if (tenantId <= 0)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
@@ -39,7 +40,9 @@ public class UserAssignment : Entity, IMultiTenantEntity
         if (roleId == Guid.Empty)
             throw new DomainException("RoleId must be provided.");
 
-        return new UserAssignment(Guid.NewGuid(), userId, roleId, tenantId);
+        var assignment = new UserAssignment(Guid.NewGuid(), userId, roleId, tenantId);
+        assignment.AddDomainEvent(new UserAssignedToRoleEvent(userId, roleId, roleName));
+        return assignment;
     }
 
     private void SetTenant(long tenantId)

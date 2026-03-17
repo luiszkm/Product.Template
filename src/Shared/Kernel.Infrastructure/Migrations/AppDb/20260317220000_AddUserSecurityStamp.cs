@@ -13,10 +13,9 @@ namespace Kernel.Infrastructure.Migrations.AppDb
             migrationBuilder.AddColumn<string>(
                 name: "SecurityStamp",
                 table: "Users",
-                type: "TEXT",
                 maxLength: 64,
                 nullable: false,
-                defaultValueSql: "lower(hex(randomblob(16)))");
+                defaultValue: "");
         }
 
         /// <inheritdoc />

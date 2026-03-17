@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -18,12 +18,26 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MediatR" Version="14.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.*" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Identity\Identity.Infrastructure\Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Application\Authorization.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Infrastructure\Authorization.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Infrastructure\Tenants.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kernel.Application\Kernel.Application.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
+    <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,10 +48,6 @@
   <PropertyGroup>
     <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>false</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
