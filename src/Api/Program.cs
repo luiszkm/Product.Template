@@ -66,6 +66,9 @@ app.UseCachingConfiguration();
 // Serilog Request Logging (captura todas as requisições de forma performática)
 app.UseSerilogConfiguration();
 
+// Security (CORS) — must run before any middleware that can short-circuit (tenant, IP, etc.)
+app.UseSecurityConfiguration();
+
 // Request Logging Detalhado (com correlationId e mascaramento de dados sensíveis)
 app.UseMiddleware<RequestLoggingMiddleware>();
 
@@ -89,12 +92,10 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-// HTTPS Redirection
-app.UseHttpsRedirection();
+// HTTPS Redirection (disabled in Development to avoid redirect issues with local frontends)
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
 app.UseRouting();
-
-// Security (CORS, Authentication, Authorization)
-app.UseSecurityConfiguration();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiting();
