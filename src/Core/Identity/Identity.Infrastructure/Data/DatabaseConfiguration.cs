@@ -8,6 +8,7 @@ using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.HostDb;
 using Product.Template.Kernel.Infrastructure.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.Persistence;
+using Product.Template.Kernel.Infrastructure.Seeders;
 
 namespace Product.Template.Core.Identity.Infrastructure.Data;
 
@@ -109,6 +110,10 @@ public static class DatabaseConfiguration
             var hashServices = tenantScope.ServiceProvider.GetRequiredService<IHashServices>();
 
             await UserSeeder.SeedAsync(context, hashServices);
+
+            var appSeeders = tenantScope.ServiceProvider.GetServices<IAppSeeder>();
+            foreach (var seeder in appSeeders)
+                await seeder.SeedAsync(context);
         }
     }
 

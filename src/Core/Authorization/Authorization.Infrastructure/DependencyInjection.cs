@@ -2,8 +2,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Core.Authorization.Application.Permissions;
 using Product.Template.Core.Authorization.Domain.Repositories;
 using Product.Template.Core.Authorization.Infrastructure.Data.Persistence;
+using Product.Template.Core.Authorization.Infrastructure.Data.Seeders;
 using Product.Template.Kernel.Application.Security;
 using Product.Template.Kernel.Infrastructure.Persistence;
+using Product.Template.Kernel.Infrastructure.Seeders;
 
 namespace Product.Template.Core.Authorization.Infrastructure;
 
@@ -19,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRolesProvider, UserRolesProvider>();
 
         services.AddSingleton<IPermissionCatalogSeeder, AuthorizationPermissionCatalogSeeder>();
+        services.AddTransient<IAppSeeder, AuthorizationSeeder>();
 
         return services;
     }

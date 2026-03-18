@@ -12,7 +12,7 @@ public class RequestDeduplicationMiddleware
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
     private readonly ILogger<RequestDeduplicationMiddleware> _logger;
-    private static readonly TimeSpan _deduplicationWindow = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _deduplicationWindow = TimeSpan.FromSeconds(1);
 
     public RequestDeduplicationMiddleware(
         RequestDelegate next,
