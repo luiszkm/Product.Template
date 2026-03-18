@@ -12,7 +12,8 @@ internal static class UserSeeder
 
     public static async Task SeedAsync(AppDbContext context, IHashServices hashServices)
     {
-        if (await context.Users.AnyAsync())
+        if (await context.Users.IgnoreQueryFilters()
+                .AnyAsync(u => u.Id == AdminUserId || u.Id == TestUserId))
             return;
 
         var tenantId = context.TenantIdForQueryFilter;

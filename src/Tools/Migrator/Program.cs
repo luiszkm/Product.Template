@@ -13,8 +13,7 @@ builder.Configuration.AddJsonFile("appsettings.json", optional: true)
     .AddEnvironmentVariables();
 
 var hostConn = builder.Configuration.GetConnectionString("HostDb")
-    ?? builder.Configuration.GetConnectionString("AppDb")
-    ?? "Data Source=host.db";
+    ?? throw new InvalidOperationException("ConnectionStrings:HostDb is required.");
 
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
@@ -23,12 +22,7 @@ builder.Services.AddScoped<ITenantConnectionStringResolver, TenantConnectionStri
 
 builder.Services.AddDbContext<HostDbContext>(options =>
 {
-    if (hostConn.Contains("Host=", StringComparison.OrdinalIgnoreCase))
-        options.UseNpgsql(hostConn);
-    else if (hostConn.Contains("Server=", StringComparison.OrdinalIgnoreCase))
-        options.UseSqlServer(hostConn);
-    else
-        options.UseSqlite(hostConn);
+    options.UseSqlServer(hostConn);
 });
 
 var app = builder.Build();
@@ -62,30 +56,13 @@ foreach (var tenant in tenants)
 
     var conn = resolver.ResolveAppConnection(tenant);
     var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-    if (conn.Contains("Host=", StringComparison.OrdinalIgnoreCase))
+    optionsBuilder.UseSqlServer(conn, sqlServer =>
     {
-        optionsBuilder.UseNpgsql(conn, npgsql =>
+        if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
         {
-            if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
-            {
-                npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
-            }
-        });
-    }
-    else if (conn.Contains("Server=", StringComparison.OrdinalIgnoreCase))
-    {
-        optionsBuilder.UseSqlServer(conn, sqlServer =>
-        {
-            if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
-            {
-                sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
-            }
-        });
-    }
-    else
-    {
-        optionsBuilder.UseSqlite(conn);
-    }
+            sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
+        }
+    });
 
     var tenantContext = new TenantContext();
     tenantContext.SetTenant(tenant);

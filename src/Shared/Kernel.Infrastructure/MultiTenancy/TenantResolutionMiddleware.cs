@@ -8,14 +8,12 @@ namespace Product.Template.Kernel.Infrastructure.MultiTenancy;
 
 public class TenantResolutionMiddleware(
     RequestDelegate next,
-    ITenantResolver tenantResolver,
-    ITenantStore tenantStore,
     IOptions<TenantResolutionOptions> options,
     ILogger<TenantResolutionMiddleware> logger)
 {
     private readonly TenantResolutionOptions _options = options.Value;
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ITenantResolver tenantResolver, ITenantStore tenantStore)
     {
         var tenantContext = context.RequestServices.GetRequiredService<ITenantContext>();
 
@@ -28,8 +26,7 @@ public class TenantResolutionMiddleware(
 
         if (string.IsNullOrWhiteSpace(tenantKey))
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            await context.Response.WriteAsync("Tenant was not provided.");
+            await next(context);
             return;
         }
 

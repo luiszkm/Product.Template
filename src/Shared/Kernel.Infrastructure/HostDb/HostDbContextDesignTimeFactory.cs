@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace Product.Template.Kernel.Infrastructure.HostDb;
 
@@ -8,33 +9,27 @@ namespace Product.Template.Kernel.Infrastructure.HostDb;
 /// without the full DI pipeline.
 ///
 /// Connection string priority:
-///   1. ConnectionStrings__HostDb environment variable (SQL Server / PostgreSQL for CI/CD)
-///   2. Falls back to SQLite (local development, no infrastructure required)
+///   1. ConnectionStrings__HostDb environment variable (CI/CD)
+///   2. appsettings.json ConnectionStrings:HostDb
 /// </summary>
 public class HostDbContextDesignTimeFactory : IDesignTimeDbContextFactory<HostDbContext>
 {
     public HostDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__HostDb");
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__HostDb")
+            ?? BuildConfiguration().GetConnectionString("HostDb")
+            ?? throw new InvalidOperationException("ConnectionStrings:HostDb is not configured.");
 
         var builder = new DbContextOptionsBuilder<HostDbContext>();
-
-        if (!string.IsNullOrWhiteSpace(connectionString)
-            && (connectionString.Contains("Server=", StringComparison.OrdinalIgnoreCase)
-                || connectionString.Contains("Initial Catalog=", StringComparison.OrdinalIgnoreCase)))
-        {
-            builder.UseSqlServer(connectionString);
-        }
-        else if (!string.IsNullOrWhiteSpace(connectionString)
-            && connectionString.Contains("Host=", StringComparison.OrdinalIgnoreCase))
-        {
-            builder.UseNpgsql(connectionString);
-        }
-        else
-        {
-            builder.UseSqlite("Data Source=design-time-host.db");
-        }
+        builder.UseSqlServer(connectionString);
 
         return new HostDbContext(builder.Options);
     }
+
+    private static IConfiguration BuildConfiguration()
+        => new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("appsettings.Development.json", optional: true)
+            .Build();
 }

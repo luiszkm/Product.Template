@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Product.Template.Kernel.Domain.MultiTenancy;
@@ -25,7 +26,9 @@ public class TenantProvisioningService(
             TenantKey = normalized,
             IsolationMode = isolationMode,
             SchemaName = isolationMode == TenantIsolationMode.SchemaPerTenant ? $"tenant_{normalized}" : null,
-            ConnectionString = isolationMode == TenantIsolationMode.DedicatedDb ? $"Host=localhost;Database={normalized}_db;Username=postgres;Password=postgres" : null,
+            ConnectionString = isolationMode == TenantIsolationMode.DedicatedDb
+                ? $"Server=localhost,1433;Database={normalized}_db;User Id=sa;Password=YourStrong!Pass123;TrustServerCertificate=True;Encrypt=False"
+                : null,
             IsActive = true
         };
 
@@ -34,12 +37,13 @@ public class TenantProvisioningService(
         if (isolationMode == TenantIsolationMode.SchemaPerTenant)
         {
             var sharedConn = connectionStringResolver.ResolveAppConnection(new TenantConfig { IsolationMode = TenantIsolationMode.SharedDb });
-            var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-            optionsBuilder.UseNpgsql(sharedConn, npgsql => npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName));
-            await using var connection = new Npgsql.NpgsqlConnection(sharedConn);
+            await using var connection = new SqlConnection(sharedConn);
             await connection.OpenAsync(cancellationToken);
             await using var cmd = connection.CreateCommand();
-            cmd.CommandText = $"CREATE SCHEMA IF NOT EXISTS \"{tenant.SchemaName}\";";
+            cmd.CommandText = $"""
+                IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '{tenant.SchemaName}')
+                    EXEC('CREATE SCHEMA [{tenant.SchemaName}]');
+                """;
             await cmd.ExecuteNonQueryAsync(cancellationToken);
             logger.LogInformation("Schema {SchemaName} created for tenant {TenantKey}.", tenant.SchemaName, tenant.TenantKey);
         }

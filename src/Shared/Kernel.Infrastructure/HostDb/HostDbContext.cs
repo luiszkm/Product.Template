@@ -24,7 +24,7 @@ public class HostDbContext(DbContextOptions<HostDbContext> options) : DbContext(
             builder.Property(x => x.IsActive).HasDefaultValue(true).IsRequired();
             builder.Property(x => x.DisplayName).HasMaxLength(200);
             builder.Property(x => x.ContactEmail).HasMaxLength(256);
-            builder.Property(x => x.CreatedAt).IsRequired().HasDefaultValueSql("now()");
+            builder.Property(x => x.CreatedAt).IsRequired();
         });
     }
 }

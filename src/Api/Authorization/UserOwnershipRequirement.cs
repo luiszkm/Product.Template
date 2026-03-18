@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Product.Template.Api.Configurations;
-using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Api.Authorization;
 
@@ -18,12 +17,10 @@ public sealed class UserOwnershipRequirement : IAuthorizationRequirement
 
 public sealed class UserOwnershipHandler : AuthorizationHandler<UserOwnershipRequirement>
 {
-    private readonly ICurrentUserService _currentUserService;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public UserOwnershipHandler(ICurrentUserService currentUserService, IHttpContextAccessor httpContextAccessor)
+    public UserOwnershipHandler(IHttpContextAccessor httpContextAccessor)
     {
-        _currentUserService = currentUserService;
         _httpContextAccessor = httpContextAccessor;
     }
 
@@ -33,7 +30,7 @@ public sealed class UserOwnershipHandler : AuthorizationHandler<UserOwnershipReq
         if (httpContext is null)
             return Task.CompletedTask;
 
-        if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
+        if (context.User.Identity?.IsAuthenticated != true)
             return Task.CompletedTask;
 
         var targetRouteValue = httpContext.Request.RouteValues.GetValueOrDefault("id")?.ToString();
@@ -52,7 +49,10 @@ public sealed class UserOwnershipHandler : AuthorizationHandler<UserOwnershipReq
             return Task.CompletedTask;
         }
 
-        if (_currentUserService.UserId == targetUserId)
+        var currentUserIdClaim = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                              ?? context.User.FindFirstValue("sub");
+
+        if (Guid.TryParse(currentUserIdClaim, out var currentUserId) && currentUserId == targetUserId)
         {
             context.Succeed(requirement);
         }

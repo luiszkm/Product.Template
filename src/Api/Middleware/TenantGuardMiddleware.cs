@@ -14,6 +14,8 @@ public class TenantGuardMiddleware
         new("/health"),
         new("/healthchecks"),
         new("/swagger"),
+        new("/scalar"),
+        new("/openapi"),
         new("/docs"),
         new("/metrics"),
         new("/__otel"),
