@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Xunit.Sdk;
 using Product.Template.Core.Authorization.Application.Permissions;
@@ -231,7 +233,9 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            // Swap the real SQL/SQLite DbContexts for in-memory providers to avoid external dependencies during E2E auth tests.
+            // Swap the real SQL DbContexts for in-memory providers to avoid external dependencies during E2E auth tests.
+            // EF Core 10 registers options via IDbContextOptionsConfiguration<T> (not IConfigureOptions<DbContextOptions<T>>);
+            // RemoveDbContextRegistrations clears that type so only our InMemory options are applied.
             RemoveDbContextRegistrations<AppDbContext>(services);
             RemoveDbContextRegistrations<HostDbContext>(services);
 
@@ -273,48 +277,62 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
                 options.DefaultPolicy = defaultPolicy;
                 options.FallbackPolicy = defaultPolicy;
             });
+        });
+    }
 
-            // Ensure in-memory databases are created and seeded for tests
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var hostDb = scope.ServiceProvider.GetRequiredService<HostDbContext>();
-            hostDb.Database.EnsureCreated();
-            if (!hostDb.Tenants.Any())
-            {
-                hostDb.Tenants.Add(new TenantConfig
-                {
-                    TenantId = 1,
-                    TenantKey = "public",
-                    IsolationMode = TenantIsolationMode.SharedDb,
-                    IsActive = true
-                });
-                hostDb.SaveChanges();
-            }
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        SeedTestData(host.Services);
+        return host;
+    }
 
-            var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
-            tenantContext.SetTenant(new TenantConfig
+    private static void SeedTestData(IServiceProvider appServices)
+    {
+        using var scope = appServices.CreateScope();
+        var sp = scope.ServiceProvider;
+
+        var hostDb = sp.GetRequiredService<HostDbContext>();
+        hostDb.Database.EnsureCreated();
+        if (!hostDb.Tenants.Any())
+        {
+            hostDb.Tenants.Add(new TenantConfig
             {
                 TenantId = 1,
                 TenantKey = "public",
                 IsolationMode = TenantIsolationMode.SharedDb,
                 IsActive = true
             });
+            hostDb.SaveChanges();
+        }
 
-            var appDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            appDb.Database.EnsureCreated();
-
-            var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
-            typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
-            appDb.Set<User>().Add(owner);
-            appDb.SaveChanges();
+        var tenantContext = sp.GetRequiredService<ITenantContext>();
+        tenantContext.SetTenant(new TenantConfig
+        {
+            TenantId = 1,
+            TenantKey = "public",
+            IsolationMode = TenantIsolationMode.SharedDb,
+            IsActive = true
         });
+
+        var appDb = sp.GetRequiredService<AppDbContext>();
+        appDb.Database.EnsureCreated();
+
+        var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
+        typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
+        appDb.Set<User>().Add(owner);
+        appDb.SaveChanges();
     }
+
     private static void RemoveDbContextRegistrations<TContext>(IServiceCollection services)
         where TContext : DbContext
     {
         services.RemoveAll(typeof(TContext));
         services.RemoveAll(typeof(DbContextOptions<TContext>));
+        services.RemoveAll(typeof(DbContextOptions));
         services.RemoveAll(typeof(IDbContextFactory<TContext>));
+        // EF Core 10 uses IDbContextOptionsConfiguration<T> (replaces IConfigureOptions<DbContextOptions<T>>)
+        services.RemoveAll(typeof(IDbContextOptionsConfiguration<TContext>));
         services.RemoveAll(typeof(IConfigureOptions<DbContextOptions<TContext>>));
         services.RemoveAll(typeof(IPostConfigureOptions<DbContextOptions<TContext>>));
     }
