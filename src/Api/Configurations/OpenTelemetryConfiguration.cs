@@ -1,3 +1,4 @@
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -17,7 +18,9 @@ public static class OpenTelemetryConfiguration
         var enableTraces = otelConfig.GetValue<bool>("EnableTraces", true);
         var enableMetrics = otelConfig.GetValue<bool>("EnableMetrics", true);
         var enableConsoleExporter = otelConfig.GetValue<bool>("EnableConsoleExporter", false);
+        var enablePrometheusExporter = otelConfig.GetValue<bool>("EnablePrometheusExporter", true);
         var otlpEndpoint = otelConfig["OtlpEndpoint"];
+        var otlpTracesEndpoint = otelConfig["OtlpTracesEndpoint"] ?? otlpEndpoint;
 
         // Resource attributes (identificam o serviço)
         var resourceBuilder = ResourceBuilder
@@ -64,12 +67,13 @@ public static class OpenTelemetryConfiguration
                     tracingBuilder.AddConsoleExporter();
                 }
 
-                // OTLP Exporter (Jaeger, Tempo, Datadog, etc)
-                if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+                // OTLP Exporter → Grafana Tempo (traces)
+                if (!string.IsNullOrWhiteSpace(otlpTracesEndpoint))
                 {
                     tracingBuilder.AddOtlpExporter(options =>
                     {
-                        options.Endpoint = new Uri(otlpEndpoint);
+                        options.Endpoint = new Uri(otlpTracesEndpoint);
+                        options.Protocol = OtlpExportProtocol.Grpc;
                     });
                 }
             })
@@ -92,12 +96,19 @@ public static class OpenTelemetryConfiguration
                     metricsBuilder.AddConsoleExporter();
                 }
 
-                // OTLP Exporter (Prometheus, Grafana, etc)
-                if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+                // Prometheus Exporter → expõe endpoint /metrics para Prometheus scraping
+                if (enablePrometheusExporter)
+                {
+                    metricsBuilder.AddPrometheusExporter();
+                }
+
+                // OTLP Exporter (fallback quando Prometheus não está habilitado)
+                if (!enablePrometheusExporter && !string.IsNullOrWhiteSpace(otlpEndpoint))
                 {
                     metricsBuilder.AddOtlpExporter(options =>
                     {
                         options.Endpoint = new Uri(otlpEndpoint);
+                        options.Protocol = OtlpExportProtocol.Grpc;
                     });
                 }
             });

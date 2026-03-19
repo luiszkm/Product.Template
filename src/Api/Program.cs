@@ -109,6 +109,9 @@ app.UseDocumentation();
 // Controllers
 app.MapControllers();
 
+// Prometheus metrics scraping endpoint (coletado pelo Prometheus a cada 15s)
+app.MapPrometheusScrapingEndpoint("/metrics");
+
 app.Run();
 
 

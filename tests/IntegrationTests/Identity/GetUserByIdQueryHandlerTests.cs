@@ -1,3 +1,4 @@
+using CommonTests.Builders;
 using IntegrationTests.Common;
 using Microsoft.Extensions.Logging.Abstractions;
 using Product.Template.Core.Identity.Application.Queries.User;
@@ -17,7 +18,13 @@ public class GetUserByIdQueryHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldReturnUser_WhenUserExists()
     {
-        var user = await _fixture.SeedUserAsync("found@test.com", "John", "Doe");
+        var user = await _fixture.SeedUserAsync(
+            new UserBuilder()
+                .WithEmail("found@test.com")
+                .WithFirstName("John")
+                .WithLastName("Doe")
+                .WithConfirmedEmail()
+                .Build());
 
         var result = await CreateHandler().Handle(new GetUserByIdQuery(user.Id), CancellationToken.None);
 

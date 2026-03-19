@@ -1,6 +1,6 @@
+using CommonTests.Builders;
 using Kernel.Application.Security;
 using MediatR;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Infrastructure.Data.Persistence;
@@ -12,11 +12,10 @@ namespace IntegrationTests.Common;
 
 /// <summary>
 /// Shared fixture for Identity handler integration tests.
-/// Uses SQLite in-memory so relational queries (EF.Property, value conversions) work correctly.
+/// Uses EF InMemory — isolated per fixture instance via a unique database name.
 /// </summary>
 public sealed class HandlerTestFixture : IDisposable
 {
-    private readonly SqliteConnection _connection;
     public AppDbContext DbContext { get; }
     public TenantContext TenantContext { get; }
     public StubHashServices HashServices { get; } = new();
@@ -32,11 +31,8 @@ public sealed class HandlerTestFixture : IDisposable
             IsActive = true
         });
 
-        _connection = new SqliteConnection("Data Source=:memory:");
-        _connection.Open();
-
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite(_connection)
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         DbContext = new AppDbContext(options, TenantContext);
@@ -46,21 +42,36 @@ public sealed class HandlerTestFixture : IDisposable
     public UserRepository UserRepository() => new(DbContext);
     public UnitOfWork UnitOfWork() => new(DbContext, NoopPublisher.Instance);
 
-    public async Task<User> SeedUserAsync(string email = "seed@test.com", string firstName = "Seed", string lastName = "User")
+    public async Task<User> SeedUserAsync(string? email = null)
     {
-        var user = User.Create(1L, email, HashServices.GeneratePasswordHash("Pass@123"), firstName, lastName);
-        user.ConfirmEmail();
+        var user = new UserBuilder()
+            .WithEmail(email ?? $"seed-{Guid.NewGuid():N}@test.com")
+            .WithConfirmedEmail()
+            .Build();
         await DbContext.Users.AddAsync(user);
         await DbContext.SaveChangesAsync();
         DbContext.ChangeTracker.Clear();
         return user;
     }
 
-    public void Dispose()
+    public async Task<User> SeedUserAsync(User user)
     {
-        DbContext.Dispose();
-        _connection.Dispose();
+        await DbContext.Users.AddAsync(user);
+        await DbContext.SaveChangesAsync();
+        DbContext.ChangeTracker.Clear();
+        return user;
     }
+
+    public async Task<List<User>> SeedManyUsersAsync(int count = 5)
+    {
+        var users = new UserBuilder().BuildMany(count);
+        await DbContext.Users.AddRangeAsync(users);
+        await DbContext.SaveChangesAsync();
+        DbContext.ChangeTracker.Clear();
+        return users;
+    }
+
+    public void Dispose() => DbContext.Dispose();
 }
 
 public sealed class StubHashServices : IHashServices

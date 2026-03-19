@@ -10,13 +10,7 @@ public class DeleteRoleCommandHandlerTests : IDisposable
 {
     private readonly AuthorizationHandlerTestFixture _fixture = new();
 
-    private CreateRoleCommandHandler CreateCreateHandler() => new(
-        _fixture.RoleRepository(),
-        _fixture.UnitOfWork(),
-        _fixture.TenantContext,
-        NullLogger<CreateRoleCommandHandler>.Instance);
-
-    private DeleteRoleCommandHandler CreateDeleteHandler() => new(
+    private DeleteRoleCommandHandler CreateHandler() => new(
         _fixture.RoleRepository(),
         _fixture.UnitOfWork(),
         NullLogger<DeleteRoleCommandHandler>.Instance);
@@ -24,11 +18,11 @@ public class DeleteRoleCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldDeleteRole_WhenRoleExists()
     {
-        var created = await CreateCreateHandler().Handle(new CreateRoleCommand("ToDelete", ""), CancellationToken.None);
+        var role = await _fixture.SeedRoleAsync();
 
-        await CreateDeleteHandler().Handle(new DeleteRoleCommand(created.Id), CancellationToken.None);
+        await CreateHandler().Handle(new DeleteRoleCommand(role.Id), CancellationToken.None);
 
-        var deleted = await _fixture.RoleRepository().GetByIdAsync(created.Id);
+        var deleted = await _fixture.RoleRepository().GetByIdAsync(role.Id);
         Assert.Null(deleted);
     }
 
@@ -36,7 +30,7 @@ public class DeleteRoleCommandHandlerTests : IDisposable
     public async Task Handle_ShouldThrowNotFoundException_WhenRoleDoesNotExist()
     {
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            CreateDeleteHandler().Handle(new DeleteRoleCommand(Guid.NewGuid()), CancellationToken.None));
+            CreateHandler().Handle(new DeleteRoleCommand(Guid.NewGuid()), CancellationToken.None));
     }
 
     public void Dispose() => _fixture.Dispose();

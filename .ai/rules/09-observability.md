@@ -41,15 +41,27 @@
 
 ## OpenTelemetry
 
+### Stack de Observabilidade
+
+| Pilar | Tecnologia | URL local | Função |
+|-------|-----------|-----------|--------|
+| **Traces** | Grafana Tempo | `http://localhost:3200` | Armazena e consulta distributed traces |
+| **Métricas** | Prometheus | `http://localhost:9090` | Coleta métricas via scraping `/metrics` |
+| **Dashboards** | Grafana | `http://localhost:3000` | Visualização unificada métricas + traces |
+| **Logs** | Seq | `http://localhost:5341` | Logs estruturados com filtros |
+
 ### Tracing
-- Instrumentation: `AspNetCore`, `HttpClient`, `Runtime`.
-- Exporter: OTLP (`http://localhost:4317`) or Console (dev).
-- Configured in `Api/Configurations/OpenTelemetryConfiguration.cs`.
+- Instrumentação automática: `AspNetCore`, `HttpClient`, `Runtime`.
+- Exporter de traces: OTLP gRPC → **Grafana Tempo** (`http://localhost:4317`).
+- Em Docker: `http://tempo:4317` (variável `OpenTelemetry__OtlpTracesEndpoint`).
+- Configurado em `Api/Configurations/OpenTelemetryConfiguration.cs`.
 
 ### Metrics
-- Runtime metrics are collected automatically.
+- Exporter: **Prometheus** scraping endpoint `/metrics` (via `AddPrometheusExporter()`).
+- Prometheus coleta a cada 15s conforme `infra/prometheus/prometheus.yml`.
+- Runtime metrics são coletadas automaticamente (GC, threads, heap).
 - Custom metrics: `RbacMetrics` (role assignments, revocations, denials).
-- When adding new metrics, follow the pattern:
+- Quando adicionar novas métricas, siga o padrão:
   ```csharp
   private static readonly Meter Meter = new("Product.Template.{Module}", "1.0.0");
   public static readonly Counter<long> MyCounter = Meter.CreateCounter<long>(
@@ -57,9 +69,34 @@
       description: "Description");
   ```
 
+### Custom Spans
+- Use `OpenTelemetryConfiguration.ActivitySource.StartActivity("NomeDoSpan")` para spans manuais.
+- Adicione tags relevantes: `tenant.id`, `user.id`, `entity.id`.
+- Chame `activity?.RecordException(ex)` em catch blocks.
+
 ### Service Identity
 - `ServiceName`: `Product.Template.Api`
-- `ServiceVersion`: from assembly version.
+- `ServiceVersion`: `1.0.0` (configurável via `appsettings.json`)
+
+### Configurações disponíveis (`appsettings.json`)
+
+```json
+"OpenTelemetry": {
+  "ServiceName": "Product.Template.Api",
+  "ServiceVersion": "1.0.0",
+  "EnableTraces": true,
+  "EnableMetrics": true,
+  "EnableConsoleExporter": false,
+  "EnablePrometheusExporter": true,
+  "OtlpEndpoint": "http://localhost:4317",
+  "OtlpTracesEndpoint": "http://localhost:4317"
+}
+```
+
+### Dashboard Grafana
+- Dashboard pré-configurado em `infra/grafana/dashboards/api-overview.json`.
+- Provisionado automaticamente via `infra/grafana/provisioning/`.
+- Acesse: `http://localhost:3000` → admin/admin123 → Dashboards → Product Template — API Overview.
 
 ## Health Checks
 

@@ -29,4 +29,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Domain\Authorization.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Domain\Tenants.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
