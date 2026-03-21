@@ -50,4 +50,5 @@
 - **Every change must be testable.** If you create a handler, create its test. If you create an endpoint, update `RBAC_MATRIX.md`.
 - **Docker**: follow `13-docker.md` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
 - **CI/CD**: follow `14-cicd.md` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
+- **AI features**: follow `15-ai-features.md` — SDK only in Kernel.Infrastructure, ITool via IMediator, TrackAsync in finally, Nunca invente no SystemPrompt.
 

@@ -200,3 +200,87 @@ Ordem no pipeline (Kernel.Application):
 2. `LoggingBehavior` — log de entrada/saída.
 3. `PerformanceBehavior` — log de requests lentas.
 
+## Handlers de IA
+
+Quando um módulo precisa de IA (LLM, OCR, embeddings, TTS, STT), os artefatos vivem em:
+
+```
+{Module}.Application/
+├── Handlers/
+│   └── Ai/
+│       ├── Commands/
+│       │   └── {UseCase}Command.cs          ← record : ICommand<{UseCase}Output>
+│       ├── {UseCase}CommandHandler.cs        ← ICommandHandler<{UseCase}Command, {UseCase}Output>
+│       └── {UseCase}CommandValidator.cs      ← AbstractValidator<{UseCase}Command>
+└── Ai/
+    └── Prompts/
+        └── {UseCase}Prompts.cs               ← internal static class com LlmRequest factory
+```
+
+Padrão obrigatório no handler:
+
+```csharp
+// Handler de IA — injeções obrigatórias
+private readonly ILlmService _llm;           // ou IOcrService, ITts, etc.
+private readonly IAiUsageTracker _tracker;
+private readonly ITenantContext _tenantContext;
+private readonly ILogger<T> _logger;
+
+public async Task<{UseCase}Output> Handle({UseCase}Command request, CancellationToken ct)
+{
+    var started = DateTime.UtcNow;
+    LlmResponse response = null!;
+    try
+    {
+        var llmRequest = {UseCase}Prompts.BuildRequest(data);
+        response = await _llm.CompleteAsync(llmRequest, ct);
+    }
+    finally
+    {
+        await _tracker.TrackAsync(new AiUsageRecord(
+            Service: "llm",
+            Provider: "azure-openai",
+            Model: response?.Model ?? "unknown",
+            Module: "{module}",
+            Operation: nameof({UseCase}CommandHandler),
+            TenantId: _tenantContext.TenantId ?? 0,
+            TokensUsed: response?.TotalTokens ?? 0,
+            Latency: DateTime.UtcNow - started,
+            Success: response is not null
+        ), ct);
+    }
+    return new {UseCase}Output(response.Text);
+}
+```
+
+Padrão obrigatório nos prompts:
+
+```csharp
+// {Module}.Application/Ai/Prompts/{UseCase}Prompts.cs
+internal static class {UseCase}Prompts
+{
+    private const string System =
+        """
+        {Persona}
+        Nunca invente informações que não estejam no contexto fornecido.
+        """;
+
+    public static LlmRequest BuildRequest(string data) => new(
+        SystemPrompt: System,
+        UserPrompt: data,          // dados do utilizador SEMPRE no UserPrompt, nunca no SystemPrompt
+        Temperature: 0.1f,         // ≤0.2 para extração; ≤0.8 para geração
+        MaxTokens: 500             // obrigatório
+    );
+}
+```
+
+Regras:
+- `_tracker.TrackAsync(...)` **obrigatório** em `finally` — rastreia mesmo em falha.
+- Dados do utilizador **nunca** no `SystemPrompt` (previne prompt injection).
+- `Temperature` e `MaxTokens` **sempre** explícitos em `LlmRequest`.
+- `"Nunca invente informações"` **obrigatório** no `SystemPrompt`.
+- SDK de IA (`Azure.AI.*`) **proibido** — usar apenas interfaces de `Kernel.Application/Ai/`.
+- Se IA é enrichment (não bloqueante): capturar exceção, logar `Warning`, continuar sem o enriquecimento.
+
+Regras canônicas completas: `.ai/rules/15-ai-features.md`
+

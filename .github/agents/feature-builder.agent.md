@@ -13,6 +13,7 @@ Antes de gerar qualquer código, leia:
 - `.github/instructions/backend.instructions.md` — organização de features
 - `.github/instructions/api.instructions.md` — padrão de endpoints
 - `.github/instructions/infrastructure.instructions.md` — persistência
+- `.ai/rules/15-ai-features.md` — **obrigatório se a feature usa IA** (LLM, OCR, embeddings, TTS, STT)
 
 ## Processo de criação de feature
 
@@ -93,6 +94,20 @@ Ao final, liste:
 - (DI, DbSet, RBAC Matrix, etc.)
 ```
 
+## Features com IA
+
+Se a feature usa IA (LLM, OCR, embeddings, TTS, STT), **use o agente especializado**:
+
+```
+@ai-feature-builder
+```
+
+Ou siga `.ai/rules/15-ai-features.md` e `.ai/prompts/create-ai-handler.md` para os artefatos adicionais:
+- `{Module}.Application/Handlers/Ai/{UseCase}CommandHandler.cs`
+- `{Module}.Application/Ai/Prompts/{UseCase}Prompts.cs`
+- `Ai.Application/Agent/Tools/{UseCase}Tool.cs` (se exposta ao agente de chat)
+- Registo em `Ai.Infrastructure/DependencyInjection.cs`
+
 ## Restrições
 
 - Usar exatamente os mesmos patterns de namespace do projeto real.
@@ -101,4 +116,6 @@ Ao final, liste:
 - Nunca criar controller com lógica — apenas dispatch para MediatR.
 - Sempre incluir `CancellationToken` em todo async.
 - Entidades DEVEM implementar `IMultiTenantEntity`.
+- Features de IA: nunca importar `Azure.AI.*` fora de `Kernel.Infrastructure`.
+- Features de IA: `_tracker.TrackAsync(...)` obrigatório em `finally` em todo handler que chama IA.
 

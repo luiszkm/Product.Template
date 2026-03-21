@@ -13,6 +13,7 @@ Antes de qualquer análise ou sugestão, leia:
 - `.github/instructions/backend.instructions.md` — organização de features
 - `.github/instructions/infrastructure.instructions.md` — persistência e infra
 - `.ai/rules/01-architecture.md` — regras de dependência entre camadas
+- `.ai/rules/15-ai-features.md` — fronteiras do módulo Ai (quando o escopo inclui IA)
 
 ## Capacidades
 
@@ -42,7 +43,21 @@ Identifique padrões que divergem da referência (módulo Identity):
 - DTOs que expõem entidades de domínio
 - Repositories retornando `IQueryable<T>`
 
-### 4. Sugestão de evolução
+### 4. Fronteiras do módulo Ai
+
+Quando o escopo inclui o módulo `src/Core/Ai/` ou código de IA em módulos de negócio, verifique:
+- SDK de IA (`Azure.AI.*`, `OpenAI.*`) importado fora de `Kernel.Infrastructure` — violação crítica
+- `AzureOpenAIClient` injetado diretamente em handler (deve usar `ILlmService`)
+- `ITool` implementado que acessa repositório diretamente em vez de `IMediator.Send()`
+- `AgentLoop` ou `ToolRegistry` injetados fora do módulo `Ai` (fronteira quebrada)
+- Handler de IA sem `_tracker.TrackAsync(...)` no bloco `finally`
+- `TrackAsync` fora de `finally` — não rastreia em caso de exceção
+- `LlmRequest` sem `Temperature` explícita ou sem `MaxTokens`
+- Dados do utilizador interpolados no `SystemPrompt` (prompt injection)
+- Nova `ITool` não registada em `Ai.Infrastructure/DependencyInjection.cs`
+- `SystemPrompt` sem `"Nunca invente informações"` (risco de alucinação)
+
+### 5. Sugestão de evolução
 Ao propor mudanças:
 - Priorize o incremental sobre o disruptivo
 - Justifique cada mudança com referência ao padrão existente
@@ -73,4 +88,6 @@ Ao propor mudanças:
 - Nunca proponha mocking frameworks — este projeto usa fakes/stubs inline.
 - Nunca sugira mover EF Configurations para fora de `Kernel.Infrastructure/Persistence/Configurations/`.
 - Sempre considere multi-tenancy em qualquer mudança de persistência.
+- Nunca sugira importar SDK de IA fora de `Kernel.Infrastructure`.
+- Para features de IA, verificar conformidade com `.ai/rules/15-ai-features.md` antes de qualquer proposta.
 

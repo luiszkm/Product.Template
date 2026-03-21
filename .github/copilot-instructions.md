@@ -144,6 +144,49 @@ O módulo **Identity** (`src/Core/Identity/`) é a implementação de referênci
 11. Usar mocking frameworks — usar fakes/stubs inline.
 12. Usar string interpolation em log templates do Serilog.
 
+## Inteligência Artificial
+
+### Stack de IA
+
+| Camada | Tecnologia |
+|--------|-----------|
+| LLM (text) | Azure OpenAI (`ILlmService`) |
+| OCR | Azure Document Intelligence (`IOcrService`) |
+| Embeddings | Azure OpenAI Embeddings (`IEmbeddingService`) |
+| TTS / STT | Azure Speech (`ITextToSpeechService`, `ISpeechToTextService`) |
+| Observabilidade | `IAiUsageTracker` → `AiUsageRecord` (tokens, latência, custo por tenant) |
+| AgentLoop | ReAct loop em `src/Core/Ai/Ai.Application/Agent/AgentLoop.cs` |
+| Tools | `ITool` em `Kernel.Application/Ai/`; registadas em `Ai.Infrastructure/DependencyInjection.cs` |
+
+### Regras obrigatórias de IA
+
+1. **Nunca** importar `Azure.AI.*` ou `OpenAI.*` fora de `Kernel.Infrastructure`.
+2. **Nunca** injetar `AzureOpenAIClient` diretamente — usar `ILlmService`.
+3. `_tracker.TrackAsync(...)` **obrigatório** em todo handler de IA, dentro de bloco `finally`.
+4. Todo `LlmRequest` **deve** definir `Temperature` e `MaxTokens` explicitamente.
+5. `SystemPrompt` **deve** incluir `"Nunca invente informações"`.
+6. Dados do utilizador **nunca** interpolados no `SystemPrompt` — usar `UserPrompt`.
+7. `ITool.ExecuteAsync` despacha via `IMediator.Send()` — **nunca** repositório diretamente.
+8. Nome da tool em `snake_case`, único no sistema.
+9. Nova tool **deve** ser registada em `Ai.Infrastructure/DependencyInjection.cs`.
+10. IA como enrichment (não bloqueante): capturar exceção, logar `Warning`, continuar.
+
+### O que o Copilot NÃO deve fazer (IA)
+
+- Importar SDK de IA (`Azure.AI.*`, `OpenAI.*`) fora de `Kernel.Infrastructure`.
+- Criar handler de IA sem `_tracker.TrackAsync(...)` no `finally`.
+- Criar `LlmRequest` sem `Temperature` ou sem `MaxTokens`.
+- Interpolar dados do utilizador no `SystemPrompt`.
+- Criar `ITool` que acessa repositório diretamente.
+- Deixar tool com `Name` duplicado ou fora de `snake_case`.
+- Omitir `"Nunca invente informações"` no `SystemPrompt`.
+
+Regras canônicas completas: `.ai/rules/15-ai-features.md`
+Guia de integração: `docs/guides/ai-integration-guide.md`
+Agente especializado: `.github/agents/ai-feature-builder.agent.md`
+
+---
+
 ## Docker e CI/CD
 
 ### Dockerfile
@@ -172,9 +215,10 @@ O módulo **Identity** (`src/Core/Identity/`) é a implementação de referênci
   - `backend-architect` — consistência arquitetural (Clean Architecture, DDD, CQRS)
   - `code-reviewer` — revisão de código, segurança e contratos
   - `feature-builder` — criação de features completas
+  - `ai-feature-builder` — criação de features de IA (handlers, prompts, tools, testes)
   - `query-optimizer` — otimização de queries EF Core / Dapper
   - `deploy-observer` — Docker, CI/CD e observabilidade
-  - `module-designer` — design de módulos DDD (bounded contexts, aggregates, eventos) ← **novo**
+  - `module-designer` — design de módulos DDD (bounded contexts, aggregates, eventos)
 - Instruções por camada: `.github/instructions/`
 - RBAC Matrix: `docs/security/RBAC_MATRIX.md`
 - Implementação de referência: `src/Core/Identity/`

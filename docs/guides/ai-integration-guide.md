@@ -119,16 +119,20 @@ src/
     ├── Ai/                                  # módulo transversal de agente
     │   ├── Ai.Application/
     │   │   ├── Handlers/
-    │   │   │   └── ChatCommandHandler.cs    # entry point do chat
-    │   │   └── Agent/
-    │   │       ├── AgentLoop.cs             # loop Reason → Act → Observe
-    │   │       ├── ToolRegistry.cs          # catálogo de tools disponíveis
-    │   │       └── Tools/
-    │   │           ├── GetRevenueSummaryTool.cs   # tool do módulo Finance
-    │   │           ├── GetUsersSummaryTool.cs      # tool do módulo Identity
-    │   │           └── SearchDocumentsTool.cs      # tool de RAG
+    │   │   │   ├── ChatCommand.cs
+    │   │   │   ├── ChatOutput.cs            # { Reply, IterationsUsed }
+    │   │   │   ├── ChatCommandHandler.cs    # entry point do chat
+    │   │   │   └── ChatCommandValidator.cs
+    │   │   ├── Agent/
+    │   │   │   ├── AgentLoop.cs             # loop ReAct → retorna AgentResult
+    │   │   │   ├── ToolRegistry.cs          # catálogo via IEnumerable<ITool>
+    │   │   │   └── Tools/
+    │   │   │       ├── GetUsersSummaryTool.cs   # wrapa ListUserQuery (Identity)
+    │   │   │       └── GetTenantInfoTool.cs     # wrapa ListTenantsQuery (Tenants)
+    │   │   └── Prompts/
+    │   │       └── AgentSystemPrompt.cs     # prompt de sistema do agente
     │   └── Ai.Infrastructure/
-    │       └── DependencyInjection.cs
+    │       └── DependencyInjection.cs       # AddAiModule()
     │
     └── {Module}/                            # módulo de negócio normal
         ├── {Module}.Domain/
@@ -706,20 +710,22 @@ User: "Qual faturamento de março e quantos usuários novos?"
 src/Core/Ai/
   Ai.Application/
     Handlers/
-      ChatCommandHandler.cs            ← entry point: recebe mensagem, retorna resposta
+      ChatCommand.cs                   ← record ChatCommand(string Message, ...)
+      ChatOutput.cs                    ← record ChatOutput(string Reply, int IterationsUsed)
+      ChatCommandHandler.cs            ← entry point: orquestra AgentLoop + tracker
+      ChatCommandValidator.cs          ← valida Message (required, max 4000 chars)
     Agent/
-      AgentLoop.cs                     ← orquestra Reason → Act → Observe
-      ToolRegistry.cs                  ← catálogo de tools; descoberta via DI
+      AgentLoop.cs                     ← loop ReAct: Reason → Act (paralelo) → Observe
+      ToolRegistry.cs                  ← catálogo de tools; descoberta via IEnumerable<ITool>
       Tools/
-        GetRevenueSummaryTool.cs       ← wrapa GetRevenueSummaryQuery (Finance)
-        GetUsersSummaryTool.cs         ← wrapa GetUsersSummaryQuery (Identity)
-        CreateTicketTool.cs            ← wrapa CreateTicketCommand (Support)
-        SearchDocumentsTool.cs         ← wrapa SearchDocumentsQuery (RAG)
-    Ai/
-      Prompts/
-        AgentSystemPrompt.cs           ← instrução de sistema do agente
+        GetUsersSummaryTool.cs         ← wrapa ListUserQuery (Identity)
+        GetTenantInfoTool.cs           ← wrapa ListTenantsQuery (Tenants)
+        ─── (adicionar tools de novos módulos aqui) ───
+    Prompts/
+      AgentSystemPrompt.cs             ← instrução de sistema do agente (pt-BR)
   Ai.Infrastructure/
-    DependencyInjection.cs
+    Ai.Infrastructure.csproj
+    DependencyInjection.cs             ← AddAiModule(): ToolRegistry, AgentLoop, tools
 ```
 
 ---
@@ -733,25 +739,38 @@ namespace Product.Template.Kernel.Application.Ai;
 /// <summary>
 /// Representa uma capacidade que o agente pode invocar.
 /// Cada módulo expõe suas operações como implementações desta interface.
-/// O LLM lê Name + Description + InputSchema para decidir quando e como usar a tool.
+/// O LLM lê Definition.Name + Definition.Description + Definition.InputSchema
+/// para decidir quando e como usar a tool.
 /// </summary>
 public interface ITool
 {
-    /// <summary>Nome único em snake_case. Ex: "get_revenue_summary"</summary>
-    string Name { get; }
+    /// <summary>
+    /// Metadados da tool (nome, descrição, schema) enviados ao LLM.
+    /// </summary>
+    ToolDefinition Definition { get; }
 
     /// <summary>
-    /// Descrição em linguagem natural para o LLM.
-    /// Seja preciso: descreva QUANDO usar, não apenas O QUE faz.
+    /// Executa a operação e retorna o resultado serializado como JSON string.
+    /// <paramref name="call"/> contém o Id, o Name e os Parameters escolhidos pelo LLM.
     /// </summary>
-    string Description { get; }
-
-    /// <summary>JSON Schema dos parâmetros aceitos.</summary>
-    JsonObject InputSchema { get; }
-
-    /// <summary>Executa a operação e retorna o resultado serializado como JSON string.</summary>
-    Task<string> ExecuteAsync(JsonObject parameters, CancellationToken cancellationToken = default);
+    Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default);
 }
+```
+
+`ToolDefinition` e `ToolCall` estão em `Kernel.Application/Ai/Models/`:
+
+```csharp
+public sealed record ToolDefinition(
+    string Name,         // snake_case, único no sistema — o LLM referencia pelo nome
+    string Description,  // descreve QUANDO usar, não apenas o que faz (em inglês)
+    JsonObject InputSchema  // JSON Schema dos parâmetros
+);
+
+public sealed record ToolCall(
+    string Id,            // ID único gerado pelo LLM (enviado de volta com o resultado)
+    string Name,          // nome da tool escolhida pelo LLM
+    JsonObject Parameters // argumentos preenchidos pelo LLM
+);
 ```
 
 ---
@@ -766,26 +785,19 @@ public sealed class ToolRegistry
 {
     private readonly IReadOnlyDictionary<string, ITool> _tools;
 
-    public ToolRegistry(IEnumerable<ITool> tools)
-    {
-        _tools = tools.ToDictionary(t => t.Name);
-    }
+    // Descoberta automática via DI — recebe IEnumerable<ITool> injetado
+    public ToolRegistry(IEnumerable<ITool> tools) =>
+        _tools = tools.ToDictionary(t => t.Definition.Name);
 
     /// <summary>Schemas enviados ao LLM para que ele conheça as tools disponíveis.</summary>
     public IReadOnlyList<ToolDefinition> GetDefinitions() =>
-        _tools.Values
-              .Select(t => new ToolDefinition(t.Name, t.Description, t.InputSchema))
-              .ToList();
+        _tools.Values.Select(t => t.Definition).ToList();
 
-    /// <summary>Executa a tool escolhida pelo LLM.</summary>
-    public async Task<string> ExecuteAsync(
-        string toolName, JsonObject parameters, CancellationToken cancellationToken)
-    {
-        if (!_tools.TryGetValue(toolName, out var tool))
-            return $"{{\"error\": \"Tool '{toolName}' not found.\"}}";
-
-        return await tool.ExecuteAsync(parameters, cancellationToken);
-    }
+    /// <summary>Executa a tool escolhida pelo LLM e devolve o resultado como JSON string.</summary>
+    public Task<string> ExecuteAsync(ToolCall call, CancellationToken ct) =>
+        _tools.TryGetValue(call.Name, out var tool)
+            ? tool.ExecuteAsync(call, ct)
+            : Task.FromResult($"{{\"error\": \"Tool '{call.Name}' not found.\"}}");
 }
 ```
 
@@ -801,72 +813,86 @@ namespace Product.Template.Core.Ai.Application.Agent;
 
 public sealed class AgentLoop
 {
-    private readonly ILlmService _llm;
-    private readonly ToolRegistry _tools;
-    private readonly ILogger<AgentLoop> _logger;
     private const int MaxIterations = 5;   // teto de segurança contra loops infinitos
 
-    public AgentLoop(ILlmService llm, ToolRegistry tools, ILogger<AgentLoop> logger)
+    private readonly ILlmService _llm;
+    private readonly ToolRegistry _toolRegistry;
+    private readonly ILogger<AgentLoop> _logger;
+
+    public AgentLoop(ILlmService llm, ToolRegistry toolRegistry, ILogger<AgentLoop> logger)
     {
         _llm = llm;
-        _tools = tools;
+        _toolRegistry = toolRegistry;
         _logger = logger;
     }
 
-    public async Task<string> RunAsync(
+    public async Task<AgentResult> RunAsync(
         string userMessage,
+        string systemPrompt,        // injetado pelo ChatCommandHandler (AgentSystemPrompt.Text)
         IReadOnlyList<LlmMessage>? history,
         CancellationToken cancellationToken)
     {
-        var messages = new List<LlmMessage>(history ?? []);
-        messages.Add(new LlmMessage("user", userMessage));
+        var conversationHistory = history?.ToList() ?? [];
+        var toolDefinitions = _toolRegistry.GetDefinitions();
+        var iterations = 0;
 
-        for (int iteration = 0; iteration < MaxIterations; iteration++)
+        while (iterations < MaxIterations)
         {
-            // ── REASON ────────────────────────────────────────────────────────
-            // O LLM recebe o histórico + definições das tools e decide o que fazer
-            var response = await _llm.CompleteAsync(new LlmRequest(
-                SystemPrompt: AgentSystemPrompt.Build(),
-                UserPrompt: userMessage,
-                History: messages,
-                Tools: _tools.GetDefinitions(),
-                Temperature: 0.2f
-            ), cancellationToken);
+            iterations++;
 
-            _logger.LogDebug(
-                "Agent iteration {Iteration}: ToolCalls={ToolCount} Text={HasText}",
-                iteration, response.ToolCalls?.Count ?? 0, !string.IsNullOrEmpty(response.Text));
+            // ── REASON ────────────────────────────────────────────────────────
+            var request = new LlmRequest(
+                UserPrompt: userMessage,
+                SystemPrompt: systemPrompt,
+                History: conversationHistory.Count > 0 ? conversationHistory : null,
+                Tools: toolDefinitions.Count > 0 ? toolDefinitions : null
+            );
+
+            var response = await _llm.CompleteAsync(request, cancellationToken);
 
             // Resposta final: nenhuma tool chamada → o LLM tem informação suficiente
-            if (response.ToolCalls is null or { Count: 0 })
-                return response.Text;
+            if (response.ToolCalls is not { Count: > 0 })
+                return new AgentResult(response.Text, iterations, response.TotalTokens);
 
             // Adiciona a decisão do assistente ao histórico
-            messages.Add(new LlmMessage("assistant", response.Text ?? string.Empty));
+            conversationHistory.Add(new LlmMessage("assistant", response.Text ?? string.Empty));
 
-            // ── ACT + OBSERVE ──────────────────────────────────────────────────
-            // Executa cada tool em paralelo e devolve os resultados ao LLM
-            var toolTasks = response.ToolCalls.Select(async call =>
-            {
-                _logger.LogInformation(
-                    "Agent calling tool {ToolName} with params {Params}",
-                    call.Name, call.Parameters.ToJsonString());
+            // ── ACT (paralelo) + OBSERVE ───────────────────────────────────────
+            var toolResults = await Task.WhenAll(
+                response.ToolCalls.Select(tc => ExecuteToolAsync(tc, cancellationToken)));
 
-                var result = await _tools.ExecuteAsync(call.Name, call.Parameters, cancellationToken);
+            foreach (var result in toolResults)
+                conversationHistory.Add(new LlmMessage("tool", result.Output, result.ToolCallId));
 
-                return new LlmMessage("tool", result, ToolCallId: call.Id);
-            });
-
-            var toolResults = await Task.WhenAll(toolTasks);
-
-            // Resultados entram no histórico — próxima iteração o LLM os verá
-            messages.AddRange(toolResults);
+            userMessage = string.Empty;  // nas iterações seguintes o histórico fala por si
         }
 
-        _logger.LogWarning("Agent exceeded max iterations ({Max}) without final answer.", MaxIterations);
-        return "Não consegui completar sua solicitação. Tente reformular a pergunta.";
+        _logger.LogWarning("AgentLoop reached max iterations ({Max}) without a final answer", MaxIterations);
+
+        // Fallback: pede ao LLM que sumarize o que foi encontrado
+        var fallback = new LlmRequest(
+            UserPrompt: "Resuma o que foi encontrado até agora com base nos dados das ferramentas.",
+            SystemPrompt: systemPrompt,
+            History: conversationHistory.Count > 0 ? conversationHistory : null
+        );
+        var fallbackResponse = await _llm.CompleteAsync(fallback, cancellationToken);
+        return new AgentResult(fallbackResponse.Text, iterations, fallbackResponse.TotalTokens);
     }
+
+    private async Task<ToolResult> ExecuteToolAsync(ToolCall toolCall, CancellationToken ct)
+    {
+        _logger.LogInformation("Executing tool {ToolName} with params {Params}",
+            toolCall.Name, toolCall.Parameters.ToJsonString());
+
+        var output = await _toolRegistry.ExecuteAsync(toolCall, ct);
+        return new ToolResult(toolCall.Id, output);
+    }
+
+    private sealed record ToolResult(string ToolCallId, string Output);
 }
+
+/// <summary>Resultado final do AgentLoop.</summary>
+public sealed record AgentResult(string Reply, int IterationsUsed, int TotalTokens);
 ```
 
 ---
@@ -874,172 +900,187 @@ public sealed class AgentLoop
 ### 5.6 Exemplo de Tool por módulo
 
 Cada módulo cria suas próprias tools em `Ai.Application/Agent/Tools/`. A tool:
-1. Declara `Name` e `Description` descritivos (o LLM lê isso)
-2. Declara `InputSchema` com os parâmetros esperados
-3. Em `ExecuteAsync`, usa `IMediator` para despachar a query/command do módulo
-
-```csharp
-// Ai.Application/Agent/Tools/GetRevenueSummaryTool.cs
-namespace Product.Template.Core.Ai.Application.Agent.Tools;
-
-public sealed class GetRevenueSummaryTool : ITool
-{
-    private readonly IMediator _mediator;
-
-    public GetRevenueSummaryTool(IMediator mediator) => _mediator = mediator;
-
-    public string Name => "get_revenue_summary";
-
-    public string Description =>
-        """
-        Returns revenue and billing summary for a specific month.
-        Use this when the user asks about: revenue, billing, income, sales total,
-        financial results, or 'how much did we bill/earn'.
-        """;
-
-    public JsonObject InputSchema => new()
-    {
-        ["type"] = "object",
-        ["properties"] = new JsonObject
-        {
-            ["month"] = new JsonObject
-            {
-                ["type"] = "integer",
-                ["description"] = "Month number (1 = January, 12 = December)"
-            },
-            ["year"] = new JsonObject
-            {
-                ["type"] = "integer",
-                ["description"] = "4-digit year, e.g. 2026"
-            }
-        },
-        ["required"] = new JsonArray { "month", "year" }
-    };
-
-    public async Task<string> ExecuteAsync(JsonObject parameters, CancellationToken ct)
-    {
-        var month = parameters["month"]!.GetValue<int>();
-        var year  = parameters["year"]!.GetValue<int>();
-
-        // Despacha a query do módulo Finance via MediatR — sem dependência direta no handler
-        var result = await _mediator.Send(new GetRevenueSummaryQuery(month, year), ct);
-
-        return JsonSerializer.Serialize(result);
-    }
-}
-```
+1. Expõe um `ToolDefinition Definition { get; }` com `Name`, `Description` e `InputSchema` (o LLM lê isso)
+2. Em `ExecuteAsync(ToolCall call, ...)`, extrai parâmetros de `call.Parameters` e despacha via `IMediator`
 
 ```csharp
 // Ai.Application/Agent/Tools/GetUsersSummaryTool.cs
+namespace Product.Template.Core.Ai.Application.Agent.Tools;
+
 public sealed class GetUsersSummaryTool : ITool
 {
     private readonly IMediator _mediator;
 
-    public string Name => "get_users_summary";
+    public GetUsersSummaryTool(IMediator mediator) => _mediator = mediator;
 
-    public string Description =>
-        """
-        Returns a count of registered and active users, optionally filtered by month.
-        Use when the user asks about: number of users, new registrations, active users, user growth.
-        """;
-
-    public JsonObject InputSchema => new()
-    {
-        ["type"] = "object",
-        ["properties"] = new JsonObject
+    public ToolDefinition Definition { get; } = new(
+        Name: "get_users_summary",
+        Description: "Returns a summary of registered users in the system, including total count " +
+                     "and recent registrations. Use when the user asks about: number of users, " +
+                     "new registrations, active users, or user growth.",
+        InputSchema: new JsonObject
         {
-            ["month"] = new JsonObject { ["type"] = "integer", ["description"] = "Month (1–12), optional" },
-            ["year"]  = new JsonObject { ["type"] = "integer", ["description"] = "Year, optional" }
-        },
-        ["required"] = new JsonArray()   // nenhum campo obrigatório — resumo geral se omitido
-    };
+            ["type"] = "object",
+            ["properties"] = new JsonObject
+            {
+                ["page_size"] = new JsonObject
+                {
+                    ["type"] = "integer",
+                    ["description"] = "Number of users to retrieve (default: 10, max: 50)"
+                }
+            },
+            ["required"] = new JsonArray()
+        }
+    );
 
-    public async Task<string> ExecuteAsync(JsonObject parameters, CancellationToken ct)
+    public async Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default)
     {
-        var month = parameters["month"]?.GetValue<int>();
-        var year  = parameters["year"]?.GetValue<int>();
-        var result = await _mediator.Send(new GetUsersSummaryQuery(month, year), ct);
-        return JsonSerializer.Serialize(result);
+        var pageSize = call.Parameters["page_size"]?.GetValue<int>() ?? 10;
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var query = new ListUserQuery { PageSize = pageSize, PageNumber = 1 };
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return JsonSerializer.Serialize(new
+        {
+            total_count = result.TotalCount,
+            users = result.Data.Select(u => new
+            {
+                id = u.Id,
+                email = u.Email,
+                name = $"{u.FirstName} {u.LastName}".Trim(),
+                email_confirmed = u.EmailConfirmed,
+                created_at = u.CreatedAt
+            })
+        });
     }
 }
 ```
 
 ```csharp
-// Ai.Application/Agent/Tools/SearchDocumentsTool.cs
-// Tool de RAG — busca semântica na base de documentos do tenant
-public sealed class SearchDocumentsTool : ITool
+// Ai.Application/Agent/Tools/GetTenantInfoTool.cs
+public sealed class GetTenantInfoTool : ITool
 {
     private readonly IMediator _mediator;
 
-    public string Name => "search_documents";
+    public GetTenantInfoTool(IMediator mediator) => _mediator = mediator;
 
-    public string Description =>
-        """
-        Searches the tenant's document base using semantic similarity.
-        Use when the user asks questions that require looking up internal documents,
-        contracts, policies, manuals, or any knowledge-base content.
-        """;
-
-    public JsonObject InputSchema => new()
-    {
-        ["type"] = "object",
-        ["properties"] = new JsonObject
+    public ToolDefinition Definition { get; } = new(
+        Name: "get_tenant_info",
+        Description: "Returns information about the tenants configured in the system. " +
+                     "Use when the user asks about tenants, clients, or multi-tenancy configuration.",
+        InputSchema: new JsonObject
         {
-            ["question"] = new JsonObject
+            ["type"] = "object",
+            ["properties"] = new JsonObject
             {
-                ["type"] = "string",
-                ["description"] = "The question or topic to search for"
-            }
-        },
-        ["required"] = new JsonArray { "question" }
-    };
+                ["page_size"] = new JsonObject
+                {
+                    ["type"] = "integer",
+                    ["description"] = "Number of tenants to retrieve (default: 20)"
+                }
+            },
+            ["required"] = new JsonArray()
+        }
+    );
 
-    public async Task<string> ExecuteAsync(JsonObject parameters, CancellationToken ct)
+    public async Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default)
     {
-        var question = parameters["question"]!.GetValue<string>();
-        var result = await _mediator.Send(new SearchDocumentsQuery(question), ct);
-        return JsonSerializer.Serialize(result);
+        var pageSize = call.Parameters["page_size"]?.GetValue<int>() ?? 20;
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
+        var query = new ListTenantsQuery(PageNumber: 1, PageSize: pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return JsonSerializer.Serialize(new
+        {
+            total_count = result.TotalCount,
+            tenants = result.Data.Select(t => new
+            {
+                tenant_id = t.TenantId,
+                tenant_key = t.TenantKey,
+                display_name = t.DisplayName,
+                isolation_mode = t.IsolationMode.ToString(),
+                is_active = t.IsActive
+            })
+        });
     }
 }
 ```
+
+> **Como adicionar uma tool de novo módulo**: crie o arquivo em `Ai.Application/Agent/Tools/`, implemente `ITool`, e registe-a em `Ai.Infrastructure/DependencyInjection.cs` com `services.AddScoped<ITool, SuaTool>()`. O `ToolRegistry` descobre via `IEnumerable<ITool>` no próximo boot.
 
 ---
 
 ### 5.7 ChatCommandHandler — entry point
 
 ```csharp
-// Ai.Application/Handlers/ChatCommandHandler.cs
-namespace Product.Template.Core.Ai.Application.Handlers;
-
-public sealed class ChatCommandHandler : ICommandHandler<ChatCommand, ChatOutput>
-{
-    private readonly AgentLoop _agent;
-    private readonly IAiUsageTracker _tracker;
-    private readonly ITenantContext _tenantContext;
-    private readonly ILogger<ChatCommandHandler> _logger;
-
-    public async Task<ChatOutput> Handle(ChatCommand request, CancellationToken cancellationToken)
-    {
-        _logger.LogInformation(
-            "Chat request received. TenantId: {TenantId} MessageLength: {Length}",
-            _tenantContext.Tenant.TenantId, request.Message.Length);
-
-        var answer = await _agent.RunAsync(
-            request.Message,
-            request.History,
-            cancellationToken);
-
-        return new ChatOutput(answer);
-    }
-}
-
 // Ai.Application/Handlers/ChatCommand.cs
 public record ChatCommand(
     string Message,
     IReadOnlyList<LlmMessage>? History = null
 ) : ICommand<ChatOutput>;
 
-public record ChatOutput(string Answer);
+// Ai.Application/Handlers/ChatOutput.cs
+public record ChatOutput(
+    string Reply,           // resposta em linguagem natural
+    int IterationsUsed      // quantas iterações do AgentLoop foram necessárias
+);
+```
+
+```csharp
+// Ai.Application/Handlers/ChatCommandHandler.cs
+namespace Product.Template.Core.Ai.Application.Handlers;
+
+internal sealed class ChatCommandHandler : ICommandHandler<ChatCommand, ChatOutput>
+{
+    private readonly AgentLoop _agentLoop;
+    private readonly IAiUsageTracker _tracker;
+    private readonly ITenantContext _tenantContext;
+    private readonly ILogger<ChatCommandHandler> _logger;
+
+    public async Task<ChatOutput> Handle(ChatCommand command, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("AI chat request for tenant {TenantId}", _tenantContext.TenantId);
+
+        var started = DateTime.UtcNow;
+        AgentResult? result = null;
+        string? errorCode = null;
+
+        try
+        {
+            result = await _agentLoop.RunAsync(
+                command.Message,
+                AgentSystemPrompt.Text,    // prompt injetado aqui — handler decide o contexto
+                command.History,
+                cancellationToken);
+
+            return new ChatOutput(result.Reply, result.IterationsUsed);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AgentLoop failed for tenant {TenantId}", _tenantContext.TenantId);
+            errorCode = ex.GetType().Name;
+            throw;
+        }
+        finally
+        {
+            var latency = DateTime.UtcNow - started;
+            await _tracker.TrackAsync(new AiUsageRecord(
+                Service: "llm",
+                Provider: "azure-openai",
+                Model: "agent",
+                Module: "ai",
+                Operation: "chat",
+                TenantId: _tenantContext.TenantId ?? 0,
+                TokensUsed: result?.TotalTokens,
+                Latency: latency,
+                Success: errorCode is null,
+                ErrorCode: errorCode
+            ), cancellationToken);
+        }
+    }
+}
 ```
 
 O endpoint no `Api` é um controller simples:
@@ -1048,7 +1089,7 @@ O endpoint no `Api` é um controller simples:
 // Api/Controllers/v1/AiController.cs
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/ai")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Tags("AI")]
 public class AiController : ControllerBase
 {
@@ -1057,6 +1098,8 @@ public class AiController : ControllerBase
     [HttpPost("chat")]
     [Authorize(Policy = SecurityConfiguration.AuthenticatedPolicy)]
     [ProducesResponseType(typeof(ChatOutput), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ChatOutput>> Chat(
         [FromBody] ChatCommand command, CancellationToken cancellationToken)
     {
@@ -1068,38 +1111,37 @@ public class AiController : ControllerBase
 
 ---
 
-### 5.8 Registro automático de Tools no DI
+### 5.8 Registro de Tools no DI
 
-Tools são descobertas automaticamente via reflexão — nenhuma alteração central ao adicionar uma nova tool:
+Tools são registadas explicitamente em `Ai.Infrastructure/DependencyInjection.cs`. O `ToolRegistry` recebe `IEnumerable<ITool>` via DI e descobre automaticamente as tools em runtime:
 
 ```csharp
 // Ai.Infrastructure/DependencyInjection.cs
-public static IServiceCollection AddAiModule(
-    this IServiceCollection services, IConfiguration configuration)
+public static class DependencyInjection
 {
-    // Descobre e registra todas as ITool do assembly automaticamente
-    var toolAssembly = typeof(GetRevenueSummaryTool).Assembly;
-
-    foreach (var toolType in toolAssembly.GetTypes()
-        .Where(t => t.IsClass && !t.IsAbstract && typeof(ITool).IsAssignableFrom(t)))
+    public static IServiceCollection AddAiModule(this IServiceCollection services)
     {
-        services.AddScoped(typeof(ITool), toolType);
+        services.AddScoped<ToolRegistry>();
+        services.AddScoped<AgentLoop>();
+
+        // Registe uma linha por tool — o ToolRegistry descobre via IEnumerable<ITool>
+        services.AddScoped<ITool, GetUsersSummaryTool>();
+        services.AddScoped<ITool, GetTenantInfoTool>();
+        // services.AddScoped<ITool, GetRevenueSummaryTool>();  // adicionar quando o módulo existir
+
+        return services;
     }
-
-    services.AddScoped<ToolRegistry>();
-    services.AddScoped<AgentLoop>();
-
-    return services;
 }
 ```
 
 **Como adicionar a tool de um novo módulo:**
 
 1. Crie `{NewModule}Tool.cs` em `Ai.Application/Agent/Tools/`
-2. Implemente `ITool` — defina `Name`, `Description`, `InputSchema` e `ExecuteAsync`
-3. Pronto. O `ToolRegistry` a descobre automaticamente no próximo boot.
+2. Implemente `ITool` — defina `Definition` (com `Name`, `Description`, `InputSchema`) e `ExecuteAsync(ToolCall call, ...)`
+3. Registe em `DependencyInjection.cs`: `services.AddScoped<ITool, SuaNovaTool>()`
+4. Pronto. O `ToolRegistry` constrói o catálogo automaticamente via `IEnumerable<ITool>`.
 
-Não é necessário alterar `AgentLoop`, `ToolRegistry`, `ChatCommandHandler` nem nenhum arquivo central.
+Não é necessário alterar `AgentLoop`, `ToolRegistry` nem `ChatCommandHandler`.
 
 ---
 
@@ -1612,56 +1654,61 @@ public class SummarizeInvoiceTests
 
 ### Testando o AgentLoop
 
+O `AgentLoop` recebe `systemPrompt` como parâmetro e retorna `AgentResult` (com `Reply`, `IterationsUsed`, `TotalTokens`):
+
 ```csharp
+// tests/UnitTests/Ai/AgentLoopTests.cs
 public class AgentLoopTests
 {
     [Fact]
-    public async Task Run_ShouldReturnDirectAnswer_WhenNoToolsNeeded()
+    public async Task RunAsync_ShouldReturnDirectReply_WhenNoToolCallsRequested()
     {
-        // LLM responde sem chamar tools
-        var llm = new StubLlmService(text: "Olá! Como posso ajudar?", toolCalls: null);
-        var loop = CreateLoop(llm);
+        var llm = new StubLlmService("Hello from the model", toolCalls: null);
+        var registry = new ToolRegistry([]);
+        var loop = new AgentLoop(llm, registry, NullLogger<AgentLoop>.Instance);
 
-        var answer = await loop.RunAsync("Olá", history: null, default);
+        var result = await loop.RunAsync("Hi", "System", null, default);
 
-        Assert.Equal("Olá! Como posso ajudar?", answer);
+        Assert.Equal("Hello from the model", result.Reply);
+        Assert.Equal(1, result.IterationsUsed);
     }
 
     [Fact]
-    public async Task Run_ShouldCallToolAndReturnFormattedAnswer()
+    public async Task RunAsync_ShouldCallToolAndReturnFinalAnswer_WhenToolCallRequested()
     {
-        // Primeira chamada: LLM decide usar a tool
-        // Segunda chamada: LLM formula a resposta com o resultado
-        var llm = new SequentialStubLlmService([
-            new LlmResponse("", 0, 0, 0, "stub", TimeSpan.Zero, ToolCalls: [
-                new ToolCall("call_1", "get_revenue_summary",
-                    JsonNode.Parse("""{"month":3,"year":2026}""")!.AsObject())
-            ]),
-            new LlmResponse("O faturamento de março foi R$ 48.200.", 0, 0, 0, "stub", TimeSpan.Zero)
-        ]);
+        var toolCalls = new List<ToolCall>
+        {
+            new("call-1", "get_info", new JsonObject())
+        };
 
-        var tools = new StubToolRegistry("get_revenue_summary",
-            result: """{"total":48200,"currency":"BRL"}""");
+        var llm = new SequentialLlmService(
+            first: new LlmResponse("Thinking...", 10, 5, 15, "gpt-4o-mini", TimeSpan.Zero, toolCalls),
+            second: new LlmResponse("Based on the data: 42 users.", 20, 10, 30, "gpt-4o-mini", TimeSpan.Zero)
+        );
 
-        var loop = new AgentLoop(llm, tools, NullLogger<AgentLoop>.Instance);
+        var tool = new CountingTool("get_info");
+        var registry = new ToolRegistry([tool]);
+        var loop = new AgentLoop(llm, registry, NullLogger<AgentLoop>.Instance);
 
-        var answer = await loop.RunAsync("Qual o faturamento de março?", null, default);
+        var result = await loop.RunAsync("How many users?", "System", null, default);
 
-        Assert.Contains("48.200", answer);
-        Assert.True(tools.WasCalled("get_revenue_summary"));
+        Assert.Equal("Based on the data: 42 users.", result.Reply);
+        Assert.Equal(2, result.IterationsUsed);
+        Assert.Equal(1, tool.CallCount);
     }
 
     [Fact]
-    public async Task Run_ShouldReturnFallback_WhenMaxIterationsReached()
+    public async Task RunAsync_ShouldStopAtMaxIterations_WhenToolCallsNeverEnd()
     {
-        // LLM sempre retorna tool calls — nunca dá resposta final
-        var llm = new InfiniteToolCallStubLlmService("get_revenue_summary");
-        var tools = new StubToolRegistry("get_revenue_summary", result: "{}");
-        var loop = new AgentLoop(llm, tools, NullLogger<AgentLoop>.Instance);
+        var toolCalls = new List<ToolCall> { new("c1", "loop_tool", new JsonObject()) };
+        var llm = new InfiniteToolCallLlm(toolCalls);
+        var tool = new CountingTool("loop_tool");
+        var registry = new ToolRegistry([tool]);
+        var loop = new AgentLoop(llm, registry, NullLogger<AgentLoop>.Instance);
 
-        var answer = await loop.RunAsync("Loop infinito", null, default);
+        var result = await loop.RunAsync("Infinite?", "System", null, default);
 
-        Assert.Contains("Não consegui completar", answer);
+        Assert.Equal(5, result.IterationsUsed);
     }
 }
 ```
@@ -1781,32 +1828,37 @@ public void BuildSummaryRequest_ShouldIncludeSupplierAndTotal()
 
 ### Módulo Ai — agente cross-módulo
 
-- [ ] Criar `src/Core/Ai/` com projetos `Ai.Application` e `Ai.Infrastructure`
-- [ ] Criar `ITool` em `Kernel.Application/Ai/` (contrato compartilhado)
-- [ ] Implementar `ToolRegistry` com descoberta por injeção de `IEnumerable<ITool>`
-- [ ] Implementar `AgentLoop` com loop ReAct e teto de iterações (`MaxIterations = 5`)
-  - [ ] Execução paralela de tool calls dentro de uma iteração (`Task.WhenAll`)
-  - [ ] Log de cada tool chamada pelo agente
-  - [ ] Mensagem de fallback se `MaxIterations` for atingido
-- [ ] Implementar `ChatCommand` + `ChatCommandHandler`
-- [ ] Criar `AgentSystemPrompt.cs` com instruções do sistema
-- [ ] Criar `AiController` com `POST /api/v1/ai/chat` (policy: `Authenticated`)
-- [ ] Adicionar entrada em `RBAC_MATRIX.md`
-- [ ] Registrar tools via `AddAiModule()` com descoberta automática por reflexão
-- [ ] Criar `AgentSystemPrompt` com as regras do agente:
-  - [ ] Idioma de resposta (pt-BR)
-  - [ ] Nunca inventar dados; usar apenas o retorno das tools
-  - [ ] Não revelar detalhes internos de implementação
+- [x] Criar `src/Core/Ai/` com projetos `Ai.Application` e `Ai.Infrastructure`
+- [x] Criar `ITool` em `Kernel.Application/Ai/` (contrato compartilhado)
+- [x] Implementar `ToolRegistry` com descoberta por injeção de `IEnumerable<ITool>`
+- [x] Implementar `AgentLoop` com loop ReAct e teto de iterações (`MaxIterations = 5`)
+  - [x] Execução paralela de tool calls dentro de uma iteração (`Task.WhenAll`)
+  - [x] Log de cada tool chamada pelo agente
+  - [x] Fallback com sumarização se `MaxIterations` for atingido
+- [x] Implementar `ChatCommand` + `ChatCommandHandler` + `ChatCommandValidator`
+- [x] Criar `AgentSystemPrompt.cs` com instruções do sistema
+- [x] Criar `AiController` com `POST /api/v1/ai/chat` (policy: `Authenticated`)
+- [x] Adicionar entrada em `RBAC_MATRIX.md`
+- [x] Registrar tools via `AddAiModule()` (registo explícito em DependencyInjection.cs)
+- [x] Criar `AgentSystemPrompt` com as regras do agente:
+  - [x] Idioma de resposta (pt-BR)
+  - [x] Nunca inventar dados; usar apenas o retorno das tools
+  - [x] Não revelar detalhes internos de implementação
 
 ### Tools por módulo (uma tool por operação exposta ao agente)
 
-- [ ] Cada tool implementa `ITool` e fica em `Ai.Application/Agent/Tools/`
-- [ ] `Name` em `snake_case` e único no sistema
-- [ ] `Description` em inglês descrevendo **quando usar**, não apenas o que faz
+- [x] `GetUsersSummaryTool` — wrapa `ListUserQuery` (Identity)
+- [x] `GetTenantInfoTool` — wrapa `ListTenantsQuery` (Tenants)
+- [ ] _(adicionar uma tool por módulo futuro)_
+
+**Checklist ao criar uma nova tool:**
+- [ ] Implementa `ITool` (campo `Definition`, método `ExecuteAsync(ToolCall call, ...)`)
+- [ ] `Definition.Name` em `snake_case` e único no sistema
+- [ ] `Definition.Description` em inglês descrevendo **quando usar**, não apenas o que faz
 - [ ] `InputSchema` com JSON Schema válido (types, required, descriptions)
 - [ ] `ExecuteAsync` despacha via `IMediator.Send()` — nunca acessa repositório diretamente
 - [ ] Resultado serializado como JSON string (o LLM lê e interpreta)
-- [ ] Adicionar `CancellationToken` em toda chamada async
+- [ ] Registada em `Ai.Infrastructure/DependencyInjection.cs` com `AddScoped<ITool, NovaTool>()`
 
 ### Segurança
 
@@ -1821,6 +1873,10 @@ public void BuildSummaryRequest_ShouldIncludeSupplierAndTotal()
 **Kernel (já implementados):**
 - [x] `CachedEmbeddingServiceTests` — hit/miss/batch (4 cenários, stub inline)
 - [x] `AiUsageTrackerTests` — sucesso, falha, serviços sem tokens (3 cenários)
+
+**Módulo Ai (já implementados):**
+- [x] `AgentLoopTests` — resposta direta, tool call → resposta, teto de iterações (3 cenários)
+- [x] `ToolRegistryTests` — descobre tools, tool encontrada, tool não encontrada (3 cenários)
 
 **Por módulo (ao implementar handlers de IA):**
 - [ ] Testes unitários do handler com `StubLlmService` inline (sem chamadas reais)

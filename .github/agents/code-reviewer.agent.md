@@ -76,7 +76,23 @@ Verifique:
 - `CorrelationId` não propagado (automático via `RequestLoggingMiddleware`, mas não bypass)
 - Exceção capturada e silenciada (`catch {}` ou `catch { return null }`)
 
-### 6. Brechas de testes
+### 6. Brechas de IA
+
+Verifique (quando o escopo inclui código de IA):
+- SDK de IA importado fora de `Kernel.Infrastructure` (proibido em Domain/Application)
+- `ILlmService` / `IOcrService` / `IEmbeddingService` não injectados via interface (uso directo de `AzureOpenAIClient`)
+- Handler de IA sem `_tracker.TrackAsync(...)` (perda de observabilidade de custos)
+- `TrackAsync` fora de bloco `finally` (não rastreia em caso de excepção)
+- `LlmRequest` sem `Temperature` explícita ou sem `MaxTokens`
+- `SystemPrompt` sem `"Nunca invente informações"` (risco de alucinação)
+- Dados do utilizador interpolados directamente no `SystemPrompt` (prompt injection)
+- Tool (`ITool`) que acede repositório directamente em vez de `IMediator.Send()`
+- Tool com `Name` não em `snake_case` ou duplicado no sistema
+- Tool não registada em `Ai.Infrastructure/DependencyInjection.cs`
+- IA usada como feature bloqueante quando deveria ser enrichment (capturar excepção e continuar)
+- `AgentLoop` ou `ToolRegistry` injectados fora do módulo `Ai` (fronteira quebrada)
+
+### 7. Brechas de testes
 
 Verifique:
 - Handler sem teste unitário (happy path + ao menos 1 failure path)
@@ -86,6 +102,8 @@ Verifique:
 - Integration test sem header `X-Tenant: public`
 - Naming de test fora do padrão `{Method}_{Scenario}_{Expected}`
 - `RbacMatrixConsistencyTests` falha por endpoint não mapeado na matriz
+
+---
 
 ## Processo de revisão
 
@@ -159,6 +177,7 @@ Para cada achado 🔴 e 🟡, entregue o código corrigido completo — não ape
 | Validação | N | N | N |
 | Persistência | N | N | N |
 | Observabilidade | N | N | N |
+| IA | N | N | N |
 | Testes | N | N | N |
 | **Total** | **N** | **N** | **N** |
 
