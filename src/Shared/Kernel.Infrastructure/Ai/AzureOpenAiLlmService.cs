@@ -145,7 +145,7 @@ internal sealed class AzureOpenAiLlmService : ILlmService
         return options;
     }
 
-    private static IReadOnlyList<Product.Template.Kernel.Application.Ai.ToolCall>? MapToolCalls(
+    private static List<Product.Template.Kernel.Application.Ai.ToolCall>? MapToolCalls(
         IReadOnlyList<ChatToolCall> toolCalls)
     {
         if (toolCalls is not { Count: > 0 }) return null;

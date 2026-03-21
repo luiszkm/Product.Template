@@ -30,9 +30,9 @@ public sealed class GetUsersSummaryTool : ITool
         }
     );
 
-    public async Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default)
+    public async Task<string> ExecuteAsync(ToolCall toolCall, CancellationToken cancellationToken = default)
     {
-        var pageSize = call.Parameters["page_size"]?.GetValue<int>() ?? 10;
+        var pageSize = toolCall.Parameters["page_size"]?.GetValue<int>() ?? 10;
         pageSize = Math.Clamp(pageSize, 1, 50);
 
         var query = new ListUserQuery { PageSize = pageSize, PageNumber = 1 };

@@ -12,8 +12,8 @@ public sealed class ToolRegistry
     public IReadOnlyList<ToolDefinition> GetDefinitions() =>
         _tools.Values.Select(t => t.Definition).ToList();
 
-    public Task<string> ExecuteAsync(ToolCall call, CancellationToken ct) =>
-        _tools.TryGetValue(call.Name, out var tool)
-            ? tool.ExecuteAsync(call, ct)
-            : Task.FromResult($"{{\"error\": \"Tool '{call.Name}' not found.\"}}");
+    public Task<string> ExecuteAsync(ToolCall toolCall, CancellationToken ct) =>
+        _tools.TryGetValue(toolCall.Name, out var tool)
+            ? tool.ExecuteAsync(toolCall, ct)
+            : Task.FromResult($"{{\"error\": \"Tool '{toolCall.Name}' not found.\"}}");
 }

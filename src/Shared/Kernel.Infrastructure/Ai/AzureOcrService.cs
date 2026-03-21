@@ -75,7 +75,7 @@ internal sealed class AzureOcrService : IOcrService
         }
 
         var fullText = string.Join("\n\n", pages.Select(p => p.Text));
-        var avgConfidence = pages.Any() ? pages.Average(p => p.Confidence) : 0f;
+        var avgConfidence = pages.Count > 0 ? pages.Average(p => p.Confidence) : 0f;
 
         return new OcrResult(
             FullText: fullText,

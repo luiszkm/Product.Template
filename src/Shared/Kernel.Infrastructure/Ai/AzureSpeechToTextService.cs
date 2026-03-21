@@ -56,7 +56,7 @@ internal sealed class AzureSpeechToTextService : ISpeechToTextService
             Segments: segments);
     }
 
-    private static IReadOnlyList<SttSegment> MapSegments(SpeechRecognitionResult result)
+    private static List<SttSegment> MapSegments(SpeechRecognitionResult result)
     {
         var detailedResults = result.Best();
         var best = detailedResults?.FirstOrDefault();

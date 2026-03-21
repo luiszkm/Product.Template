@@ -72,6 +72,12 @@ COPY src/Core/Tenants/Tenants.Application/packages.lock.json               src/C
 COPY src/Core/Tenants/Tenants.Infrastructure/Tenants.Infrastructure.csproj src/Core/Tenants/Tenants.Infrastructure/
 COPY src/Core/Tenants/Tenants.Infrastructure/packages.lock.json            src/Core/Tenants/Tenants.Infrastructure/
 
+# Ai module
+COPY src/Core/Ai/Ai.Application/Ai.Application.csproj                      src/Core/Ai/Ai.Application/
+COPY src/Core/Ai/Ai.Application/packages.lock.json                         src/Core/Ai/Ai.Application/
+COPY src/Core/Ai/Ai.Infrastructure/Ai.Infrastructure.csproj                src/Core/Ai/Ai.Infrastructure/
+COPY src/Core/Ai/Ai.Infrastructure/packages.lock.json                      src/Core/Ai/Ai.Infrastructure/
+
 # API entry-point
 COPY src/Api/Api.csproj        src/Api/
 COPY src/Api/packages.lock.json src/Api/

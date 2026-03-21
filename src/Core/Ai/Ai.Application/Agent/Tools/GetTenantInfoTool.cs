@@ -30,9 +30,9 @@ public sealed class GetTenantInfoTool : ITool
         }
     );
 
-    public async Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default)
+    public async Task<string> ExecuteAsync(ToolCall toolCall, CancellationToken cancellationToken = default)
     {
-        var pageSize = call.Parameters["page_size"]?.GetValue<int>() ?? 20;
+        var pageSize = toolCall.Parameters["page_size"]?.GetValue<int>() ?? 20;
         pageSize = Math.Clamp(pageSize, 1, 100);
 
         var query = new ListTenantsQuery(PageNumber: 1, PageSize: pageSize);
