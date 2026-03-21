@@ -26,5 +26,6 @@ public static class FeatureFlags
     public const string EnableRequestDeduplication = "EnableRequestDeduplication";
     public const string EnableAdvancedLogging = "EnableAdvancedLogging";
     public const string EnableExperimentalFeatures = "EnableExperimentalFeatures";
+    public const string EnableAI = "EnableAI";
 }
 

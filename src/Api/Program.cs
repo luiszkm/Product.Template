@@ -49,6 +49,9 @@ builder.Services.AddSecurityConfiguration(builder.Configuration, builder.Environ
 // OpenTelemetry (Traces e Metrics)
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
+// AI Services (Null services when FeatureFlags:EnableAI = false)
+builder.Services.AddAiConfiguration(builder.Configuration);
+
 var app = builder.Build();
 
 // Initialize Database with Seeders (skipped when DisableDatabaseInitialization is true)

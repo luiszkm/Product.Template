@@ -14,6 +14,12 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.*" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.*" />
+    <!-- AI: Azure OpenAI — LLM + Embeddings -->
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <!-- AI: Azure Document Intelligence — OCR -->
+    <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
+    <!-- AI: Azure Cognitive Speech — TTS + STT -->
+    <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.43.0" />
   </ItemGroup>
 
   <ItemGroup>
