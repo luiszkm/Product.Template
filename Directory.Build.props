@@ -27,7 +27,13 @@
     <TreatWarningsAsErrors Condition="'$(Configuration)' == 'Release'">true</TreatWarningsAsErrors>
     <TreatWarningsAsErrors Condition="'$(Configuration)' != 'Release'">false</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <!--
+      1591  : missing XML doc (API controllers have partial coverage — deferred cleanup)
+      CA1873: logging argument evaluation cost — acceptable in handler/behavior classes;
+              fix properly with LoggerMessage source generators in a future refactor
+      CA1711: type name ending in 'EventHandler' — intentional for DomainEvent handlers
+    -->
+    <NoWarn>$(NoWarn);1591;CA1873;CA1711</NoWarn>
   </PropertyGroup>
 
   <!-- Test projects configuration -->

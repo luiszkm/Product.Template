@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Domain.SeedWorks;
 

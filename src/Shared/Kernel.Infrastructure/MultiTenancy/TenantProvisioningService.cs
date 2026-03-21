@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.HostDb;
-using Product.Template.Kernel.Infrastructure.Persistence;
 
 namespace Product.Template.Kernel.Infrastructure.MultiTenancy;
 

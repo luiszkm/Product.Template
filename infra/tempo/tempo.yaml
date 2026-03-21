@@ -3,7 +3,7 @@ stream_over_http_enabled: true
 server:
   http_listen_port: 3200
 
-# Configuração de distribuição (single-node para dev)
+# Receivers OTLP (gRPC + HTTP)
 distributor:
   receivers:
     otlp:
@@ -13,12 +13,7 @@ distributor:
         http:
           endpoint: 0.0.0.0:4318
 
-ingester:
-  trace_idle_period: 10s
-  max_block_bytes: 1_000_000
-  max_block_duration: 5m
-
-# Armazenamento local (para desenvolvimento)
+# Armazenamento local para desenvolvimento
 storage:
   trace:
     backend: local
@@ -26,29 +21,8 @@ storage:
       path: /var/tempo/wal
     local:
       path: /var/tempo/blocks
-    pool:
-      max_workers: 100
-      queue_depth: 10000
 
-# Compaction
-compactor:
-  compaction:
-    compaction_window: 1h
-    max_block_bytes: 100_000_000
-    block_retention: 48h          # manter traces por 48h
-
-# Configuração do servidor HTTP para queries do Grafana
-query_frontend:
-  search:
-    duration_slo: 5s
-    throughput_bytes_slo: 1.073741824e+09
-  trace_by_id:
-    duration_slo: 5s
-
-querier:
-  max_concurrent_queries: 20
-
-# Habilitar métricas de generators (span metrics → Prometheus)
+# Métricas geradas a partir de traces → Prometheus
 metrics_generator:
   registry:
     external_labels:
@@ -59,11 +33,22 @@ metrics_generator:
     remote_write:
       - url: http://prometheus:9090/api/v1/write
         send_exemplars: true
-  traces_storage:
-    path: /var/tempo/generator/traces
+  processor:
+    service_graphs: {}
+    span_metrics: {}
+
+# Query
+query_frontend:
+  search:
+    duration_slo: 5s
+    throughput_bytes_slo: 1.073741824e+09
+  trace_by_id:
+    duration_slo: 5s
+
+querier:
+  max_concurrent_queries: 20
 
 overrides:
   defaults:
     metrics_generator:
       processors: [service-graphs, span-metrics]
-

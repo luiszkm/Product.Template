@@ -15,9 +15,10 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
 WORKDIR /app
 
-# Non-root user (Alpine: addgroup/adduser)
-RUN addgroup --system --gid 1654 appgroup \
- && adduser  --system --uid 1654 --ingroup appgroup --no-create-home app
+# NOTE: mcr.microsoft.com/dotnet/aspnet:10.0-alpine already ships with
+# user/group app:app (UID/GID 1654) — no need to create them.
+# ICU libs are required because DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false.
+RUN apk add --no-cache icu-libs
 
 EXPOSE 8080
 
@@ -41,16 +42,39 @@ COPY global.json           ./
 
 # Shared kernel
 COPY src/Shared/Kernel.Domain/Kernel.Domain.csproj                         src/Shared/Kernel.Domain/
+COPY src/Shared/Kernel.Domain/packages.lock.json                           src/Shared/Kernel.Domain/
 COPY src/Shared/Kernel.Application/Kernel.Application.csproj               src/Shared/Kernel.Application/
+COPY src/Shared/Kernel.Application/packages.lock.json                      src/Shared/Kernel.Application/
 COPY src/Shared/Kernel.Infrastructure/Kernel.Infrastructure.csproj         src/Shared/Kernel.Infrastructure/
+COPY src/Shared/Kernel.Infrastructure/packages.lock.json                   src/Shared/Kernel.Infrastructure/
 
 # Identity module
 COPY src/Core/Identity/Identity.Domain/Identity.Domain.csproj              src/Core/Identity/Identity.Domain/
+COPY src/Core/Identity/Identity.Domain/packages.lock.json                  src/Core/Identity/Identity.Domain/
 COPY src/Core/Identity/Identity.Application/Identity.Application.csproj    src/Core/Identity/Identity.Application/
+COPY src/Core/Identity/Identity.Application/packages.lock.json             src/Core/Identity/Identity.Application/
 COPY src/Core/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj src/Core/Identity/Identity.Infrastructure/
+COPY src/Core/Identity/Identity.Infrastructure/packages.lock.json          src/Core/Identity/Identity.Infrastructure/
+
+# Authorization module
+COPY src/Core/Authorization/Authorization.Domain/Authorization.Domain.csproj           src/Core/Authorization/Authorization.Domain/
+COPY src/Core/Authorization/Authorization.Domain/packages.lock.json                    src/Core/Authorization/Authorization.Domain/
+COPY src/Core/Authorization/Authorization.Application/Authorization.Application.csproj src/Core/Authorization/Authorization.Application/
+COPY src/Core/Authorization/Authorization.Application/packages.lock.json               src/Core/Authorization/Authorization.Application/
+COPY src/Core/Authorization/Authorization.Infrastructure/Authorization.Infrastructure.csproj src/Core/Authorization/Authorization.Infrastructure/
+COPY src/Core/Authorization/Authorization.Infrastructure/packages.lock.json            src/Core/Authorization/Authorization.Infrastructure/
+
+# Tenants module
+COPY src/Core/Tenants/Tenants.Domain/Tenants.Domain.csproj                 src/Core/Tenants/Tenants.Domain/
+COPY src/Core/Tenants/Tenants.Domain/packages.lock.json                    src/Core/Tenants/Tenants.Domain/
+COPY src/Core/Tenants/Tenants.Application/Tenants.Application.csproj       src/Core/Tenants/Tenants.Application/
+COPY src/Core/Tenants/Tenants.Application/packages.lock.json               src/Core/Tenants/Tenants.Application/
+COPY src/Core/Tenants/Tenants.Infrastructure/Tenants.Infrastructure.csproj src/Core/Tenants/Tenants.Infrastructure/
+COPY src/Core/Tenants/Tenants.Infrastructure/packages.lock.json            src/Core/Tenants/Tenants.Infrastructure/
 
 # API entry-point
-COPY src/Api/Api.csproj src/Api/
+COPY src/Api/Api.csproj        src/Api/
+COPY src/Api/packages.lock.json src/Api/
 
 RUN dotnet restore "src/Api/Api.csproj" --locked-mode
 
@@ -90,7 +114,7 @@ LABEL org.opencontainers.image.title="Product.Template API" \
       org.opencontainers.image.licenses="MIT"
 
 WORKDIR /app
-COPY --from=publish --chown=app:appgroup /app/publish .
+COPY --from=publish --chown=app:app /app/publish .
 
 USER app
 

@@ -22,7 +22,7 @@ public class RoleRepository : IRoleRepository
 
     public async Task<Role?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         => await _context.Set<Role>()
-            .FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower(), cancellationToken);
+            .FirstOrDefaultAsync(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase), cancellationToken);
 
     public async Task<Role?> GetWithPermissionsAsync(Guid id, CancellationToken cancellationToken = default)
         => await _context.Set<Role>()

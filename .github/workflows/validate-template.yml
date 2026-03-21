@@ -19,7 +19,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
@@ -27,11 +27,40 @@ jobs:
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
 
-    - name: Run tests
+    - name: Run unit, integration and architecture tests
       run: dotnet test --no-build --configuration Release --verbosity normal
+        --collect:"XPlat Code Coverage"
+        --results-directory ./coverage
+        --ignore-filter "FullyQualifiedName~E2ETests"
 
-    - name: Run integration authorization tests
-      run: dotnet test tests/IntegrationTests/IntegrationTests.csproj --no-build --configuration Release --filter "FullyQualifiedName~Authorization" --verbosity normal
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: ./coverage
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: validate
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run E2E tests (Testcontainers / Docker)
+      run: dotnet test tests/E2ETests/E2ETests.csproj --no-build --configuration Release --verbosity normal
 
   test-template-installation:
     name: Test Template Installation
@@ -45,7 +74,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Install template locally
       run: dotnet new install .
@@ -82,7 +111,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
@@ -101,13 +130,18 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
 
     - name: Run security audit
-      run: dotnet list package --vulnerable --include-transitive
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+        if grep -q "has the following vulnerable packages" vulnerable.txt; then
+          echo "Vulnerable packages found!"
+          exit 1
+        fi
 
   build-matrix:
     name: Build on ${{ matrix.os }}
@@ -123,7 +157,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '10.0.x'
 
     - name: Restore dependencies
       run: dotnet restore
@@ -133,3 +167,4 @@ jobs:
 
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal
+        --ignore-filter "FullyQualifiedName~E2ETests"
