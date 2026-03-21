@@ -4,7 +4,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Product.Template.Api.HealthChecks;
 using Product.Template.Kernel.Infrastructure.HostDb;
 using Product.Template.Kernel.Infrastructure.Persistence;
-
 namespace Product.Template.Api.Configurations;
 
 public static class HealthCheckConfiguration
@@ -58,13 +57,10 @@ public static class HealthCheckConfiguration
             }, tags: ["system"]);
 
         // Health Checks UI (only useful in development — disable in production via env)
-        services.AddHealthChecksUI(setup =>
-            {
-                setup.SetEvaluationTimeInSeconds(60);
-                setup.MaximumHistoryEntriesPerEndpoint(50);
-                setup.AddHealthCheckEndpoint("API Health", "/health");
-            })
-            .AddInMemoryStorage();
+        // TODO: re-enable when Xabaril releases an AspNetCore.HealthChecks.UI version
+        //       compatible with .NET 10 (currently blocked by IdentityModel 5.2.0 dep).
+        //       Track: https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks
+        // services.AddHealthChecksUI(...).AddInMemoryStorage();
 
         return services;
     }
@@ -113,15 +109,9 @@ public static class HealthCheckConfiguration
         if (!isDev)
             fullHealthEndpoint.RequireAuthorization(SecurityConfiguration.AdminOnlyPolicy);
 
-        // /healthchecks-ui — only in Development
-        if (isDev)
-        {
-            app.MapHealthChecksUI(options =>
-            {
-                options.UIPath  = "/healthchecks-ui";
-                options.ApiPath = "/healthchecks-api";
-            });
-        }
+        // /healthchecks-ui — disabled: AspNetCore.HealthChecks.UI 9.0.0 requires IdentityModel 5.2.0
+        // which is incompatible with .NET 10. Re-enable when a compatible version is released.
+        // if (isDev) { app.MapHealthChecksUI(options => { options.UIPath = "/healthchecks-ui"; ... }); }
 
         return app;
     }

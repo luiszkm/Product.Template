@@ -12,12 +12,16 @@ A production-ready .NET 10 backend template following Clean Architecture, DDD, a
 | EF Core | 10.x | ORM (write) |
 | MediatR | 14.x | CQRS mediator |
 | FluentValidation | 12.x | Input validation |
-| Serilog | 10.x | Structured logging |
-| OpenTelemetry | 1.14+ | Traces & metrics |
+| Serilog | 10.x | Structured logging (Console · File · Seq) |
+| OpenTelemetry | 1.14+ | Distributed traces & metrics |
+| Grafana Tempo | 2.6.x | Trace storage (OTLP receiver) |
+| Prometheus | latest | Metrics scraping & storage |
+| Grafana | latest | Dashboards (traces + metrics) |
+| Seq | 2025.x | Structured log UI |
 | JWT Bearer | — | Authentication |
 | Scalar | — | API documentation (OpenAPI) |
 | xUnit + Bogus | — | Testing |
-| Docker | Linux | Containerization |
+| Docker Compose | — | Full local dev environment |
 
 ## Architecture
 
@@ -96,6 +100,196 @@ All API requests require the tenant header:
 X-Tenant: public
 ```
 
+---
+
+## Docker (Development)
+
+The `compose.yaml` at the repo root spins up the **complete local development environment** — API, database, and the full observability stack — with a single command.
+
+### Start everything
+
+```bash
+docker compose up
+```
+
+### Rebuild after code changes
+
+```bash
+docker compose up --build
+```
+
+### Stop and wipe all volumes
+
+```bash
+docker compose down -v
+```
+
+### Service map
+
+| Service | Image | Port(s) | Purpose |
+|---------|-------|---------|---------|
+| `api` | `product-template-api` (built locally) | `8080` | ASP.NET Core API |
+| `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | `1433` | SQL Server (AppDb + HostDb) |
+| `seq` | `datalust/seq:2025.x` | `5341` | Structured log UI |
+| `tempo` | `grafana/tempo:2.6.1` | `3200` · `4317` · `4318` | Trace storage (OTLP) |
+| `prometheus` | `prom/prometheus` | `9090` | Metrics storage (scrapes `/metrics`) |
+| `grafana` | `grafana/grafana` | `3000` | Dashboards |
+
+### Startup sequence
+
+```
+sqlserver (healthy) ─┐
+                     ├──► api ──► prometheus ──► grafana
+tempo (started)  ────┘
+seq (independent)
+```
+
+The `api` waits for SQL Server to pass its healthcheck before starting.
+
+### Default credentials
+
+| Service | URL | Username | Password |
+|---------|-----|----------|---------|
+| API | http://localhost:8080 | — | — |
+| Seq | http://localhost:5341 | `admin` | `admin123` |
+| Grafana | http://localhost:3000 | `admin` | `admin123` |
+| Prometheus | http://localhost:9090 | — | — |
+| SQL Server | `localhost,1433` | `sa` | `YourStrong!Pass123` |
+
+> **Important:** credentials in `compose.yaml` are for **local development only**.  
+> In production, supply them via environment variables or a secrets manager — never in source control.
+
+### Dockerfile multi-stage build
+
+```
+restore  → copy .csproj + packages.lock.json, dotnet restore --locked-mode
+publish  → copy full source, dotnet publish -c Release
+final    → aspnet:10.0-alpine + icu-libs, non-root user app:app (UID 1654)
+```
+
+The image runs as non-root (`USER app`) and exposes port `8080` only.  
+`HEALTHCHECK` points to `/health/live` — a zero-cost liveness probe that always returns `200` as long as the process is alive.
+
+---
+
+## Observability
+
+The stack ships with a complete, pre-wired observability pipeline out of the box.
+
+### Architecture
+
+```
+API ──(OTLP gRPC)──► Tempo ──────────────────► Grafana
+ │                                              ▲
+ └──(/metrics scrape)──► Prometheus ────────────┘
+ │
+ └──(Serilog sink)──► Seq
+```
+
+### Structured Logging — Serilog
+
+Serilog writes to three sinks simultaneously:
+
+| Sink | Where | Notes |
+|------|-------|-------|
+| Console | stdout | Human-readable in dev, JSON in prod |
+| File | `src/Api/logs/log-YYYYMMDD.txt` | Rotates daily, 30-day retention |
+| Seq | http://localhost:5341 | Searchable, filterable UI |
+
+Every request is enriched with:
+- `CorrelationId` — propagated via `X-Correlation-ID` response header
+- `MachineName`, `ThreadId`, `Application`, `Environment`
+- Exceptions via `Serilog.Exceptions` (structured, not string-serialised)
+
+Sensitive fields (passwords, tokens) are masked by `RequestLoggingMiddleware` before logging.
+
+**Rule:** never use string interpolation in log templates — always structured arguments:
+
+```csharp
+// ✅ correct
+_logger.LogInformation("User {UserId} logged in", user.Id);
+
+// ❌ wrong
+_logger.LogInformation($"User {user.Id} logged in");
+```
+
+### Distributed Tracing — OpenTelemetry → Tempo
+
+Traces are exported via **OTLP gRPC** to Grafana Tempo (`http://tempo:4317`).
+
+Automatically instrumented:
+- All incoming HTTP requests (ASP.NET Core)
+- All outgoing HTTP calls (HttpClient)
+- Runtime metrics (GC, thread pool, exceptions)
+
+Custom spans can be added anywhere:
+
+```csharp
+using var activity = OpenTelemetryConfiguration.ActivitySource.StartActivity("my-operation");
+activity?.SetTag("order.id", orderId);
+```
+
+Configuration (`appsettings.json`):
+
+```json
+"OpenTelemetry": {
+  "EnableTraces": true,
+  "EnableMetrics": true,
+  "EnablePrometheusExporter": true,
+  "OtlpTracesEndpoint": "http://localhost:4317"
+}
+```
+
+### Metrics — Prometheus + Grafana
+
+Prometheus scrapes the `/metrics` endpoint every **15 seconds**.
+
+Exposed metrics include:
+- ASP.NET Core request duration, active connections, response codes
+- .NET runtime: GC collections, heap size, thread pool, exception rate
+- HttpClient call durations
+
+Open **Grafana** at http://localhost:3000 to query metrics and traces together.  
+Tempo is pre-configured as a data source and linked to Prometheus via span metrics.
+
+### Health Checks
+
+Three purpose-built endpoints:
+
+| Endpoint | Purpose | Used by |
+|----------|---------|---------|
+| `GET /health/live` | Liveness — is the process alive? | Docker `HEALTHCHECK`, k8s `livenessProbe` |
+| `GET /health/ready` | Readiness — AppDb + HostDb reachable? | k8s `readinessProbe`, load balancer |
+| `GET /health` | Full diagnostics (all checks + history) | Monitoring, admins — **protected in production** |
+
+Checks registered:
+
+| Check | Tag | Threshold |
+|-------|-----|-----------|
+| `appdb` — `SELECT 1` on AppDbContext | `ready` | `> 1 000 ms` → Degraded |
+| `hostdb` — `CanConnect` on HostDbContext | `ready` | failure → Unhealthy |
+| `memory` — GC heap | `system` | `> 1 GB` → Degraded |
+| `disk-space` — available free space | `system` | `< 10 %` → Degraded |
+
+In **Development** only, the Health Checks UI is available at:
+```
+http://localhost:8080/healthchecks-ui
+```
+
+In **Production**, `/health` requires `AdminOnly` policy and `/healthchecks-ui` is disabled entirely.
+
+### Correlation IDs
+
+Every request receives a `CorrelationId` (UUID v4) injected by `RequestLoggingMiddleware`.  
+It is:
+- Logged in every Serilog entry for that request
+- Returned in the `X-Correlation-ID` response header
+- Propagated to downstream HTTP calls via `HttpClient` headers
+
+Use it to correlate a Seq log entry → Tempo trace → Prometheus metric for the same request.
+
+---
+
 ## AI-First Development
 
 This template has a built-in **GitHub Copilot AI-first layer** — persistent instructions, specialized agents, and reusable prompts that eliminate the need to repeat architecture rules in every session.
@@ -173,10 +367,12 @@ When starting a new task in Copilot Chat:
 - **CQRS** via MediatR with validation, logging, and performance behaviors
 - **Multi-tenancy** — header/subdomain resolution, shared-DB or schema-per-tenant
 - **RBAC** — role + permission-based authorization with JWT
-- **Observability** — Serilog + OpenTelemetry + correlation IDs + health checks
+- **Observability** — Serilog (Console · File · Seq) + OpenTelemetry (Traces → Tempo, Metrics → Prometheus) + Grafana dashboards + health checks
+- **Health checks** — `/health/live` (liveness), `/health/ready` (readiness, DB-only), `/health` (full diagnostics, admin-only in prod)
 - **Resilience** — Polly retry, circuit breaker, timeout, rate limiting
 - **API documentation** — Scalar (modern OpenAPI UI)
 - **Request deduplication** — idempotency key middleware
+- **Correlation IDs** — propagated through logs, traces, and response headers
 - **Feature flags** — Microsoft.FeatureManagement
 - **Architecture tests** — automated enforcement of layer dependencies and naming
 
@@ -203,8 +399,10 @@ dotnet test tests/ArchitectureTests
 
 | Document | Purpose |
 |----------|---------|
-| `README.md` | This file |
+| `README.md` | This file — stack, setup, Docker, observability, AI tooling |
 | `CONTRIBUTING.md` | How to contribute and use AI tools |
+| `compose.yaml` | Local development environment (API + SQL Server + Seq + Tempo + Prometheus + Grafana) |
+| `src/Api/Dockerfile` | Multi-stage production build (Alpine + icu-libs, non-root, locked restore) |
 | `.github/copilot-instructions.md` | Persistent Copilot rules (auto-loaded) |
 | `.github/instructions/` | Layer-specific instructions for Copilot |
 | `.github/agents/` | Specialized agents for Copilot Chat |

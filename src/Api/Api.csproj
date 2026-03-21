@@ -30,9 +30,13 @@
     <PackageReference Include="Polly" Version="8.6.5" />
 
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.*" />
-    <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
+    <!--
+      AspNetCore.HealthChecks.UI (9.0.0) and UI.InMemory.Storage require IdentityModel 5.2.0
+      (Duende package), which conflicts with .NET 10 that uses Microsoft.IdentityModel 8.x.
+      No .NET 10-compatible release exists yet (tracked: https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks).
+      UI.Client is kept — it only provides UIResponseWriter (JSON serializer, no IdentityModel dep).
+    -->
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
-    <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
 
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.*" />
 
