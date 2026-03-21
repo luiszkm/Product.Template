@@ -5,6 +5,10 @@ using Azure.AI.OpenAI;
 using Kernel.Infrastructure.Configurations;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
+using Polly;
+using Polly.CircuitBreaker;
+using Polly.Retry;
+using Polly.Timeout;
 using Product.Template.Kernel.Application.Ai;
 
 namespace Kernel.Infrastructure.Ai;
@@ -14,6 +18,33 @@ internal sealed class AzureOpenAiLlmService : ILlmService
     private readonly AzureOpenAIClient _azureClient;
     private readonly AiOptions _options;
 
+    private static readonly ResiliencePipeline<LlmResponse> Pipeline =
+        new ResiliencePipelineBuilder<LlmResponse>()
+            .AddRetry(new RetryStrategyOptions<LlmResponse>
+            {
+                MaxRetryAttempts = 3,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = TimeSpan.FromSeconds(1),
+                ShouldHandle = new PredicateBuilder<LlmResponse>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .Handle<Azure.RequestFailedException>(e => e.Status is 429 or 503)
+            })
+            .AddTimeout(TimeSpan.FromSeconds(30))
+            .AddCircuitBreaker(new CircuitBreakerStrategyOptions<LlmResponse>
+            {
+                FailureRatio = 0.5,
+                SamplingDuration = TimeSpan.FromMinutes(1),
+                MinimumThroughput = 5,
+                BreakDuration = TimeSpan.FromMinutes(2),
+                ShouldHandle = new PredicateBuilder<LlmResponse>()
+                    .Handle<HttpRequestException>()
+                    .Handle<TimeoutRejectedException>()
+                    .Handle<Azure.RequestFailedException>(e => e.Status is 429 or 503)
+            })
+            .Build();
+
     public AzureOpenAiLlmService(AzureOpenAIClient azureClient, IOptions<AiOptions> options)
     {
         _azureClient = azureClient;
@@ -22,26 +53,29 @@ internal sealed class AzureOpenAiLlmService : ILlmService
 
     public async Task<LlmResponse> CompleteAsync(LlmRequest request, CancellationToken cancellationToken = default)
     {
-        var deployment = request.Model ?? _options.DefaultModel;
-        var chatClient = _azureClient.GetChatClient(deployment);
-        var messages = BuildMessages(request);
-        var chatOptions = BuildChatOptions(request);
+        return await Pipeline.ExecuteAsync(async ct =>
+        {
+            var deployment = request.Model ?? _options.DefaultModel;
+            var chatClient = _azureClient.GetChatClient(deployment);
+            var messages = BuildMessages(request);
+            var chatOptions = BuildChatOptions(request);
 
-        var sw = Stopwatch.StartNew();
-        var response = await chatClient.CompleteChatAsync(messages, chatOptions, cancellationToken);
-        sw.Stop();
+            var sw = Stopwatch.StartNew();
+            var response = await chatClient.CompleteChatAsync(messages, chatOptions, ct);
+            sw.Stop();
 
-        var completion = response.Value;
+            var completion = response.Value;
 
-        return new LlmResponse(
-            Text: completion.Content.FirstOrDefault()?.Text ?? string.Empty,
-            PromptTokens: completion.Usage?.InputTokenCount ?? 0,
-            CompletionTokens: completion.Usage?.OutputTokenCount ?? 0,
-            TotalTokens: completion.Usage?.TotalTokenCount ?? 0,
-            Model: deployment,
-            Latency: sw.Elapsed,
-            ToolCalls: MapToolCalls(completion.ToolCalls)
-        );
+            return new LlmResponse(
+                Text: completion.Content.FirstOrDefault()?.Text ?? string.Empty,
+                PromptTokens: completion.Usage?.InputTokenCount ?? 0,
+                CompletionTokens: completion.Usage?.OutputTokenCount ?? 0,
+                TotalTokens: completion.Usage?.TotalTokenCount ?? 0,
+                Model: deployment,
+                Latency: sw.Elapsed,
+                ToolCalls: MapToolCalls(completion.ToolCalls)
+            );
+        }, cancellationToken);
     }
 
     public async IAsyncEnumerable<string> StreamAsync(

@@ -552,19 +552,6 @@
           "Microsoft.EntityFrameworkCore.Relational": "10.0.5"
         }
       },
-      "Microsoft.Extensions.AI": {
-        "type": "Transitive",
-        "resolved": "9.6.0",
-        "contentHash": "JrMdI7lKN23axyQpWLF2B1Pgzxo3+oO/1XNC90rlInlkdHnhOwqZ9vHlcZu5gZLtQPQLf6MbnWwgInm+GVuEpA==",
-        "dependencies": {
-          "Microsoft.Extensions.AI.Abstractions": "9.6.0"
-        }
-      },
-      "Microsoft.Extensions.AI.Abstractions": {
-        "type": "Transitive",
-        "resolved": "9.6.0",
-        "contentHash": "xGO7rHg3qK8jRdriAxIrsH4voNemCf8GVmgdcPXI5gpZ6lZWqOEM4ZO8yfYxUmg7+URw2AY1h7Uc/H17g7X1Kw=="
-      },
       "Microsoft.Extensions.AmbientMetadata.Application": {
         "type": "Transitive",
         "resolved": "10.2.0",
@@ -1022,7 +1009,7 @@
           "Microsoft.EntityFrameworkCore.InMemory": "[10.0.5, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.*, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.*, )",
-          "Microsoft.Extensions.AI": "[9.6.0, )"
+          "Polly": "[8.6.5, )"
         }
       },
       "tenants.application": {

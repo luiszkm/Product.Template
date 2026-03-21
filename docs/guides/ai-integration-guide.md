@@ -93,19 +93,27 @@ src/
 │   │           ├── ToolCall.cs              # { Id, Name, Parameters }
 │   │           ├── ToolDefinition.cs        # { Name, Description, InputSchema }
 │   │           ├── EmbeddingResult.cs
-│   │           ├── OcrRequest.cs
-│   │           └── OcrResult.cs
+│   │           ├── OcrModels.cs             # OcrRequest, OcrResult, OcrPage, OcrTable
+│   │           ├── TtsModels.cs             # TtsOptions
+│   │           ├── SttModels.cs             # SttOptions, SttResult, SttSegment
+│   │           └── AiUsageRecord.cs
 │   │
 │   └── Kernel.Infrastructure/
 │       └── Ai/
-│           ├── OpenAiLlmService.cs          # implementação OpenAI (com function calling)
-│           ├── AzureOpenAiLlmService.cs     # implementação Azure OpenAI
-│           ├── OpenAiEmbeddingService.cs
+│           ├── AzureOpenAiLlmService.cs     # implementação Azure OpenAI (com function calling)
+│           ├── AzureOpenAiEmbeddingService.cs
 │           ├── AzureOcrService.cs           # Azure Document Intelligence
 │           ├── AzureTextToSpeechService.cs
 │           ├── AzureSpeechToTextService.cs
-│           ├── CachedEmbeddingService.cs    # decorator com IDistributedCache
-│           └── AiUsageTracker.cs
+│           ├── CachedEmbeddingService.cs    # decorator com IDistributedCache (24h AbsoluteExpiration)
+│           ├── AiUsageTracker.cs
+│           └── Null/                        # implementações noop para ambientes sem IA
+│               ├── NullLlmService.cs
+│               ├── NullEmbeddingService.cs
+│               ├── NullOcrService.cs
+│               ├── NullTextToSpeechService.cs
+│               ├── NullSpeechToTextService.cs
+│               └── NullAiUsageTracker.cs
 │
 └── Core/
     ├── Ai/                                  # módulo transversal de agente
@@ -1167,37 +1175,66 @@ public class ExtractInvoiceFieldsCommandValidator
 
 **5. Registre os serviços de IA no DI**
 
+A ativação é feita via feature flag em `Api/Configurations/AiConfiguration.cs`. O `IDistributedCache` é registado automaticamente (Redis se configurado, memória como fallback):
+
 ```csharp
-// Kernel.Infrastructure/DependencyInjection.cs
-public static IServiceCollection AddKernelInfrastructure(
+// Api/Configurations/AiConfiguration.cs
+public static IServiceCollection AddAiConfiguration(
     this IServiceCollection services, IConfiguration configuration)
 {
-    // ... registros existentes ...
+    var aiEnabled = configuration.GetValue<bool>("FeatureFlags:EnableAI");
+
+    if (!aiEnabled)
+    {
+        services.AddNullAiServices();
+        return services;
+    }
+
+    var redis = configuration["Redis:ConnectionString"];
+    if (!string.IsNullOrEmpty(redis))
+        services.AddStackExchangeRedisCache(o => o.Configuration = redis);
+    else
+        services.AddDistributedMemoryCache();   // fallback — não persistente entre restarts
 
     services.AddAiServices(configuration);
     return services;
 }
 
+// Para ambientes sem IA (testes, dev sem credenciais):
+public static IServiceCollection AddNullAiServices(this IServiceCollection services)
+{
+    services.AddSingleton<ILlmService, NullLlmService>();
+    services.AddSingleton<IEmbeddingService, NullEmbeddingService>();
+    services.AddSingleton<IOcrService, NullOcrService>();
+    services.AddSingleton<ITextToSpeechService, NullTextToSpeechService>();
+    services.AddSingleton<ISpeechToTextService, NullSpeechToTextService>();
+    services.AddSingleton<IAiUsageTracker, NullAiUsageTracker>();
+    return services;
+}
+
+// Para produção (Azure):
 public static IServiceCollection AddAiServices(
     this IServiceCollection services, IConfiguration configuration)
 {
-    var provider = configuration["Ai:Provider"];   // "openai" | "azure-openai"
+    services.Configure<AiOptions>(configuration.GetSection("AI"));
+    var opts = configuration.GetSection("AI").Get<AiOptions>() ?? new AiOptions();
 
-    if (provider == "azure-openai")
-    {
-        services.AddScoped<ILlmService, AzureOpenAiLlmService>();
-        services.AddScoped<IEmbeddingService, AzureOpenAiEmbeddingService>();
-    }
-    else
-    {
-        services.AddScoped<ILlmService, OpenAiLlmService>();
-        services.AddScoped<IEmbeddingService, OpenAiEmbeddingService>();
-    }
+    services.AddSingleton(_ => new AzureOpenAIClient(
+        new Uri(opts.AzureOpenAI.Endpoint),
+        new AzureKeyCredential(opts.AzureOpenAI.ApiKey)));
+
+    services.AddScoped<ILlmService, AzureOpenAiLlmService>();
+    services.AddScoped<AzureOpenAiEmbeddingService>();
+    services.AddScoped<IEmbeddingService>(sp =>
+        new CachedEmbeddingService(
+            sp.GetRequiredService<AzureOpenAiEmbeddingService>(),
+            sp.GetRequiredService<IDistributedCache>()));
 
     services.AddScoped<IOcrService, AzureOcrService>();
-    services.AddScoped<ITextToSpeechService, OpenAiTextToSpeechService>();
+    services.AddScoped<ITextToSpeechService, AzureTextToSpeechService>();
     services.AddScoped<ISpeechToTextService, AzureSpeechToTextService>();
-    services.AddScoped<IAiUsageTracker, AiUsageTracker>();
+
+    services.AddSingleton<IAiUsageTracker, AiUsageTracker>();
 
     return services;
 }
@@ -1207,33 +1244,37 @@ public static IServiceCollection AddAiServices(
 
 ```json
 {
-  "Ai": {
-    "Provider": "azure-openai",
-    "DefaultModel": "gpt-4o",
-    "DefaultEmbeddingModel": "text-embedding-3-small",
-    "MaxRetries": 3,
-    "TimeoutSeconds": 30,
-    "CacheEmbeddings": true,
+  "FeatureFlags": {
+    "EnableAI": false
+  },
 
-    "OpenAi": {
-      "ApiKey": "",
-      "OrgId": ""
-    },
+  "Redis": {
+    "ConnectionString": ""
+  },
 
-    "AzureOpenAi": {
+  "AI": {
+    "DefaultModel": "gpt-4o-mini",
+    "MaxTokens": 4096,
+    "Temperature": 0.2,
+
+    "AzureOpenAI": {
       "Endpoint": "https://<resource>.openai.azure.com/",
       "ApiKey": "",
-      "DeploymentName": "gpt-4o",
+      "ChatDeploymentName": "gpt-4o-mini",
       "EmbeddingDeploymentName": "text-embedding-3-small"
     },
 
     "AzureCognitive": {
-      "Endpoint": "https://<resource>.cognitiveservices.azure.com/",
-      "ApiKey": ""
+      "DocumentIntelligenceEndpoint": "https://<resource>.cognitiveservices.azure.com/",
+      "DocumentIntelligenceApiKey": "",
+      "SpeechServiceKey": "",
+      "SpeechServiceRegion": "eastus"
     }
   }
 }
 ```
+
+> **Segredos**: Nunca commite `ApiKey` ou `SpeechServiceKey`. Use `secrets.json` em dev e variáveis de ambiente / Azure Key Vault em produção.
 
 ---
 
@@ -1407,15 +1448,17 @@ public sealed class CachedEmbeddingService : IEmbeddingService
 }
 ```
 
-Registre o decorator no DI:
+Registre o decorator no DI (já incluído em `AddAiServices`):
 
 ```csharp
-services.AddScoped<OpenAiEmbeddingService>();
+services.AddScoped<AzureOpenAiEmbeddingService>();
 services.AddScoped<IEmbeddingService>(sp =>
     new CachedEmbeddingService(
-        sp.GetRequiredService<OpenAiEmbeddingService>(),
+        sp.GetRequiredService<AzureOpenAiEmbeddingService>(),
         sp.GetRequiredService<IDistributedCache>()));
 ```
+
+O `CachedEmbeddingService` usa `AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(24)` e chave de cache SHA-256 do texto (`emb:<hex>`).
 
 ---
 
@@ -1433,43 +1476,55 @@ services.AddScoped<IEmbeddingService>(sp =>
 
 ### Polly para resiliência
 
+`AzureOpenAiLlmService.CompleteAsync` tem um pipeline Polly v8 estático (retry → timeout → circuit breaker):
+
+| Camada | Configuração |
+|--------|-------------|
+| Retry | 3x, exponential backoff + jitter, 1s base |
+| Timeout | 30s por tentativa |
+| Circuit breaker | 50% falhas / 5 req mín / 1 min → break 2 min |
+
+Erros tratados: `429`, `503` (Azure), `TimeoutRejectedException`, `HttpRequestException`.
+
 ```csharp
-// Kernel.Infrastructure/Ai/OpenAiLlmService.cs
-public sealed class OpenAiLlmService : ILlmService
-{
-    private readonly OpenAIClient _client;
-    private readonly ILogger<OpenAiLlmService> _logger;
-
-    private static readonly ResiliencePipeline<LlmResponse> _pipeline =
-        new ResiliencePipelineBuilder<LlmResponse>()
-            .AddRetry(new RetryStrategyOptions<LlmResponse>
-            {
-                MaxRetryAttempts = 3,
-                BackoffType = DelayBackoffType.Exponential,
-                Delay = TimeSpan.FromSeconds(1),
-                ShouldHandle = new PredicateBuilder<LlmResponse>()
-                    .Handle<RateLimitException>()
-                    .Handle<HttpRequestException>(e => e.StatusCode == HttpStatusCode.ServiceUnavailable)
-            })
-            .AddTimeout(TimeSpan.FromSeconds(30))
-            .AddCircuitBreaker(new CircuitBreakerStrategyOptions<LlmResponse>
-            {
-                FailureRatio = 0.5,
-                SamplingDuration = TimeSpan.FromMinutes(1),
-                MinimumThroughput = 5,
-                BreakDuration = TimeSpan.FromMinutes(2)
-            })
-            .Build();
-
-    public async Task<LlmResponse> CompleteAsync(LlmRequest request, CancellationToken cancellationToken)
-    {
-        return await _pipeline.ExecuteAsync(async ct =>
+// Kernel.Infrastructure/Ai/AzureOpenAiLlmService.cs
+private static readonly ResiliencePipeline<LlmResponse> Pipeline =
+    new ResiliencePipelineBuilder<LlmResponse>()
+        .AddRetry(new RetryStrategyOptions<LlmResponse>
         {
-            // ... chamada ao SDK OpenAI ...
-        }, cancellationToken);
-    }
+            MaxRetryAttempts = 3,
+            BackoffType = DelayBackoffType.Exponential,
+            UseJitter = true,
+            Delay = TimeSpan.FromSeconds(1),
+            ShouldHandle = new PredicateBuilder<LlmResponse>()
+                .Handle<HttpRequestException>()
+                .Handle<TimeoutRejectedException>()
+                .Handle<Azure.RequestFailedException>(e => e.Status is 429 or 503)
+        })
+        .AddTimeout(TimeSpan.FromSeconds(30))
+        .AddCircuitBreaker(new CircuitBreakerStrategyOptions<LlmResponse>
+        {
+            FailureRatio = 0.5,
+            SamplingDuration = TimeSpan.FromMinutes(1),
+            MinimumThroughput = 5,
+            BreakDuration = TimeSpan.FromMinutes(2),
+            ShouldHandle = new PredicateBuilder<LlmResponse>()
+                .Handle<HttpRequestException>()
+                .Handle<TimeoutRejectedException>()
+                .Handle<Azure.RequestFailedException>(e => e.Status is 429 or 503)
+        })
+        .Build();
+
+public async Task<LlmResponse> CompleteAsync(LlmRequest request, CancellationToken cancellationToken = default)
+{
+    return await Pipeline.ExecuteAsync(async ct =>
+    {
+        // ... chamada ao AzureOpenAIClient ...
+    }, cancellationToken);
 }
 ```
+
+> `StreamAsync` não usa o pipeline — o caller controla o ciclo de vida via `CancellationToken`.
 
 ### Resposta de fallback
 
@@ -1504,7 +1559,7 @@ public class SummarizeInvoiceTests
     [Fact]
     public async Task Handle_ShouldSummarize()
     {
-        var service = new OpenAiLlmService(realApiKey);  // chama OpenAI de verdade
+        var service = new AzureOpenAiLlmService(client, options);  // chama Azure OpenAI de verdade
         ...
     }
 }
@@ -1672,36 +1727,42 @@ public void BuildSummaryRequest_ShouldIncludeSupplierAndTotal()
 
 ### Kernel — contratos e infraestrutura base
 
-- [ ] Criar interfaces em `Kernel.Application/Ai/`:
-  - [ ] `ILlmService` com `CompleteAsync` e `StreamAsync`
-  - [ ] `IEmbeddingService` com `EmbedAsync` e `EmbedBatchAsync`
-  - [ ] `IOcrService` com `ExtractTextAsync`
-  - [ ] `ITextToSpeechService` com `SynthesizeAsync`
-  - [ ] `ISpeechToTextService` com `TranscribeAsync`
-  - [ ] `IAiUsageTracker` com `TrackAsync`
-  - [ ] `ITool` com `Name`, `Description`, `InputSchema`, `ExecuteAsync`
-- [ ] Criar models em `Kernel.Application/Ai/Models/`:
-  - [ ] `LlmRequest` com campo `Tools` (`IReadOnlyList<ToolDefinition>?`)
-  - [ ] `LlmResponse` com campo `ToolCalls` (`IReadOnlyList<ToolCall>?`)
-  - [ ] `LlmMessage` com campo `ToolCallId` (para mensagens de resultado de tool)
-  - [ ] `ToolDefinition` (`Name`, `Description`, `InputSchema`)
-  - [ ] `ToolCall` (`Id`, `Name`, `Parameters`)
-  - [ ] `EmbeddingResult`, `OcrRequest`, `OcrResult`
-  - [ ] `TtsOptions`, `SttOptions`, `SttResult`
-  - [ ] `AiUsageRecord`
-- [ ] Criar implementações em `Kernel.Infrastructure/Ai/`:
-  - [ ] `OpenAiLlmService` (com suporte a function calling)
-  - [ ] `AzureOpenAiLlmService` (com suporte a function calling)
-  - [ ] `OpenAiEmbeddingService`
-  - [ ] `AzureOcrService`
-  - [ ] `OpenAiTextToSpeechService`
-  - [ ] `AzureSpeechToTextService`
-  - [ ] `CachedEmbeddingService` (decorator com `IDistributedCache`)
-  - [ ] `AiUsageTracker`
-- [ ] Configurar resiliência (Polly): retry + timeout + circuit breaker
-- [ ] Registrar serviços no `AddAiServices()` com seleção de provider via config
-- [ ] Adicionar seção `Ai` no `appsettings.json`
-- [ ] Adicionar métricas OpenTelemetry (`ai.tokens.total`, `ai.request.duration`, `ai.errors.total`)
+- [x] Criar interfaces em `Kernel.Application/Ai/`:
+  - [x] `ILlmService` com `CompleteAsync` e `StreamAsync`
+  - [x] `IEmbeddingService` com `EmbedAsync` e `EmbedBatchAsync`
+  - [x] `IOcrService` com `ExtractTextAsync`
+  - [x] `ITextToSpeechService` com `SynthesizeAsync`
+  - [x] `ISpeechToTextService` com `TranscribeAsync`
+  - [x] `IAiUsageTracker` com `TrackAsync`
+  - [x] `ITool` com `Definition` e `ExecuteAsync`
+- [x] Criar models em `Kernel.Application/Ai/Models/`:
+  - [x] `LlmRequest` com campo `Tools` (`IReadOnlyList<ToolDefinition>?`)
+  - [x] `LlmResponse` com campo `ToolCalls` (`IReadOnlyList<ToolCall>?`)
+  - [x] `LlmMessage` com campo `ToolCallId` (para mensagens de resultado de tool)
+  - [x] `ToolDefinition` (`Name`, `Description`, `InputSchema`)
+  - [x] `ToolCall` (`Id`, `Name`, `Parameters`)
+  - [x] `EmbeddingResult`
+  - [x] `OcrModels` (`OcrRequest`, `OcrResult`, `OcrPage`, `OcrTable`)
+  - [x] `TtsModels` (`TtsOptions`)
+  - [x] `SttModels` (`SttOptions`, `SttResult`, `SttSegment`)
+  - [x] `AiUsageRecord`
+- [x] Criar implementações em `Kernel.Infrastructure/Ai/`:
+  - [x] `AzureOpenAiLlmService` (com suporte a function calling)
+  - [x] `AzureOpenAiEmbeddingService`
+  - [x] `AzureOcrService` (Azure Document Intelligence)
+  - [x] `AzureTextToSpeechService`
+  - [x] `AzureSpeechToTextService`
+  - [x] `CachedEmbeddingService` (decorator com `IDistributedCache`, 24h TTL)
+  - [x] `AiUsageTracker` (métricas OpenTelemetry: `ai.tokens.used`, `ai.requests.total`, `ai.request.duration_ms`)
+  - [x] Null implementations para todos os serviços (`Null/` folder)
+- [x] Registrar serviços via `AddAiServices()` (Azure) e `AddNullAiServices()` (dev/test)
+- [x] Ativar via feature flag `FeatureFlags:EnableAI` em `AiConfiguration.cs`
+- [x] Registar `IDistributedCache` (Redis se configurado, `AddDistributedMemoryCache` como fallback)
+- [x] Adicionar seção `AI` no `appsettings.json` com `AiOptions`
+- [x] Configurar resiliência (Polly) no `AzureOpenAiLlmService`: retry (3x, exponential+jitter), timeout (30s), circuit breaker (50%, 2 min break), trata 429/503
+- [x] Adicionar `Redis:ConnectionString` (vazio) em `appsettings.json`
+- [x] Testes unitários do Kernel (`CachedEmbeddingServiceTests`, `AiUsageTrackerTests`)
+- [x] `InternalsVisibleTo("UnitTests")` em `Kernel.Infrastructure/Properties/AssemblyInfo.cs`
 
 ### Por módulo — ao adicionar uma feature de IA
 
@@ -1757,10 +1818,17 @@ public void BuildSummaryRequest_ShouldIncludeSupplierAndTotal()
 
 ### Testes
 
+**Kernel (já implementados):**
+- [x] `CachedEmbeddingServiceTests` — hit/miss/batch (4 cenários, stub inline)
+- [x] `AiUsageTrackerTests` — sucesso, falha, serviços sem tokens (3 cenários)
+
+**Por módulo (ao implementar handlers de IA):**
 - [ ] Testes unitários do handler com `StubLlmService` inline (sem chamadas reais)
 - [ ] Snapshot tests dos prompts (verificar campos obrigatórios presentes)
 - [ ] Testes de fallback (handler funciona quando IA falha com exceção)
 - [ ] Testes do validator da command de IA
+
+**Módulo Ai — agente:**
 - [ ] `AgentLoop`: resposta direta (sem tools), tool call → resposta, teto de iterações
 - [ ] Tools: `InputSchema` tem campos `required` corretos; `ExecuteAsync` despacha query certa
 - [ ] `ToolRegistry`: descobre todas as tools registradas no DI
@@ -1768,8 +1836,8 @@ public void BuildSummaryRequest_ShouldIncludeSupplierAndTotal()
 
 ### Operação (antes de produção)
 
-- [ ] Caching de embeddings ativado (`IDistributedCache` — Redis preferido)
-- [ ] Circuit breaker configurado e validado
+- [x] Caching de embeddings ativado (`IDistributedCache` — Redis se `Redis:ConnectionString` configurado)
+- [x] Circuit breaker no pipeline Polly (50% falhas / 1 min → break 2 min)
 - [ ] Dashboard com `ai.tokens.total` por tenant/módulo
 - [ ] Alerta de custo quando tokens/hora ultrapassar threshold
 - [ ] Revisão do `MaxTokens` de cada prompt em ambiente de staging

@@ -20,6 +20,9 @@
     <PackageReference Include="Azure.AI.DocumentIntelligence" Version="1.0.0" />
     <!-- AI: Azure Cognitive Speech — TTS + STT -->
     <PackageReference Include="Microsoft.CognitiveServices.Speech" Version="1.43.0" />
+    <!-- Resilience for AI calls -->
+    <PackageReference Include="Polly" Version="8.6.5" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.*" />
   </ItemGroup>
 
   <ItemGroup>
