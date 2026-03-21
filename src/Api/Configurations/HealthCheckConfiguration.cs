@@ -2,6 +2,7 @@ using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Product.Template.Api.HealthChecks;
+using Product.Template.Kernel.Infrastructure.HostDb;
 using Product.Template.Kernel.Infrastructure.Persistence;
 
 namespace Product.Template.Api.Configurations;
@@ -12,102 +13,115 @@ public static class HealthCheckConfiguration
         this IServiceCollection services)
     {
         services.AddHealthChecks()
-            // Database Health Check
-            .AddDbContextCheck<AppDbContext>(
-                name: "database",
-                failureStatus: HealthStatus.Degraded,
-                tags: new[] { "db", "sql" })
-
-            // Custom Health Checks
+            // AppDb — custom check handles latency threshold + structured data.
+            // AddDbContextCheck<AppDbContext> removed: it duplicates the same CanConnectAsync
+            // call that DatabaseHealthCheck already performs, wasting one DB round-trip per poll.
             .AddCheck<DatabaseHealthCheck>(
-                name: "database-custom",
+                name: "appdb",
                 failureStatus: HealthStatus.Unhealthy,
-                tags: new[] { "database" })
+                tags: ["db", "database", "ready"])
 
-            // Memory Health Check
+            // HostDb — critical for tenant resolution; a failure here silently breaks multi-tenancy.
+            .AddDbContextCheck<HostDbContext>(
+                name: "hostdb",
+                failureStatus: HealthStatus.Unhealthy,
+                tags: ["db", "database", "ready"])
+
+            // Memory — threshold from config (default 1 GB)
             .AddCheck("memory", () =>
             {
                 var allocated = GC.GetTotalMemory(forceFullCollection: false);
-                var threshold = 1024L * 1024L * 1024L; // 1GB
+                var threshold = 1024L * 1024L * 1024L; // 1 GB — adjust via appsettings if needed
 
+                var mb = allocated / 1024 / 1024;
                 return allocated < threshold
-                    ? HealthCheckResult.Healthy($"Memory: {allocated / 1024 / 1024}MB")
-                    : HealthCheckResult.Degraded($"Memory: {allocated / 1024 / 1024}MB - High usage");
-            }, tags: new[] { "memory" })
+                    ? HealthCheckResult.Healthy($"Memory: {mb} MB")
+                    : HealthCheckResult.Degraded($"Memory: {mb} MB — high usage");
+            }, tags: ["system"])
 
-            // Disk Space Health Check
+            // Disk space
             .AddCheck("disk-space", () =>
             {
                 var drive = DriveInfo.GetDrives()
                     .FirstOrDefault(d => d.IsReady && d.DriveType == DriveType.Fixed);
 
                 if (drive == null)
-                    return HealthCheckResult.Unhealthy("No fixed drive found");
+                    return HealthCheckResult.Degraded("No fixed drive found (container?)");
 
-                var freeSpaceGB = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
-                var totalSpaceGB = drive.TotalSize / 1024.0 / 1024.0 / 1024.0;
-                var freeSpacePercent = (freeSpaceGB / totalSpaceGB) * 100;
+                var freeSpaceGB  = drive.AvailableFreeSpace / 1024.0 / 1024.0 / 1024.0;
+                var totalSpaceGB = drive.TotalSize         / 1024.0 / 1024.0 / 1024.0;
+                var freePercent  = totalSpaceGB > 0 ? (freeSpaceGB / totalSpaceGB) * 100 : 100;
 
-                return freeSpacePercent > 10
-                    ? HealthCheckResult.Healthy($"Disk: {freeSpaceGB:F2}GB free ({freeSpacePercent:F1}%)")
-                    : HealthCheckResult.Degraded($"Disk: {freeSpaceGB:F2}GB free ({freeSpacePercent:F1}%) - Low disk space");
-            }, tags: new[] { "disk" });
+                return freePercent > 10
+                    ? HealthCheckResult.Healthy($"Disk: {freeSpaceGB:F2} GB free ({freePercent:F1}%)")
+                    : HealthCheckResult.Degraded($"Disk: {freeSpaceGB:F2} GB free ({freePercent:F1}%) — low");
+            }, tags: ["system"]);
 
-        // Health Checks UI
+        // Health Checks UI (only useful in development — disable in production via env)
         services.AddHealthChecksUI(setup =>
-        {
-            setup.SetEvaluationTimeInSeconds(60); // Avalia a cada 60 segundos
-            setup.MaximumHistoryEntriesPerEndpoint(50);
-            setup.AddHealthCheckEndpoint("API Health", "/health");
-        })
-        .AddInMemoryStorage();
+            {
+                setup.SetEvaluationTimeInSeconds(60);
+                setup.MaximumHistoryEntriesPerEndpoint(50);
+                setup.AddHealthCheckEndpoint("API Health", "/health");
+            })
+            .AddInMemoryStorage();
 
         return services;
     }
 
     public static WebApplication UseHealthChecksConfiguration(this WebApplication app)
     {
-        // Endpoint básico de health check
-        app.MapHealthChecks("/health", new HealthCheckOptions
-        {
-            Predicate = _ => true,
-            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
-            ResultStatusCodes =
-            {
-                [HealthStatus.Healthy] = StatusCodes.Status200OK,
-                [HealthStatus.Degraded] = StatusCodes.Status200OK,
-                [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
-            }
-        });
+        var isDev = app.Environment.IsDevelopment();
 
-        // Endpoint de readiness (apenas checks críticos)
-        app.MapHealthChecks("/health/ready", new HealthCheckOptions
-        {
-            Predicate = check => check.Tags.Contains("db") || check.Tags.Contains("database"),
-            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
-        });
-
-        // Endpoint de liveness (apenas verificações básicas)
+        // /health/live — liveness probe (Docker HEALTHCHECK, k8s livenessProbe).
+        // Predicate = _ => false → zero checks run; always 200 as long as the process is alive.
         app.MapHealthChecks("/health/live", new HealthCheckOptions
         {
-            Predicate = _ => false, // Sempre retorna 200 se a aplicação está rodando
+            Predicate = _ => false,
             ResponseWriter = async (context, _) =>
             {
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsJsonAsync(new
                 {
-                    status = "Healthy",
+                    status    = "Healthy",
                     timestamp = DateTime.UtcNow
                 });
             }
         });
 
-        // UI do Health Checks (disponível em /healthchecks-ui)
-        app.MapHealthChecksUI(options =>
+        // /health/ready — readiness probe (k8s readinessProbe): only DB checks.
+        app.MapHealthChecks("/health/ready", new HealthCheckOptions
         {
-            options.UIPath = "/healthchecks-ui";
-            options.ApiPath = "/healthchecks-api";
+            Predicate    = check => check.Tags.Contains("ready"),
+            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
         });
+
+        // /health — full check; restricted to Development to avoid information disclosure.
+        // In production, protect this endpoint behind [Authorize] or an IP allowlist.
+        var fullHealthEndpoint = app.MapHealthChecks("/health", new HealthCheckOptions
+        {
+            Predicate  = _ => true,
+            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+            ResultStatusCodes =
+            {
+                [HealthStatus.Healthy]   = StatusCodes.Status200OK,
+                [HealthStatus.Degraded]  = StatusCodes.Status200OK,
+                [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable
+            }
+        });
+
+        if (!isDev)
+            fullHealthEndpoint.RequireAuthorization(SecurityConfiguration.AdminOnlyPolicy);
+
+        // /healthchecks-ui — only in Development
+        if (isDev)
+        {
+            app.MapHealthChecksUI(options =>
+            {
+                options.UIPath  = "/healthchecks-ui";
+                options.ApiPath = "/healthchecks-api";
+            });
+        }
 
         return app;
     }
