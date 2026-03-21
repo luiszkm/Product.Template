@@ -1,3 +1,4 @@
+using Product.Template.Core.Ai.Infrastructure;
 using Product.Template.Core.Authorization.Infrastructure;
 using Product.Template.Core.Identity.Infrastructure;
 using Product.Template.Core.Tenants.Infrastructure;
@@ -12,6 +13,7 @@ namespace Product.Template.Api.Configurations
             services.AddIdentityInJections();
             services.AddAuthorizationModule();
             services.AddTenantsModule();
+            services.AddAiModule();
             services.AddHttpContextAccessor();
             return services;
         }

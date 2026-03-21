@@ -1543,9 +1543,28 @@
         "resolved": "16.3.0",
         "contentHash": "SgMOdxbz8X65z8hraIs6hOEdnkH6hESTAIUa7viEngHOYaH+6q5XJmwr1+yb9vJpNQ19hCQY69xbFsLtXpobQA=="
       },
+      "ai.application": {
+        "type": "Project",
+        "dependencies": {
+          "FluentValidation": "[12.1.1, )",
+          "Identity.Application": "[1.0.0, )",
+          "Kernel.Application": "[1.0.0, )",
+          "MediatR": "[14.0.0, )",
+          "Tenants.Application": "[1.0.0, )"
+        }
+      },
+      "ai.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "Ai.Application": "[1.0.0, )",
+          "Kernel.Infrastructure": "[1.0.0, )"
+        }
+      },
       "api": {
         "type": "Project",
         "dependencies": {
+          "Ai.Application": "[1.0.0, )",
+          "Ai.Infrastructure": "[1.0.0, )",
           "Asp.Versioning.Mvc": "[8.1.1, )",
           "Asp.Versioning.Mvc.ApiExplorer": "[8.1.1, )",
           "AspNetCore.HealthChecks.UI": "[9.0.0, )",

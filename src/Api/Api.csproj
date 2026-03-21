@@ -65,6 +65,8 @@
     <ProjectReference Include="..\Core\Authorization\Authorization.Infrastructure\Authorization.Infrastructure.csproj" />
     <ProjectReference Include="..\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
     <ProjectReference Include="..\Core\Tenants\Tenants.Infrastructure\Tenants.Infrastructure.csproj" />
+    <ProjectReference Include="..\Core\Ai\Ai.Application\Ai.Application.csproj" />
+    <ProjectReference Include="..\Core\Ai\Ai.Infrastructure\Ai.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

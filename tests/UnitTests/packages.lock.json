@@ -388,6 +388,16 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "ai.application": {
+        "type": "Project",
+        "dependencies": {
+          "FluentValidation": "[12.1.1, )",
+          "Identity.Application": "[1.0.0, )",
+          "Kernel.Application": "[1.0.0, )",
+          "MediatR": "[14.0.0, )",
+          "Tenants.Application": "[1.0.0, )"
+        }
+      },
       "authorization.domain": {
         "type": "Project",
         "dependencies": {
@@ -451,6 +461,15 @@
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.*, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[10.0.*, )",
           "Polly": "[8.6.5, )"
+        }
+      },
+      "tenants.application": {
+        "type": "Project",
+        "dependencies": {
+          "FluentValidation": "[12.1.1, )",
+          "Kernel.Application": "[1.0.0, )",
+          "MediatR": "[14.0.0, )",
+          "Tenants.Domain": "[1.0.0, )"
         }
       },
       "tenants.domain": {

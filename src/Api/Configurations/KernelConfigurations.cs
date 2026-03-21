@@ -1,6 +1,7 @@
 using Product.Template.Kernel.Application;
 using Kernel.Infrastructure;
 using System.Reflection;
+using Product.Template.Core.Ai.Application.Handlers;
 using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Authorization.Application.Permissions;
 using Product.Template.Core.Tenants.Application.Permissions;
@@ -20,6 +21,7 @@ public static class KernelConfigurations
             typeof(LoginCommand).Assembly, // Identity.Application
             typeof(AuthorizationPermissions).Assembly, // Authorization.Application
             typeof(TenantsPermissions).Assembly, // Tenants.Application
+            typeof(ChatCommand).Assembly, // Ai.Application
         };
 
         services.AddKernelApplication(assemblies);

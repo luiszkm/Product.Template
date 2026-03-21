@@ -61,6 +61,12 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 | PUT | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | |
 | DELETE | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | Soft-deactivate |
 
+## API v1 - AiController
+
+| Método | Rota | Acesso | Policy | Permissão canônica | Observação |
+|---|---|---|---|---|---|
+| POST | `/api/v1/ai/chat` | Protegido | `Authenticated` | - | Requer JWT válido; qualquer utilizador autenticado pode usar |
+
 ## Regras de revisão (gate)
 1. Não introduzir endpoint protegido com `[Authorize]` sem `Policy` explícita.
 2. Todo endpoint novo deve entrar nesta matriz no mesmo PR.

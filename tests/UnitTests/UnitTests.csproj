@@ -44,6 +44,7 @@
     <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Ai\Ai.Application\Ai.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
