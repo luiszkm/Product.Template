@@ -5,10 +5,6 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Authorization.Domain.Entities;
 
-/// <summary>
-/// Represents the assignment of a user (by UserId) to a Role within a tenant.
-/// References users by UserId (Guid) only — no navigation to User entity, keeping modules decoupled.
-/// </summary>
 public class UserAssignment : AggregateRoot, IMultiTenantEntity
 {
     public long TenantId { get; private set; }

@@ -18,7 +18,6 @@ public static class DependencyInjection
             cfg.RegisterServicesFromAssemblies(assemblies);
         });
 
-        // Registra FluentValidation validators
         foreach (var assembly in assemblies)
         {
             services.AddValidatorsFromAssembly(assembly);
