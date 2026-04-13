@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "output=$(dotnet build --no-restore 2>&1); rc=$?; [ $rc -ne 0 ] && { echo \"Build failed after last changes:\"; echo \"$output\" | grep -E \" error \" | head -15; exit 2; }",
+            "asyncRewake": true,
+            "timeout": 60,
+            "statusMessage": "Validating build..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "output=$(dotnet test tests/ArchitectureTests --no-restore 2>&1); rc=$?; [ $rc -ne 0 ] && { echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Architecture tests failed. Fix violations before committing: dotnet test tests/ArchitectureTests\"}}'; exit 1; }",
+            "timeout": 120,
+            "statusMessage": "Running architecture tests..."
+          }
+        ]
+      }
+    ]
+  }
+}
