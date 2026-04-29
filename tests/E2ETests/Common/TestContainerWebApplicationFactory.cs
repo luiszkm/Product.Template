@@ -20,16 +20,16 @@ namespace E2ETests.Common;
 
 /// <summary>
 /// WebApplicationFactory that runs the full application stack against a real SQL Server
-/// container (via <see cref="SqlServerContainerFixture"/>).
+/// container (via <see cref="PostgresContainerFixture"/>).
 /// Migrations and seeders are executed during <see cref="InitializeAsync"/>.
 /// </summary>
 public sealed class TestContainerWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public static readonly Guid SeededOwnerId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
-    private readonly SqlServerContainerFixture _sql;
+    private readonly PostgresContainerFixture _sql;
 
-    public TestContainerWebApplicationFactory(SqlServerContainerFixture sql)
+    public TestContainerWebApplicationFactory(PostgresContainerFixture sql)
     {
         _sql = sql;
     }
