@@ -20,7 +20,7 @@ namespace Kernel.Infrastructure.Migrations
                 .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Product.Template.Kernel.Domain.MultiTenancy.TenantConfig", b =>
                 {
