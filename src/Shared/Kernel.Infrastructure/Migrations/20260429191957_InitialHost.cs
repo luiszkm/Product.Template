@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Kernel.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initialhost : Migration
+    public partial class InitialHost : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,14 +16,14 @@ namespace Kernel.Infrastructure.Migrations
                 columns: table => new
                 {
                     TenantId = table.Column<long>(type: "bigint", nullable: false),
-                    TenantKey = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    ContactEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    IsolationMode = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
-                    SchemaName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    ConnectionString = table.Column<string>(type: "nvarchar(1024)", maxLength: 1024, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    TenantKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    DisplayName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    ContactEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    IsolationMode = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
+                    SchemaName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    ConnectionString = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
