@@ -25,7 +25,7 @@ public sealed class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<
             ?? throw new InvalidOperationException("ConnectionStrings:AppDb is not configured.");
 
         var builder = new DbContextOptionsBuilder<AppDbContext>();
-        builder.UseSqlServer(connectionString);
+        builder.UseNpgsql(connectionString);
 
         var registry = new EfModelAssemblyRegistry();
         registry.Register(typeof(AppDbContext).Assembly);

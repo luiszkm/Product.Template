@@ -38,7 +38,7 @@ public static class DatabaseConfiguration
             var hostConnection = cfg.GetConnectionString("HostDb")
                 ?? throw new InvalidOperationException("ConnectionStrings:HostDb is required.");
 
-            options.UseSqlServer(hostConnection);
+            options.UseNpgsql(hostConnection);
         });
 
         services.AddDbContext<AppDbContext>((sp, options) =>
@@ -48,11 +48,11 @@ public static class DatabaseConfiguration
             var tenant = tenantContext.Tenant ?? new TenantConfig { IsolationMode = TenantIsolationMode.SharedDb };
             var appConnection = resolver.ResolveAppConnection(tenant);
 
-            options.UseSqlServer(appConnection, sqlServer =>
+            options.UseNpgsql(appConnection, npgsql =>
             {
                 if (tenant.IsolationMode == TenantIsolationMode.SchemaPerTenant && !string.IsNullOrWhiteSpace(tenant.SchemaName))
                 {
-                    sqlServer.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
+                    npgsql.MigrationsHistoryTable("__EFMigrationsHistory", tenant.SchemaName);
                 }
             });
             options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();

@@ -21,7 +21,7 @@ public class HostDbContextDesignTimeFactory : IDesignTimeDbContextFactory<HostDb
             ?? throw new InvalidOperationException("ConnectionStrings:HostDb is not configured.");
 
         var builder = new DbContextOptionsBuilder<HostDbContext>();
-        builder.UseSqlServer(connectionString);
+        builder.UseNpgsql(connectionString);
 
         return new HostDbContext(builder.Options);
     }
