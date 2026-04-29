@@ -19,7 +19,7 @@ using E2ETests.Security;
 namespace E2ETests.Common;
 
 /// <summary>
-/// WebApplicationFactory that runs the full application stack against a real SQL Server
+/// WebApplicationFactory that runs the full application stack against a real PostgreSQL
 /// container (via <see cref="PostgresContainerFixture"/>).
 /// Migrations and seeders are executed during <see cref="InitializeAsync"/>.
 /// </summary>
