@@ -4,6 +4,9 @@ using Product.Template.Api.Middleware;
 using Product.Template.Core.Identity.Infrastructure.Data;
 using Product.Template.Kernel.Infrastructure.MultiTenancy;
 
+// Enforce UTC timestamps — Npgsql rejects DateTime without DateTimeKind.Utc otherwise.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
+
 var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
 
