@@ -3,21 +3,22 @@ using Testcontainers.PostgreSql;
 
 namespace E2ETests.Common;
 
-/// <summary>
-/// Starts a single PostgreSQL container shared across all E2E tests in the collection.
-/// Using ICollectionFixture ensures the container is started once per test run, not per class.
-/// </summary>
 public sealed class PostgresContainerFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17")
-        .WithPassword("E2eTest@Strong123")
-        .Build();
+    private PostgreSqlContainer? _container;
 
     public string HostDbConnectionString { get; private set; } = null!;
     public string AppDbConnectionString { get; private set; } = null!;
 
     public async Task InitializeAsync()
     {
+        if (!File.Exists("/var/run/docker.sock"))
+            throw new InvalidOperationException("DockerUnavailable");
+
+        _container = new PostgreSqlBuilder("postgres:17")
+            .WithPassword("E2eTest@Strong123")
+            .Build();
+
         await _container.StartAsync();
         var baseCs = _container.GetConnectionString();
 
@@ -28,11 +29,15 @@ public sealed class PostgresContainerFixture : IAsyncLifetime
         AppDbConnectionString = appBuilder.ConnectionString;
     }
 
-    public async Task DisposeAsync() => await _container.DisposeAsync();
+    public async Task DisposeAsync()
+    {
+        if (_container is not null)
+            await _container.DisposeAsync();
+    }
 }
 
-[CollectionDefinition(Name)]
-public sealed class PostgresCollection : ICollectionFixture<PostgresContainerFixture>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class PostgresCollection : ICollectionFixture<PostgresE2EFixture>
 {
     public const string Name = "Postgres";
 }
