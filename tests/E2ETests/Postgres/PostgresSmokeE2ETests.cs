@@ -16,12 +16,25 @@ public class PostgresSmokeE2ETests
     }
 
     [Fact]
-    public async Task ListUsers_ShouldReturn200Or401_WhenAppStartsWithPostgres()
+    public async Task HealthLive_ShouldReturn200_WhenAppStartsWithPostgres()
     {
-        if (!_fixture.IsDockerAvailable || _fixture.Factory is null)
+        if (!_fixture.TryEnsureAvailable())
             return;
 
-        using var client = _fixture.Factory.CreateClient();
+        using var client = _fixture.Factory!.CreateClient();
+
+        var response = await client.GetAsync("/health/live");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ListUsers_ShouldReturn200Or401_WhenAppStartsWithPostgres()
+    {
+        if (!_fixture.TryEnsureAvailable())
+            return;
+
+        using var client = _fixture.Factory!.CreateClient();
         client.DefaultRequestHeaders.Add("X-Tenant", "public");
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/identity");
