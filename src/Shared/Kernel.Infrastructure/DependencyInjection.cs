@@ -41,7 +41,8 @@ public static class DependencyInjection
         services.AddScoped<ITenantContext, TenantContext>();
 
         services.AddScoped<AuditableEntityInterceptor>();
-        services.AddScoped<AuditLogInterceptor>();
+        if (configuration.GetValue<bool>("FeatureFlags:EnableAuditTrail", true))
+            services.AddScoped<AuditLogInterceptor>();
 
         // Register Kernel.Infrastructure's own EF configurations
         services.GetOrCreateEfRegistry().Register(typeof(AppDbContext).Assembly);

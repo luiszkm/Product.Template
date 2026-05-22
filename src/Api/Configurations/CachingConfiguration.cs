@@ -2,18 +2,13 @@
 
 namespace Product.Template.Api.Configurations;
 
-/// <summary>
-/// Configuração de Output Caching (.NET 8+)
-/// </summary>
 public static class CachingConfiguration
 {
     public static IServiceCollection AddCachingConfiguration(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var cacheEnabled = configuration.GetValue<bool>("Caching:Enabled", true);
-
-        if (!cacheEnabled)
+        if (!IsCachingEnabled(configuration))
             return services;
 
         services.AddOutputCache(options =>
@@ -49,8 +44,15 @@ public static class CachingConfiguration
 
     public static IApplicationBuilder UseCachingConfiguration(this IApplicationBuilder app)
     {
-        app.UseOutputCache();
+        var configuration = app.ApplicationServices.GetRequiredService<IConfiguration>();
+        if (IsCachingEnabled(configuration))
+            app.UseOutputCache();
+
         return app;
     }
+
+    private static bool IsCachingEnabled(IConfiguration configuration) =>
+        configuration.GetValue<bool>("Caching:Enabled", true)
+        && configuration.GetValue<bool>("FeatureFlags:EnableCaching", true);
 }
 
