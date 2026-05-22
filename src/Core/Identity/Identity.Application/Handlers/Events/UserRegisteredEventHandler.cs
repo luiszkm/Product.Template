@@ -1,37 +1,44 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Product.Template.Core.Identity.Application.Security;
 using Product.Template.Core.Identity.Domain.Events;
+using Product.Template.Core.Identity.Domain.Repositories;
 
 namespace Product.Template.Core.Identity.Application.Handlers.Events;
 
-/// <summary>
-/// Example domain event handler for <see cref="UserRegisteredEvent"/>.
-///
-/// Domain event handlers are the recommended place to trigger side effects that
-/// cross aggregate boundaries — such as sending a welcome email, provisioning
-/// default resources, or publishing integration events to a message broker.
-///
-/// This handler logs the event and illustrates where email dispatch or
-/// other notifications would be hooked in production.
-/// To send real emails, inject an IEmailSender (or INotificationService) here.
-/// </summary>
 public sealed class UserRegisteredEventHandler : INotificationHandler<UserRegisteredEvent>
 {
+    private readonly IUserRepository _userRepository;
+    private readonly IEmailConfirmationTokenService _emailConfirmationTokenService;
     private readonly ILogger<UserRegisteredEventHandler> _logger;
 
-    public UserRegisteredEventHandler(ILogger<UserRegisteredEventHandler> logger)
+    public UserRegisteredEventHandler(
+        IUserRepository userRepository,
+        IEmailConfirmationTokenService emailConfirmationTokenService,
+        ILogger<UserRegisteredEventHandler> logger)
     {
+        _userRepository = userRepository;
+        _emailConfirmationTokenService = emailConfirmationTokenService;
         _logger = logger;
     }
 
-    public Task Handle(UserRegisteredEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(UserRegisteredEvent notification, CancellationToken cancellationToken)
     {
-        // TODO: inject IEmailSender and send a welcome / confirm-email link.
+        var user = await _userRepository.GetByIdAsync(notification.UserId, cancellationToken);
+        if (user is null)
+            return;
+
+        var token = _emailConfirmationTokenService.GenerateToken(user.Id, user.SecurityStamp);
+
         _logger.LogInformation(
-            "User {UserId} registered with e-mail {Email} — welcome email would be sent here",
+            "User {UserId} registered with e-mail {Email} — confirmation e-mail stub dispatched",
             notification.UserId,
             notification.Email);
 
-        return Task.CompletedTask;
+        _logger.LogDebug(
+            "Email confirmation stub for user {UserId}: POST /api/v1/identity/{UserId}/confirm-email body {{ \"token\": \"{Token}\" }}",
+            notification.UserId,
+            notification.UserId,
+            token);
     }
 }

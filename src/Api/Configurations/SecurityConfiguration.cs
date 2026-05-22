@@ -92,12 +92,20 @@ public static class SecurityConfiguration
                     OnTokenValidated = async context =>
                     {
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                        var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
-                        var stampClaim = context.Principal?.FindFirst(AuthorizationClaimTypes.SecurityStamp);
+                        var userIdClaim = context.Principal?.FindFirst(ClaimTypes.NameIdentifier);
 
-                        if (userIdClaim is null || stampClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
+                        if (userIdClaim is null || !Guid.TryParse(userIdClaim.Value, out var userId))
                         {
-                            logger.LogInformation("JWT Token validated for user: {UserId}", userIdClaim?.Value);
+                            logger.LogWarning("JWT rejected: missing or invalid user identifier claim");
+                            context.Fail("Invalid token: missing user identifier.");
+                            return;
+                        }
+
+                        var stampClaim = context.Principal?.FindFirst(AuthorizationClaimTypes.SecurityStamp);
+                        if (stampClaim is null)
+                        {
+                            logger.LogWarning("JWT rejected for user {UserId}: missing security_stamp claim", userId);
+                            context.Fail("Invalid token: missing security stamp.");
                             return;
                         }
 

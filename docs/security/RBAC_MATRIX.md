@@ -28,7 +28,7 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 | GET | `/api/v1/identity/{id}` | Protegido | `UserReadOrSelf` | `identity.user.read` | Owner-check via requirement |
 | GET | `/api/v1/identity/{id}/roles` | Protegido | `UsersManage` | `identity.user.manage` | |
 | PUT | `/api/v1/identity/{id}` | Protegido | `UserManageOrSelf` | `identity.user.manage` | Owner-check via requirement |
-| POST | `/api/v1/identity/{id}/confirm-email` | Público | - | - | Confirmação de e-mail; idempotente |
+| POST | `/api/v1/identity/{id}/confirm-email` | Público | - | - | Confirmação de e-mail com token HMAC; idempotente |
 | DELETE | `/api/v1/identity/{id}` | Protegido | `UsersManage` | `identity.user.manage` | Soft-delete |
 
 ## API v1 - AuthorizationController

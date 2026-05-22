@@ -70,6 +70,18 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("Login attempt failed for inactive user: {Email}", request.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            _logger.LogWarning("Login attempt failed for unconfirmed email: {Email}", request.Email);
+            throw new BusinessRuleException("Email address must be confirmed before login.");
+        }
+
         var rolesData = await _userRolesProvider.GetUserRolesAndPermissionsAsync(user.Id, cancellationToken);
 
         var permissionClaims = rolesData.Permissions

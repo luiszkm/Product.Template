@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Kernel.Application.Security;
 using Microsoft.Extensions.Logging;
 using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
@@ -112,10 +113,17 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
 
         var rolesData = await _userRolesProvider.GetUserRolesAndPermissionsAsync(user.Id, cancellationToken);
 
+        var permissionClaims = rolesData.Permissions
+            .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
+
+        var extraClaims = permissionClaims
+            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp));
+
         var token = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
             email: user.Email,
-            roles: rolesData.Roles);
+            roles: rolesData.Roles,
+            extraClaims: extraClaims);
 
         var rawRefreshToken = _jwtTokenService.GenerateRefreshToken();
         var refreshToken = Domain.Entities.RefreshToken.Create(

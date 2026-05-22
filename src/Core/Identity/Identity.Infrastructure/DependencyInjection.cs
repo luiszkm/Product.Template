@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Core.Identity.Application.Permissions;
 using Product.Template.Core.Identity.Domain.Repositories;
+using Product.Template.Core.Identity.Application.Security;
 using Product.Template.Core.Identity.Infrastructure.Data.Persistence;
 using Product.Template.Core.Identity.Infrastructure.Security;
 using Product.Template.Kernel.Application.Data;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         services.AddTransient<IUserRepository, UserRepository>();
         services.AddTransient<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<ISecurityStampService, SecurityStampService>();
+        services.AddSingleton<IEmailConfirmationTokenService, EmailConfirmationTokenService>();
 
         return services;
     }
