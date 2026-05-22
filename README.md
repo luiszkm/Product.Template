@@ -106,6 +106,14 @@ X-Tenant: public
 
 The `compose.yaml` at the repo root spins up the **complete local development environment** — API, database, and the full observability stack — with a single command.
 
+### Configure secrets (optional)
+
+Copy `compose.env.example` to `compose.env` and set passwords. If omitted, safe dev-only defaults are used.
+
+```bash
+cp compose.env.example compose.env
+```
+
 ### Start everything
 
 ```bash
@@ -129,7 +137,7 @@ docker compose down -v
 | Service | Image | Port(s) | Purpose |
 |---------|-------|---------|---------|
 | `api` | `product-template-api` (built locally) | `8080` | ASP.NET Core API |
-| `sqlserver` | `mcr.microsoft.com/mssql/server:2022-latest` | `1433` | SQL Server (AppDb + HostDb) |
+| `postgres` | `postgres:17` | `5432` | PostgreSQL (AppDb + HostDb) |
 | `seq` | `datalust/seq:2025.x` | `5341` | Structured log UI |
 | `tempo` | `grafana/tempo:2.6.1` | `3200` · `4317` · `4318` | Trace storage (OTLP) |
 | `prometheus` | `prom/prometheus` | `9090` | Metrics storage (scrapes `/metrics`) |
@@ -138,26 +146,27 @@ docker compose down -v
 ### Startup sequence
 
 ```
-sqlserver (healthy) ─┐
+postgres (healthy) ──┐
                      ├──► api ──► prometheus ──► grafana
 tempo (started)  ────┘
 seq (independent)
 ```
 
-The `api` waits for SQL Server to pass its healthcheck before starting.
+The `api` waits for PostgreSQL to pass its healthcheck before starting.
 
 ### Default credentials
 
-| Service | URL | Username | Password |
-|---------|-----|----------|---------|
-| API | http://localhost:8080 | — | — |
-| Seq | http://localhost:5341 | `admin` | `admin123` |
-| Grafana | http://localhost:3000 | `admin` | `admin123` |
-| Prometheus | http://localhost:9090 | — | — |
-| SQL Server | `localhost,1433` | `sa` | `YourStrong!Pass123` |
+Values come from `compose.env` or built-in dev defaults (`dev-*-change-me`). See `compose.env.example`.
 
-> **Important:** credentials in `compose.yaml` are for **local development only**.  
-> In production, supply them via environment variables or a secrets manager — never in source control.
+| Service | URL | Notes |
+|---------|-----|-------|
+| API | http://localhost:8080 | `X-Tenant: public` on requests |
+| Seq | http://localhost:5341 | Admin password from `SEQ_FIRSTRUN_ADMINPASSWORD` |
+| Grafana | http://localhost:3000 | `admin` + `GRAFANA_ADMIN_PASSWORD` |
+| Prometheus | http://localhost:9090 | Scrapes `/metrics` (no key in Development) |
+| PostgreSQL | `localhost:5432` | `postgres` + `POSTGRES_PASSWORD` |
+
+> **Important:** never commit `compose.env`. In production, `/metrics` and `/health/ready` require `X-Monitoring-Api-Key` when `Monitoring:RequireApiKey` is true (see `appsettings.Production.json`).
 
 ### Dockerfile multi-stage build
 
