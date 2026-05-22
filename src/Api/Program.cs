@@ -79,28 +79,25 @@ app.UseSerilogConfiguration();
 // Security (CORS) — must run before any middleware that can short-circuit (tenant, IP, etc.)
 app.UseSecurityConfiguration();
 
-// Request Logging Detalhado (com correlationId e mascaramento de dados sensíveis)
-app.UseMiddleware<RequestLoggingMiddleware>();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
-// Request Deduplication (previne requisições duplicadas)
-app.UseMiddleware<RequestDeduplicationMiddleware>();
+if (app.Configuration.GetValue<bool>("FeatureFlags:EnableAdvancedLogging", true))
+    app.UseMiddleware<RequestLoggingMiddleware>();
 
-// Tenant resolution (header/subdomain)
 if (!app.Configuration.GetValue<bool>("DisableTenantMiddleware"))
 {
     app.UseMiddleware<TenantResolutionMiddleware>();
 }
 
+if (app.Configuration.GetValue<bool>("FeatureFlags:EnableRequestDeduplication", true))
+    app.UseMiddleware<RequestDeduplicationMiddleware>();
+
 app.UseMiddleware<TenantGuardMiddleware>();
 
-// IP Whitelist/Blacklist Validation
 app.UseMiddleware<IpWhitelistMiddleware>();
-
-// Rate Limiting
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
 
 // HTTPS Redirection (disabled in Development to avoid redirect issues with local frontends)
 if (!app.Environment.IsDevelopment())

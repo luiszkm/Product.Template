@@ -2,6 +2,7 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Product.Template.Api.Http;
 using System.Diagnostics;
 
 namespace Product.Template.Api.Configurations;
@@ -46,7 +47,11 @@ public static class OpenTelemetryConfiguration
                         options.RecordException = true;
                         options.EnrichWithHttpRequest = (activity, httpRequest) =>
                         {
-                            activity.SetTag("http.request.client_ip", httpRequest.HttpContext.Connection.RemoteIpAddress?.ToString());
+                            var clientIp = ClientIpResolver.GetClientIp(httpRequest.HttpContext);
+                            if (clientIp is not null)
+                            {
+                                activity.SetTag("http.request.client_ip", clientIp);
+                            }
                         };
                         options.EnrichWithHttpResponse = (activity, httpResponse) =>
                         {

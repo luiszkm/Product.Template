@@ -4,11 +4,14 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging.Abstractions;
 using Product.Template.Api.Middleware;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace UnitTests.Middleware;
 
 public class RequestDeduplicationMiddlewareTests
 {
+    private const string DefaultTenantPart = "no-tenant";
+
     [Fact]
     public async Task InvokeAsync_ShouldPassThrough_WhenMethodIsGet()
     {
@@ -27,7 +30,7 @@ public class RequestDeduplicationMiddlewareTests
 
         var context = CreateContext(HttpMethods.Get, "/api/v1/test");
 
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context, new FakeTenantContext());
 
         Assert.True(invoked);
         Assert.Equal(StatusCodes.Status200OK, context.Response.StatusCode);
@@ -53,7 +56,7 @@ public class RequestDeduplicationMiddlewareTests
         var context = CreateContext(HttpMethods.Post, "/api/v1/test");
         context.Request.Headers["X-Idempotency-Key"] = "key-1";
 
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context, new FakeTenantContext());
 
         Assert.True(invoked);
         Assert.Equal(StatusCodes.Status201Created, context.Response.StatusCode);
@@ -71,7 +74,7 @@ public class RequestDeduplicationMiddlewareTests
             Method = HttpMethods.Post,
             Path = "/api/v1/test"
         });
-        await cache.SetStringAsync($"dedup:{idempotencyKey}", entry);
+        await cache.SetStringAsync($"dedup:{DefaultTenantPart}:{idempotencyKey}", entry);
 
         RequestDelegate next = _ => throw new InvalidOperationException("Next should not be invoked");
 
@@ -83,7 +86,7 @@ public class RequestDeduplicationMiddlewareTests
         var context = CreateContext(HttpMethods.Post, "/api/v1/test");
         context.Request.Headers["X-Idempotency-Key"] = idempotencyKey;
 
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context, new FakeTenantContext());
 
         Assert.Equal(StatusCodes.Status409Conflict, context.Response.StatusCode);
         Assert.Equal("true", context.Response.Headers["X-Duplicate-Request"].ToString());
@@ -94,7 +97,7 @@ public class RequestDeduplicationMiddlewareTests
     {
         var cache = new FakeDistributedCache();
         var idempotencyKey = "in-flight-key";
-        await cache.SetStringAsync($"dedup:processing:{idempotencyKey}", "1");
+        await cache.SetStringAsync($"dedup:processing:{DefaultTenantPart}:{idempotencyKey}", "1");
 
         RequestDelegate next = _ => throw new InvalidOperationException("Next should not be invoked");
 
@@ -106,7 +109,7 @@ public class RequestDeduplicationMiddlewareTests
         var context = CreateContext(HttpMethods.Post, "/api/v1/test");
         context.Request.Headers["X-Idempotency-Key"] = idempotencyKey;
 
-        await middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context, new FakeTenantContext());
 
         Assert.Equal(StatusCodes.Status409Conflict, context.Response.StatusCode);
         Assert.Equal("true", context.Response.Headers["X-Duplicate-Request"].ToString());
@@ -154,5 +157,29 @@ public class RequestDeduplicationMiddlewareTests
             Set(key, value, options);
             return Task.CompletedTask;
         }
+    }
+
+    private sealed class FakeTenantContext : ITenantContext
+    {
+        private readonly Guid? _tenantId;
+        private readonly bool _isResolved;
+
+        public FakeTenantContext(Guid? tenantId = null, bool isResolved = false)
+        {
+            _tenantId = tenantId;
+            _isResolved = isResolved;
+        }
+
+        public Guid? TenantId => _tenantId;
+
+        public string? TenantKey => _tenantId.HasValue ? "test" : null;
+
+        public TenantConfig? Tenant => _tenantId.HasValue
+            ? new TenantConfig { TenantId = _tenantId.Value, TenantKey = "test" }
+            : null;
+
+        public bool IsResolved => _isResolved;
+
+        public void SetTenant(TenantConfig tenant) => throw new NotSupportedException();
     }
 }

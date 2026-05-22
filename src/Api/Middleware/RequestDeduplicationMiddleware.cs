@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Api.Middleware;
 
@@ -23,7 +24,7 @@ public class RequestDeduplicationMiddleware
         _logger = logger;
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    public async Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
     {
         if (!ShouldCheckDuplication(context.Request.Method))
         {
@@ -31,12 +32,13 @@ public class RequestDeduplicationMiddleware
             return;
         }
 
+        var tenantPart = GetTenantPart(tenantContext, context);
         var idempotencyKey = context.Request.Headers["X-Idempotency-Key"].FirstOrDefault();
         if (string.IsNullOrEmpty(idempotencyKey))
-            idempotencyKey = await GenerateRequestHashAsync(context);
+            idempotencyKey = await GenerateRequestHashAsync(context, tenantPart);
 
-        var cacheKey = $"dedup:{idempotencyKey}";
-        var inFlightKey = $"dedup:processing:{idempotencyKey}";
+        var cacheKey = $"dedup:{tenantPart}:{idempotencyKey}";
+        var inFlightKey = $"dedup:processing:{tenantPart}:{idempotencyKey}";
         var cacheOptions = new DistributedCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = DeduplicationWindow
@@ -118,9 +120,19 @@ public class RequestDeduplicationMiddleware
     private static bool ShouldCheckDuplication(string method) =>
         method is "POST" or "PUT" or "PATCH";
 
-    private static async Task<string> GenerateRequestHashAsync(HttpContext context)
+    private static string GetTenantPart(ITenantContext tenantContext, HttpContext context)
+    {
+        if (tenantContext.IsResolved)
+            return tenantContext.TenantId?.ToString() ?? "no-tenant";
+
+        var headerTenant = context.Request.Headers["X-Tenant"].FirstOrDefault()?.Trim().ToLowerInvariant();
+        return string.IsNullOrEmpty(headerTenant) ? "no-tenant" : headerTenant;
+    }
+
+    private static async Task<string> GenerateRequestHashAsync(HttpContext context, string tenantPart)
     {
         var sb = new StringBuilder();
+        sb.Append(tenantPart);
         sb.Append(context.Request.Method);
         sb.Append(context.Request.Path);
         sb.Append(context.Request.QueryString);

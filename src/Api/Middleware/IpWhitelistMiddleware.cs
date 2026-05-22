@@ -1,4 +1,5 @@
 using System.Net;
+using Product.Template.Api.Http;
 
 namespace Product.Template.Api.Middleware;
 
@@ -38,7 +39,7 @@ public class IpWhitelistMiddleware
             return;
         }
 
-        var remoteIp = GetRemoteIpAddress(context);
+        var remoteIp = ClientIpResolver.GetClientIp(context);
 
         if (remoteIp == null)
         {
@@ -79,28 +80,6 @@ public class IpWhitelistMiddleware
         }
 
         await _next(context);
-    }
-
-    private string? GetRemoteIpAddress(HttpContext context)
-    {
-        // Tentar obter o IP de headers de proxy
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwardedFor))
-        {
-            var ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            if (ips.Length > 0)
-            {
-                return ips[0].Trim();
-            }
-        }
-
-        var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(realIp))
-        {
-            return realIp;
-        }
-
-        return context.Connection.RemoteIpAddress?.ToString();
     }
 
     private bool IsAllowed(string ip)

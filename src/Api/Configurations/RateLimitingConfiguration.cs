@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.RateLimiting;
+using Product.Template.Api.Http;
 using System.Threading.RateLimiting;
 
 namespace Product.Template.Api.Configurations;
@@ -27,7 +28,7 @@ public static class RateLimitingConfiguration
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
-                var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var clientIp = ClientIpResolver.GetClientIp(httpContext) ?? "unknown";
 
                 return RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: clientIp,
