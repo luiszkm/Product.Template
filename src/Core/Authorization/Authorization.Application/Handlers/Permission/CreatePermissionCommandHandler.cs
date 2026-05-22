@@ -35,8 +35,8 @@ public class CreatePermissionCommandHandler : ICommandHandler<CreatePermissionCo
         if (existing is not null)
             throw new BusinessRuleException($"Permission '{request.Name}' already exists.");
 
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
             throw new BusinessRuleException("Tenant must be resolved before creating permissions.");
 
         var permission = Domain.Entities.Permission.Create(tenantId, request.Name, request.Description);

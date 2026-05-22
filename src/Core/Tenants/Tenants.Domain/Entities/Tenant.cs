@@ -5,14 +5,8 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Tenants.Domain.Entities;
 
-/// <summary>
-/// Domain aggregate root for tenant management.
-/// NOTE: Tenant does NOT implement IMultiTenantEntity — tenants themselves are not tenant-scoped.
-/// Backed by the same "Tenants" table as TenantConfig via TenantRepository mapping.
-/// </summary>
 public class Tenant : AggregateRoot
 {
-    public long TenantId { get; private set; }
     public string TenantKey { get; private set; }
     public string DisplayName { get; private set; }
     public string? ContactEmail { get; private set; }
@@ -21,10 +15,9 @@ public class Tenant : AggregateRoot
 
     private Tenant() { TenantKey = null!; DisplayName = null!; }
 
-    private Tenant(Guid id, long tenantId, string tenantKey, string displayName, string? contactEmail, TenantIsolationMode isolationMode)
+    private Tenant(Guid id, string tenantKey, string displayName, string? contactEmail, TenantIsolationMode isolationMode)
     {
         Id = id;
-        TenantId = tenantId;
         TenantKey = tenantKey;
         DisplayName = displayName;
         ContactEmail = contactEmail;
@@ -32,19 +25,22 @@ public class Tenant : AggregateRoot
         IsolationMode = isolationMode;
     }
 
-    public static Tenant Create(long tenantId, string tenantKey, string displayName, string? contactEmail, TenantIsolationMode isolationMode)
+    public static Tenant Create(string tenantKey, string displayName, string? contactEmail, TenantIsolationMode isolationMode)
     {
-        if (tenantId <= 0)
-            throw new DomainException("TenantId must be a positive number.");
-
         if (string.IsNullOrWhiteSpace(tenantKey))
             throw new ArgumentException("TenantKey cannot be empty.", nameof(tenantKey));
 
         if (string.IsNullOrWhiteSpace(displayName))
             throw new ArgumentException("DisplayName cannot be empty.", nameof(displayName));
 
-        var tenant = new Tenant(Guid.NewGuid(), tenantId, tenantKey.Trim().ToLowerInvariant(), displayName.Trim(), contactEmail?.Trim(), isolationMode);
-        tenant.AddDomainEvent(new TenantCreatedEvent(tenant.TenantId, tenant.TenantKey));
+        var tenant = new Tenant(
+            Guid.NewGuid(),
+            tenantKey.Trim().ToLowerInvariant(),
+            displayName.Trim(),
+            contactEmail?.Trim(),
+            isolationMode);
+
+        tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.TenantKey));
         return tenant;
     }
 
@@ -60,7 +56,7 @@ public class Tenant : AggregateRoot
     public void Deactivate()
     {
         IsActive = false;
-        AddDomainEvent(new TenantDeactivatedEvent(TenantId, TenantKey));
+        AddDomainEvent(new TenantDeactivatedEvent(Id, TenantKey));
     }
 
     public void Activate()
@@ -68,17 +64,18 @@ public class Tenant : AggregateRoot
         IsActive = true;
     }
 
-    /// <summary>
-    /// Rehydrates a Tenant from persistence (no domain events raised).
-    /// </summary>
     public static Tenant Reconstitute(
-        long tenantId, string tenantKey, string? displayName, string? contactEmail,
-        bool isActive, TenantIsolationMode isolationMode, DateTime createdAt)
+        Guid id,
+        string tenantKey,
+        string? displayName,
+        string? contactEmail,
+        bool isActive,
+        TenantIsolationMode isolationMode,
+        DateTime createdAt)
     {
         return new Tenant
         {
-            Id = Guid.NewGuid(),
-            TenantId = tenantId,
+            Id = id,
             TenantKey = tenantKey,
             DisplayName = displayName ?? tenantKey,
             ContactEmail = contactEmail,

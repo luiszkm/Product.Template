@@ -261,7 +261,7 @@ UserId = "abc-123"
 CorrelationId = "req-xyz"
 
 # Erros de um tenant
-TenantId = 1 AND Level = "Error"
+TenantId = "00000000-0000-0000-0000-000000000001" AND Level = "Error"
 
 # Tempo de resposta alto (via propriedades estruturadas)
 Elapsed > 1000

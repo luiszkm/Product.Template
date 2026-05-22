@@ -59,7 +59,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                     b.Property<string>("RestoredBy")
                         .HasColumnType("text");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -113,7 +113,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                     b.Property<string>("RestoredBy")
                         .HasColumnType("text");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -166,7 +166,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -220,7 +220,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -293,7 +293,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("Token")
@@ -384,7 +384,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -437,7 +437,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                     b.Property<DateTime>("OccurredAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");

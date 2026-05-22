@@ -35,8 +35,8 @@ public class CreateRoleCommandHandler : ICommandHandler<CreateRoleCommand, RoleO
         if (existing is not null)
             throw new BusinessRuleException($"Role '{request.Name}' already exists.");
 
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
             throw new BusinessRuleException("Tenant must be resolved before creating roles.");
 
         var role = Domain.Entities.Role.Create(tenantId, request.Name, request.Description);

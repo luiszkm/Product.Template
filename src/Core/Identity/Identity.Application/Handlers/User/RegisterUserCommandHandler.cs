@@ -43,8 +43,8 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
             throw new BusinessRuleException("Email já está em uso.");
         }
 
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
         {
             _logger.LogWarning("Tentativa de registro sem tenant resolvido");
             throw new BusinessRuleException("Tenant must be resolved before registering a user.");

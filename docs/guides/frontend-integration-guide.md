@@ -460,12 +460,12 @@ interface PermissionOutput {
 #### `GET /api/v1/tenants` — requer `tenants.read`
 
 ```typescript
-// Query: ?pageNumber=1&pageSize=10
+// Query: ?pageNumber=1&pageSize=20&searchTerm=acme&sortBy=tenantKey&sortDirection=asc
 // Response 200 — PaginatedList<TenantOutput>
 interface TenantOutput {
-  tenantId: number;         // long
-  tenantKey: string;        // ex: "acme"
-  displayName: string;      // ex: "Acme Corp"
+  tenantId: string;         // Guid (uuid)
+  tenantKey: string;        // ex: "acme" — usado em X-Tenant no runtime
+  displayName: string;
   contactEmail: string | null;
   isActive: boolean;
   isolationMode: "SharedDb" | "SchemaPerTenant" | "DedicatedDb";
@@ -473,9 +473,12 @@ interface TenantOutput {
 }
 ```
 
+Ver também: [Tenant identifiers](./tenant-identifiers.md).
+
 #### `GET /api/v1/tenants/{id}` — requer `tenants.read`
 
-```
+```typescript
+// Path: id = Guid string
 // Response 200 — TenantOutput
 // Errors: 401, 403, 404
 ```
@@ -483,30 +486,35 @@ interface TenantOutput {
 #### `POST /api/v1/tenants` — requer `tenants.manage`
 
 ```typescript
-// Request
+// Request — tenantId é gerado pelo servidor (não enviar)
 {
-  tenantId: number;
   tenantKey: string;
   displayName: string;
   contactEmail?: string;
   isolationMode: "SharedDb" | "SchemaPerTenant" | "DedicatedDb";
 }
-// Response 201 — TenantOutput
+// Response 201 — TenantOutput (inclui tenantId)
 // Errors: 400, 401, 403
 ```
 
 #### `PUT /api/v1/tenants/{id}` — requer `tenants.manage`
 
 ```typescript
-// Request  (tenantId no body deve bater com id na URL)
-{ tenantId: number; displayName: string; contactEmail?: string }
+// Path: id = Guid string
+// Request (tenantId no body deve ser igual ao id da URL)
+{
+  tenantId: string;
+  displayName: string;
+  contactEmail?: string;
+}
 // Response 200 — TenantOutput
 // Errors: 400, 401, 403, 404
 ```
 
 #### `DELETE /api/v1/tenants/{id}` — requer `tenants.manage`
 
-```
+```typescript
+// Path: id = Guid string
 // Soft-deactivate (isActive = false). NÃO remove dados.
 // Response 204
 // Errors: 401, 403, 404
@@ -725,7 +733,7 @@ function canViewUser(targetUserId: string): boolean {
 - [ ] Lista paginada de tenants (`GET /tenants`)
 - [ ] Detalhe do tenant (`GET /tenants/{id}`)
 - [ ] Formulário de criação de tenant (`POST /tenants`)
-  - [ ] Campos: `tenantId` (number), `tenantKey`, `displayName`, `contactEmail?`, `isolationMode`
+  - [ ] Campos: `tenantKey`, `displayName`, `contactEmail?`, `isolationMode` (sem `tenantId` no create)
   - [ ] Dropdown de `isolationMode`: SharedDb / SchemaPerTenant / DedicatedDb
 - [ ] Formulário de edição (`PUT /tenants/{id}`)
   - [ ] Somente `displayName` e `contactEmail` são editáveis

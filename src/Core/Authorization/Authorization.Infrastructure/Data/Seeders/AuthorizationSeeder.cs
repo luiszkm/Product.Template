@@ -39,7 +39,7 @@ internal sealed class AuthorizationSeeder : IAppSeeder
         await SeedUserAssignmentsAsync(context, tenantId, cancellationToken);
     }
 
-    private async Task SeedPermissionsAsync(AppDbContext context, long tenantId, CancellationToken cancellationToken)
+    private async Task SeedPermissionsAsync(AppDbContext context, Guid tenantId, CancellationToken cancellationToken)
     {
         var existingNames = (await context.Set<Permission>().IgnoreQueryFilters()
                 .Select(p => p.Name)
@@ -60,7 +60,7 @@ internal sealed class AuthorizationSeeder : IAppSeeder
 
     private static async Task SeedRolesAsync(
         AppDbContext context,
-        long tenantId,
+        Guid tenantId,
         List<Permission> permissions,
         CancellationToken cancellationToken)
     {
@@ -84,7 +84,7 @@ internal sealed class AuthorizationSeeder : IAppSeeder
 
     private static async Task SeedUserAssignmentsAsync(
         AppDbContext context,
-        long tenantId,
+        Guid tenantId,
         CancellationToken cancellationToken)
     {
         var adminAssignment = UserAssignment.Create(AdminUserId, AdminRoleId, tenantId, "Admin");

@@ -1,22 +1,23 @@
 using Bogus;
 using Product.Template.Core.Authorization.Domain.Entities;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace CommonTests.Builders;
 
 public sealed class RoleBuilder
 {
-    private readonly Faker _faker = new();
-    private long _tenantId = 1L;
+    private Guid _tenantId = WellKnownTenants.Public;
     private string _name;
     private string _description;
 
     public RoleBuilder()
     {
-        _name = _faker.Name.JobTitle();
-        _description = _faker.Lorem.Sentence();
+        var faker = new Faker();
+        _name = faker.Commerce.Department();
+        _description = faker.Lorem.Sentence();
     }
 
-    public RoleBuilder WithTenantId(long tenantId) { _tenantId = tenantId; return this; }
+    public RoleBuilder WithTenantId(Guid tenantId) { _tenantId = tenantId; return this; }
     public RoleBuilder WithName(string name) { _name = name; return this; }
     public RoleBuilder WithDescription(string description) { _description = description; return this; }
 

@@ -8,7 +8,7 @@ public sealed class UpdateTenantCommandValidator : AbstractValidator<UpdateTenan
     public UpdateTenantCommandValidator()
     {
         RuleFor(x => x.TenantId)
-            .GreaterThan(0).WithMessage("TenantId must be a positive number.");
+            .NotEqual(Guid.Empty).WithMessage("TenantId must be provided.");
 
         RuleFor(x => x.DisplayName)
             .NotEmpty().WithMessage("Display name is required.")

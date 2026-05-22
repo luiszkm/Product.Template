@@ -11,9 +11,9 @@ public class AppDbContext : DbContext
     private readonly ITenantContext _tenantContext;
     private readonly EfModelAssemblyRegistry? _registry;
 
-    public long TenantIdForQueryFilter => _tenantContext.Tenant?.IsolationMode == TenantIsolationMode.SharedDb
-        ? _tenantContext.TenantId ?? 0
-        : 0;
+    public Guid TenantIdForQueryFilter => _tenantContext.Tenant?.IsolationMode == TenantIsolationMode.SharedDb
+        ? _tenantContext.TenantId ?? Guid.Empty
+        : Guid.Empty;
 
     // Identity Tables
     public DbSet<User> Users => Set<User>();

@@ -46,8 +46,8 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
 
     public async Task<AuthTokenOutput> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
         {
             _logger.LogWarning("Tentativa de refresh sem tenant resolvido");
             throw new BusinessRuleException("Tenant must be resolved before refreshing tokens.");

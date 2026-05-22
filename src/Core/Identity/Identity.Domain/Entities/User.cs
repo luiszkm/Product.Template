@@ -8,7 +8,7 @@ namespace Product.Template.Core.Identity.Domain.Entities;
 
 public class User : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; private set; }
+    public Guid TenantId { get; private set; }
     public Email Email { get; private set; }
     public string PasswordHash { get; private set; }
     public string FirstName { get; private set; }
@@ -20,7 +20,7 @@ public class User : AggregateRoot, IMultiTenantEntity
 
     private User() { Email = null!; PasswordHash = null!; FirstName = null!; LastName = null!; SecurityStamp = null!; }
 
-    private User(Guid id, long tenantId, Email email, string passwordHash, string firstName, string lastName)
+    private User(Guid id, Guid tenantId, Email email, string passwordHash, string firstName, string lastName)
     {
         Id = id;
         SetTenant(tenantId);
@@ -35,7 +35,7 @@ public class User : AggregateRoot, IMultiTenantEntity
     }
 
     public static User Create(
-        long tenantId,
+        Guid tenantId,
         string email,
         string passwordHash,
         string firstName,
@@ -97,14 +97,14 @@ public class User : AggregateRoot, IMultiTenantEntity
         LastName = lastName.Trim();
     }
 
-    private void SetTenant(long tenantId)
+    private void SetTenant(Guid tenantId)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
-        if (TenantId != 0 && TenantId != tenantId)
+        if (TenantId != Guid.Empty && TenantId != tenantId)
             throw new DomainException("TenantId cannot be changed once set.");
         TenantId = tenantId;
     }
 
-    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
+    void IMultiTenantEntity.AssignTenant(Guid tenantId) => SetTenant(tenantId);
 }

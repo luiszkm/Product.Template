@@ -33,9 +33,9 @@ public class TenancyInvariantTests
         foreach (var type in multiTenantTypes)
         {
             var tenantIdProperty = type.GetProperty(nameof(IMultiTenantEntity.TenantId), BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (tenantIdProperty is null || tenantIdProperty.PropertyType != typeof(long))
+            if (tenantIdProperty is null || tenantIdProperty.PropertyType != typeof(Guid))
             {
-                violations.Add($"{type.FullName} must declare a TenantId property of type long.");
+                violations.Add($"{type.FullName} must declare a TenantId property of type Guid.");
                 continue;
             }
 

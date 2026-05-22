@@ -27,7 +27,7 @@ namespace Kernel.Infrastructure.Migrations
 
             modelBuilder.Entity("Product.Template.Kernel.Domain.MultiTenancy.TenantConfig", b =>
                 {
-                    b.Property<long>("TenantId")
+                    b.Property<Guid>("TenantId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("ConnectionString")

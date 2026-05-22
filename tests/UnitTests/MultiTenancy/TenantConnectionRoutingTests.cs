@@ -16,7 +16,7 @@ public class TenantConnectionRoutingTests
         var resolver = new TenantConnectionStringResolver(configuration);
         var tenant = new TenantConfig
         {
-            TenantId = 10,
+            TenantId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
             TenantKey = "enterprise",
             IsolationMode = TenantIsolationMode.DedicatedDb,
             ConnectionString = "Host=localhost;Database=tenant_enterprise;Username=postgres;Password=postgres"

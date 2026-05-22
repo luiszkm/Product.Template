@@ -3,4 +3,4 @@ using Product.Template.Kernel.Application.Messaging.Interfaces;
 
 namespace Product.Template.Core.Tenants.Application.Queries;
 
-public record GetTenantByIdQuery(long TenantId) : IQuery<TenantOutput>;
+public record GetTenantByIdQuery(Guid TenantId) : IQuery<TenantOutput>;

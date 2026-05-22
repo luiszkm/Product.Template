@@ -9,7 +9,7 @@ public static class TenantMapper
     {
         ArgumentNullException.ThrowIfNull(tenant);
         return new TenantOutput(
-            tenant.TenantId,
+            tenant.Id,
             tenant.TenantKey,
             tenant.DisplayName,
             tenant.ContactEmail,

@@ -7,7 +7,7 @@ namespace Product.Template.Core.Authorization.Domain.Entities;
 
 public class Role : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; private set; }
+    public Guid TenantId { get; private set; }
     public string Name { get; private set; }
     public string Description { get; private set; }
 
@@ -16,7 +16,7 @@ public class Role : AggregateRoot, IMultiTenantEntity
 
     private Role() { Name = null!; Description = null!; }
 
-    private Role(Guid id, long tenantId, string name, string description)
+    private Role(Guid id, Guid tenantId, string name, string description)
     {
         Id = id;
         SetTenant(tenantId);
@@ -24,9 +24,9 @@ public class Role : AggregateRoot, IMultiTenantEntity
         Description = description;
     }
 
-    public static Role Create(long tenantId, string name, string description)
+    public static Role Create(Guid tenantId, string name, string description)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
 
         if (string.IsNullOrWhiteSpace(name))
@@ -61,14 +61,14 @@ public class Role : AggregateRoot, IMultiTenantEntity
             _rolePermissions.Remove(rp);
     }
 
-    private void SetTenant(long tenantId)
+    private void SetTenant(Guid tenantId)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
-        if (TenantId != 0 && TenantId != tenantId)
+        if (TenantId != Guid.Empty && TenantId != tenantId)
             throw new DomainException("TenantId cannot be changed once set.");
         TenantId = tenantId;
     }
 
-    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
+    void IMultiTenantEntity.AssignTenant(Guid tenantId) => SetTenant(tenantId);
 }

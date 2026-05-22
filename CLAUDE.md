@@ -85,7 +85,7 @@ The `src/Shared/` folder contains the Kernel (base) libraries shared across all 
 ### Domain entities
 
 - Inherit from `Entity` or `AggregateRoot` (from `Kernel.Domain`).
-- All implement `IMultiTenantEntity` (`TenantId long`).
+- All implement `IMultiTenantEntity` (`TenantId` as `Guid`). Runtime resolution uses `X-Tenant` + `tenantKey`; see `docs/guides/tenant-identifiers.md`.
 - **Private constructor + static `Create(...)` factory** — enforces invariants inside.
 - Properties with `private set`; state changes via explicit behavior methods (e.g., `Deactivate()`).
 - Domain events: `AddDomainEvent(...)` inside aggregate, dispatched after `Commit()`.

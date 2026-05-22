@@ -46,8 +46,8 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
             return;
         }
 
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
             throw new BusinessRuleException("Tenant must be resolved before assigning roles.");
 
         var assignment = Domain.Entities.UserAssignment.Create(request.UserId, request.RoleId, tenantId, role.Name);

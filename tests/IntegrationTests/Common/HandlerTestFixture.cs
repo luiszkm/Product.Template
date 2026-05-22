@@ -25,7 +25,7 @@ public sealed class HandlerTestFixture : IDisposable
         TenantContext = new TenantContext();
         TenantContext.SetTenant(new TenantConfig
         {
-            TenantId = 1,
+            TenantId = WellKnownTenants.Public,
             TenantKey = "test",
             IsolationMode = TenantIsolationMode.SharedDb,
             IsActive = true

@@ -15,7 +15,7 @@ namespace Kernel.Infrastructure.Migrations
                 name: "Tenants",
                 columns: table => new
                 {
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     TenantKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     DisplayName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     ContactEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),

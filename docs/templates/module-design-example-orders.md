@@ -152,7 +152,7 @@ public Money CalculateTotal() => OrderLines.Sum(l => l.Total);
 ```csharp
 public class Order : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; set; }
+    public Guid TenantId { get; set; }
     public Guid CustomerId { get; private set; }
     public Address DeliveryAddress { get; private set; }
     public OrderStatus Status { get; private set; }

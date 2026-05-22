@@ -48,7 +48,7 @@ public sealed class AuditLogInterceptor : SaveChangesInterceptor
     private async Task WriteAuditEntriesAsync(DbContext context, CancellationToken cancellationToken)
     {
         var actor = _currentUserService.UserName ?? "System";
-        var tenantId = _tenantContext.TenantId ?? 0;
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
         var auditEntries = new List<AuditLog>();
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditableEntity>())

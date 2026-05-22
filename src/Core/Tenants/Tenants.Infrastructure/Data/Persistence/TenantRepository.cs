@@ -17,7 +17,7 @@ public class TenantRepository : ITenantRepository
         _hostDbContext = hostDbContext;
     }
 
-    public async Task<Tenant?> GetByTenantIdAsync(long tenantId, CancellationToken cancellationToken = default)
+    public async Task<Tenant?> GetByTenantIdAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         var config = await _hostDbContext.Tenants
             .FirstOrDefaultAsync(t => t.TenantId == tenantId, cancellationToken);
@@ -36,10 +36,21 @@ public class TenantRepository : ITenantRepository
     public async Task<PaginatedListOutput<Tenant>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
     {
         var query = _hostDbContext.Tenants.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(listInput.SearchTerm))
+        {
+            var term = listInput.SearchTerm.Trim();
+            query = query.Where(t =>
+                (t.DisplayName != null && t.DisplayName.Contains(term)) ||
+                t.TenantKey.Contains(term) ||
+                (t.ContactEmail != null && t.ContactEmail.Contains(term)));
+        }
+
+        query = ApplySort(query, listInput.SortBy, listInput.SortDirection);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var configs = await query
-            .OrderBy(t => t.TenantId)
             .Skip((listInput.PageNumber - 1) * listInput.PageSize)
             .Take(listInput.PageSize)
             .ToListAsync(cancellationToken);
@@ -60,7 +71,7 @@ public class TenantRepository : ITenantRepository
     public async Task UpdateAsync(Tenant tenant, CancellationToken cancellationToken = default)
     {
         var config = await _hostDbContext.Tenants
-            .FirstOrDefaultAsync(t => t.TenantId == tenant.TenantId, cancellationToken);
+            .FirstOrDefaultAsync(t => t.TenantId == tenant.Id, cancellationToken);
 
         if (config is null)
             return;
@@ -83,7 +94,7 @@ public class TenantRepository : ITenantRepository
     private static TenantConfig MapToConfig(Tenant tenant) =>
         new TenantConfig
         {
-            TenantId = tenant.TenantId,
+            TenantId = tenant.Id,
             TenantKey = tenant.TenantKey,
             DisplayName = tenant.DisplayName,
             ContactEmail = tenant.ContactEmail,
@@ -91,4 +102,32 @@ public class TenantRepository : ITenantRepository
             IsolationMode = tenant.IsolationMode,
             CreatedAt = tenant.CreatedAt
         };
+
+    private static IQueryable<TenantConfig> ApplySort(IQueryable<TenantConfig> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+            return query.OrderByDescending(t => t.CreatedAt).ThenBy(t => t.TenantId);
+
+        var descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.Trim().ToLowerInvariant() switch
+        {
+            "tenantkey" or "key" => descending
+                ? query.OrderByDescending(t => t.TenantKey).ThenBy(t => t.TenantId)
+                : query.OrderBy(t => t.TenantKey).ThenBy(t => t.TenantId),
+            "displayname" or "name" => descending
+                ? query.OrderByDescending(t => t.DisplayName).ThenBy(t => t.TenantId)
+                : query.OrderBy(t => t.DisplayName).ThenBy(t => t.TenantId),
+            "contactemail" or "description" => descending
+                ? query.OrderByDescending(t => t.ContactEmail).ThenBy(t => t.TenantId)
+                : query.OrderBy(t => t.ContactEmail).ThenBy(t => t.TenantId),
+            "createdat" => descending
+                ? query.OrderByDescending(t => t.CreatedAt).ThenBy(t => t.TenantId)
+                : query.OrderBy(t => t.CreatedAt).ThenBy(t => t.TenantId),
+            "isactive" => descending
+                ? query.OrderByDescending(t => t.IsActive).ThenBy(t => t.TenantId)
+                : query.OrderBy(t => t.IsActive).ThenBy(t => t.TenantId),
+            _ => query.OrderByDescending(t => t.CreatedAt).ThenBy(t => t.TenantId)
+        };
+    }
 }

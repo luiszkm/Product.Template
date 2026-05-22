@@ -16,7 +16,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Actor = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     EntityType = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     EntityId = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
@@ -35,7 +35,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -58,7 +58,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     Token = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -87,7 +87,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     Description = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -110,7 +110,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     PasswordHash = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
                     FirstName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
@@ -139,7 +139,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoleId = table.Column<Guid>(type: "uuid", nullable: false),
                     PermissionId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -175,7 +175,7 @@ namespace Kernel.Infrastructure.Migrations.AppDb
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    TenantId = table.Column<long>(type: "bigint", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     UserId = table.Column<Guid>(type: "uuid", nullable: false),
                     RoleId = table.Column<Guid>(type: "uuid", nullable: false),
                     AssignedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),

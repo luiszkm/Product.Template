@@ -28,7 +28,7 @@ public sealed class TenantsHandlerTestFixture : IDisposable
         var tenant = new TenantBuilder()
             .WithTenantKey(key ?? $"tenant-{Guid.NewGuid():N}")
             .Build();
-        await HostDbContext.Set<Tenant>().AddAsync(tenant);
+        await TenantRepository().AddAsync(tenant);
         await HostDbContext.SaveChangesAsync();
         HostDbContext.ChangeTracker.Clear();
         return tenant;
@@ -36,8 +36,10 @@ public sealed class TenantsHandlerTestFixture : IDisposable
 
     public async Task<List<Tenant>> SeedManyTenantsAsync(int count = 5)
     {
+        var repo = TenantRepository();
         var tenants = new TenantBuilder().BuildMany(count);
-        await HostDbContext.Set<Tenant>().AddRangeAsync(tenants);
+        foreach (var tenant in tenants)
+            await repo.AddAsync(tenant);
         await HostDbContext.SaveChangesAsync();
         HostDbContext.ChangeTracker.Clear();
         return tenants;

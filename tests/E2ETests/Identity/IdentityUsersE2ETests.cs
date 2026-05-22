@@ -99,7 +99,7 @@ public class IdentityUsersE2ETests
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
         tenantContext.SetTenant(new TenantConfig
         {
-            TenantId = 1,
+            TenantId = WellKnownTenants.Public,
             TenantKey = "public",
             IsolationMode = TenantIsolationMode.SharedDb,
             IsActive = true
@@ -111,7 +111,7 @@ public class IdentityUsersE2ETests
             if (await db.Users.AnyAsync(u => u.Email.Value == email))
                 continue;
 
-            var user = User.Create(1L, email, "hashed:test", firstName, lastName);
+            var user = User.Create(WellKnownTenants.Public, email, "hashed:test", firstName, lastName);
             db.Users.Add(user);
         }
 

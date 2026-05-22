@@ -98,7 +98,7 @@ public class AuthorizationRolesE2ETests
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
         tenantContext.SetTenant(new TenantConfig
         {
-            TenantId = 1,
+            TenantId = WellKnownTenants.Public,
             TenantKey = "public",
             IsolationMode = TenantIsolationMode.SharedDb,
             IsActive = true
@@ -110,7 +110,7 @@ public class AuthorizationRolesE2ETests
             if (await db.Set<Role>().AnyAsync(r => r.Name == name))
                 continue;
 
-            db.Set<Role>().Add(Role.Create(1L, name, description));
+            db.Set<Role>().Add(Role.Create(WellKnownTenants.Public, name, description));
             await db.SaveChangesAsync();
         }
     }

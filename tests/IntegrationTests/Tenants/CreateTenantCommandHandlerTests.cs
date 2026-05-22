@@ -19,30 +19,31 @@ public class CreateTenantCommandHandlerTests : IDisposable
     [Fact]
     public async Task Handle_ShouldCreateTenant_WhenKeyIsUnique()
     {
-        var command = new CreateTenantCommand(10, "acme", "Acme Corp", "admin@acme.com", TenantIsolationMode.SharedDb);
+        var command = new CreateTenantCommand("acme", "Acme Corp", "admin@acme.com", TenantIsolationMode.SharedDb);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 
         Assert.Equal("acme", result.TenantKey);
         Assert.Equal("Acme Corp", result.DisplayName);
+        Assert.NotEqual(Guid.Empty, result.TenantId);
     }
 
     [Fact]
     public async Task Handle_ShouldThrowBusinessRuleException_WhenKeyAlreadyExists()
     {
-        var command = new CreateTenantCommand(20, "duplicate", "Dup", null, TenantIsolationMode.SharedDb);
+        var command = new CreateTenantCommand("duplicate", "Dup", null, TenantIsolationMode.SharedDb);
         await CreateHandler().Handle(command, CancellationToken.None);
 
         await Assert.ThrowsAsync<BusinessRuleException>(() =>
             CreateHandler().Handle(
-                new CreateTenantCommand(21, "duplicate", "Dup2", null, TenantIsolationMode.SharedDb),
+                new CreateTenantCommand("duplicate", "Dup2", null, TenantIsolationMode.SharedDb),
                 CancellationToken.None));
     }
 
     [Fact]
     public async Task Handle_ShouldPersistTenant_WhenCreationSucceeds()
     {
-        var command = new CreateTenantCommand(30, "persist-corp", "Persist Corp", null, TenantIsolationMode.SharedDb);
+        var command = new CreateTenantCommand("persist-corp", "Persist Corp", null, TenantIsolationMode.SharedDb);
 
         var result = await CreateHandler().Handle(command, CancellationToken.None);
 

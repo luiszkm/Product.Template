@@ -7,7 +7,7 @@
 | `Entity` | Has `Id (Guid)`, `LogicalId (long)`, full audit fields (`CreatedAt/By`, `UpdatedAt/By`, `DeletedAt/By`, `RestoredAt/By`), `SoftDelete()`, `Restore()`. |
 | `AggregateRoot : Entity` | Root of an aggregate. Owns a `DomainEvents` collection. Only aggregate roots have repositories. |
 | `IAuditableEntity` | Marker interface — audit fields are populated automatically by `AuditableEntityInterceptor`. |
-| `IMultiTenantEntity` | Requires `TenantId (long)`. All module entities must implement this. |
+| `IMultiTenantEntity` | Requires `TenantId (Guid)`. All module entities must implement this. See `docs/guides/tenant-identifiers.md`. |
 | `IDomainEvent` | Marker for domain events raised inside aggregates. |
 
 ## Modeling Rules

@@ -55,11 +55,11 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 
 | Método | Rota | Acesso | Policy | Permissão canônica | Observação |
 |---|---|---|---|---|---|
-| GET | `/api/v1/tenants` | Protegido | `TenantsRead` | `tenants.read` | |
-| GET | `/api/v1/tenants/{id}` | Protegido | `TenantsRead` | `tenants.read` | |
-| POST | `/api/v1/tenants` | Protegido | `TenantsManage` | `tenants.manage` | Provisiona tenant |
-| PUT | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | |
-| DELETE | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | Soft-deactivate |
+| GET | `/api/v1/tenants` | Protegido | `TenantsRead` | `tenants.read` | Lista paginada; `searchTerm`, `sortBy` |
+| GET | `/api/v1/tenants/{id}` | Protegido | `TenantsRead` | `tenants.read` | `id` = Guid |
+| POST | `/api/v1/tenants` | Protegido | `TenantsManage` | `tenants.manage` | `tenantId` gerado no servidor |
+| PUT | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | `id` = Guid |
+| DELETE | `/api/v1/tenants/{id}` | Protegido | `TenantsManage` | `tenants.manage` | Desativa tenant; `id` = Guid |
 
 ## API v1 - AiController
 

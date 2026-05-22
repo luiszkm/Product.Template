@@ -49,8 +49,8 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
 
     public async Task<AuthTokenOutput> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
         {
             _logger.LogWarning("Tentativa de login sem tenant resolvido");
             throw new BusinessRuleException("Tenant must be resolved before login.");
