@@ -38,7 +38,7 @@ public static class SecurityConfiguration
         IConfiguration configuration,
         IHostEnvironment env)
     {
-        services.AddCorsFromConfiguration(configuration);
+        services.AddCorsFromConfiguration(configuration, env);
 
         services.AddAuthorization();
 
@@ -135,7 +135,10 @@ public static class SecurityConfiguration
 
     // ===================== Helpers =====================
 
-    private static IServiceCollection AddCorsFromConfiguration(this IServiceCollection services, IConfiguration configuration)
+    private static IServiceCollection AddCorsFromConfiguration(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IHostEnvironment env)
     {
         services.AddCors(options =>
         {
@@ -143,12 +146,28 @@ public static class SecurityConfiguration
             var allowedMethods = configuration.GetSection("Cors:AllowedMethods").Get<string[]>() ?? ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"];
             var allowedHeaders = configuration.GetSection("Cors:AllowedHeaders").Get<string[]>() ?? ["*"];
 
+            if (allowedOrigins.Length == 0)
+            {
+                var envOrigins = configuration["Cors:AllowedOriginsEnv"];
+                if (!string.IsNullOrWhiteSpace(envOrigins))
+                {
+                    allowedOrigins = envOrigins
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                }
+            }
+
             options.AddPolicy(DefaultCorsPolicyName, builder =>
             {
-                // Origins
                 if (allowedOrigins.Contains("*"))
                 {
                     builder.AllowAnyOrigin();
+                }
+                else if (allowedOrigins.Length == 0)
+                {
+                    if (env.IsDevelopment())
+                        builder.AllowAnyOrigin();
+                    else
+                        builder.SetIsOriginAllowed(_ => false);
                 }
                 else
                 {
