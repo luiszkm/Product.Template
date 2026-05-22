@@ -7,7 +7,8 @@ Base route: `/api/v1/ai`
 ## POST `/api/v1/ai/chat`
 
 - Policy: `Authenticated`
-- Status: `200`, `400`, `401`
+- Feature flag: `FeatureFlags:EnableAI` (desligado → `404`)
+- Status: `200`, `400`, `401`, `404`
 
 ### Request body (`ChatCommand`)
 

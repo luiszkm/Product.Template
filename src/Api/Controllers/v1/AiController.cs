@@ -2,6 +2,7 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Product.Template.Api.Attributes;
 using Product.Template.Api.Configurations;
 using Product.Template.Core.Ai.Application.Handlers;
 
@@ -12,6 +13,7 @@ namespace Product.Template.Api.Controllers.v1;
 [Route("api/v{version:apiVersion}/[controller]")]
 [Produces("application/json")]
 [Tags("AI")]
+[FeatureGate(FeatureFlags.EnableAI)]
 public class AiController : ControllerBase
 {
     private readonly IMediator _mediator;
