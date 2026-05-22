@@ -1576,7 +1576,9 @@
           "FluentValidation": "[12.1.1, )",
           "Identity.Domain": "[1.0.0, )",
           "Kernel.Application": "[1.0.0, )",
-          "MediatR": "[14.0.0, )"
+          "MediatR": "[14.0.0, )",
+          "Microsoft.Extensions.Configuration.Abstractions": "[10.0.0, )",
+          "Microsoft.Extensions.Configuration.Binder": "[10.0.0, )"
         }
       },
       "identity.domain": {
