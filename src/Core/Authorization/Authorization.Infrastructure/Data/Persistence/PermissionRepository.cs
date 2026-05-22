@@ -42,6 +42,17 @@ public class PermissionRepository : IPermissionRepository
     public async Task<PaginatedListOutput<Permission>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
     {
         var query = _context.Set<Permission>().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(listInput.SearchTerm))
+        {
+            var term = listInput.SearchTerm.Trim();
+            query = query.Where(p =>
+                p.Name.Contains(term) ||
+                p.Description.Contains(term));
+        }
+
+        query = ApplySort(query, listInput.SortBy, listInput.SortDirection);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var permissions = await query
@@ -54,5 +65,27 @@ public class PermissionRepository : IPermissionRepository
             PageSize: listInput.PageSize,
             TotalCount: totalCount,
             Data: permissions);
+    }
+
+    private static IQueryable<Permission> ApplySort(IQueryable<Permission> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+            return query.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id);
+
+        var descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.Trim().ToLowerInvariant() switch
+        {
+            "name" => descending
+                ? query.OrderByDescending(p => p.Name).ThenBy(p => p.Id)
+                : query.OrderBy(p => p.Name).ThenBy(p => p.Id),
+            "description" => descending
+                ? query.OrderByDescending(p => p.Description).ThenBy(p => p.Id)
+                : query.OrderBy(p => p.Description).ThenBy(p => p.Id),
+            "createdat" => descending
+                ? query.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id)
+                : query.OrderBy(p => p.CreatedAt).ThenBy(p => p.Id),
+            _ => query.OrderByDescending(p => p.CreatedAt).ThenBy(p => p.Id)
+        };
     }
 }

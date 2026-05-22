@@ -81,6 +81,31 @@ public sealed class AuthorizationHandlerTestFixture : IDisposable
         return permission;
     }
 
+    public async Task<Role> SeedRoleAsync(Role role)
+    {
+        await DbContext.Set<Role>().AddAsync(role);
+        await DbContext.SaveChangesAsync();
+        DbContext.ChangeTracker.Clear();
+        return role;
+    }
+
+    public async Task<Permission> SeedPermissionAsync(Permission permission)
+    {
+        await DbContext.Set<Permission>().AddAsync(permission);
+        await DbContext.SaveChangesAsync();
+        DbContext.ChangeTracker.Clear();
+        return permission;
+    }
+
+    public async Task<List<Permission>> SeedManyPermissionsAsync(int count = 5)
+    {
+        var permissions = new PermissionBuilder().BuildMany(count);
+        await DbContext.Set<Permission>().AddRangeAsync(permissions);
+        await DbContext.SaveChangesAsync();
+        DbContext.ChangeTracker.Clear();
+        return permissions;
+    }
+
     public void Dispose() => DbContext.Dispose();
 }
 

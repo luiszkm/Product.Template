@@ -5,4 +5,4 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Authorization.Application.Queries.Role;
 
-public record ListRolesQuery(int PageNumber = 1, int PageSize = 10) : ListInput(PageNumber, PageSize), IQuery<PaginatedListOutput<RoleOutput>>;
+public record ListRolesQuery() : ListInput, IQuery<PaginatedListOutput<RoleOutput>>;
