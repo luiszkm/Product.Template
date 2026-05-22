@@ -56,12 +56,6 @@ public static class HealthCheckConfiguration
                     : HealthCheckResult.Degraded($"Disk: {freeSpaceGB:F2} GB free ({freePercent:F1}%) — low");
             }, tags: ["system"]);
 
-        // Health Checks UI (only useful in development — disable in production via env)
-        // TODO: re-enable when Xabaril releases an AspNetCore.HealthChecks.UI version
-        //       compatible with .NET 10 (currently blocked by IdentityModel 5.2.0 dep).
-        //       Track: https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks
-        // services.AddHealthChecksUI(...).AddInMemoryStorage();
-
         return services;
     }
 
@@ -108,10 +102,6 @@ public static class HealthCheckConfiguration
 
         if (!isDev)
             fullHealthEndpoint.RequireAuthorization(SecurityConfiguration.AdminOnlyPolicy);
-
-        // /healthchecks-ui — disabled: AspNetCore.HealthChecks.UI 9.0.0 requires IdentityModel 5.2.0
-        // which is incompatible with .NET 10. Re-enable when a compatible version is released.
-        // if (isDev) { app.MapHealthChecksUI(options => { options.UIPath = "/healthchecks-ui"; ... }); }
 
         return app;
     }

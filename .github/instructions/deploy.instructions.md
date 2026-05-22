@@ -128,6 +128,10 @@ src/Api/
 | `DOTNET_RUNNING_IN_CONTAINER` | `true` | Habilita otimizações de container |
 | `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT` | `false` | Suporte a locale/datas |
 | `DOTNET_GC_HEAP_HARD_LIMIT_PERCENT` | `75` | Evita OOM com memory limits |
+| `Monitoring__ApiKey` | — | Obrigatório em produção (`Monitoring:RequireApiKey`) |
+| `Cors__AllowedOriginsEnv` | — | Origens CORS (vírgula) quando `AllowedOrigins` vazio |
+
+Guia completo: `docs/guides/deploy-guide.md` (CORS, dedup, monitoring, feature flags).
 
 ---
 
@@ -147,7 +151,10 @@ src/Api/
 |----------|-----------|-----------|
 | `/health/live` | Liveness — processo vivo | Docker HEALTHCHECK, K8s livenessProbe |
 | `/health/ready` | Readiness — dependências prontas | K8s readinessProbe, load balancer |
-| `/healthchecks-ui` | Dashboard visual | Monitoramento interno |
+| `/health` | Detalhe completo (Admin fora de dev) | Troubleshooting |
+| `/metrics` | Prometheus (API key em produção) | Scraping |
+
+Health Checks UI (`/healthchecks-ui`): **desligado** — ver `HealthChecksUiSupport` e `docs/guides/deploy-guide.md`.
 
 ---
 

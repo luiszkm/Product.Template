@@ -9,8 +9,13 @@ public static class ControllersConfigurations
 {
     public static IServiceCollection AddControllersConfigurations(this IServiceCollection services, IHostEnvironment env)
     {
+        services.AddScoped<Product.Template.Api.Filters.FeatureGateActionFilter>();
+
         services.AddControllers(options =>
-            options.Filters.Add(typeof(Product.Template.Api.GlobalFilter.Exceptions.ApiGlobalExceptionFilter)));
+        {
+            options.Filters.Add(typeof(Product.Template.Api.GlobalFilter.Exceptions.ApiGlobalExceptionFilter));
+            options.Filters.Add<Product.Template.Api.Filters.FeatureGateActionFilter>();
+        });
 
         services.AddOpenApiDocumentation(env);
 
