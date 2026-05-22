@@ -1,22 +1,21 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Product.Template.Api.Middleware;
 
-/// <summary>
-/// Middleware para prevenir requisições duplicadas (idempotência)
-/// </summary>
 public class RequestDeduplicationMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IMemoryCache _cache;
+    private readonly IDistributedCache _cache;
     private readonly ILogger<RequestDeduplicationMiddleware> _logger;
-    private static readonly TimeSpan _deduplicationWindow = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan DeduplicationWindow = TimeSpan.FromSeconds(1);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public RequestDeduplicationMiddleware(
         RequestDelegate next,
-        IMemoryCache cache,
+        IDistributedCache cache,
         ILogger<RequestDeduplicationMiddleware> logger)
     {
         _next = next;
@@ -33,61 +32,32 @@ public class RequestDeduplicationMiddleware
         }
 
         var idempotencyKey = context.Request.Headers["X-Idempotency-Key"].FirstOrDefault();
-
         if (string.IsNullOrEmpty(idempotencyKey))
-        {
             idempotencyKey = await GenerateRequestHashAsync(context);
-        }
 
         var cacheKey = $"dedup:{idempotencyKey}";
         var inFlightKey = $"dedup:processing:{idempotencyKey}";
-        var cacheOptions = new MemoryCacheEntryOptions
+        var cacheOptions = new DistributedCacheEntryOptions
         {
-            AbsoluteExpirationRelativeToNow = _deduplicationWindow
+            AbsoluteExpirationRelativeToNow = DeduplicationWindow
         };
 
-        if (_cache.TryGetValue(cacheKey, out DeduplicationEntry? existingEntry))
+        var existingPayload = await _cache.GetStringAsync(cacheKey, context.RequestAborted);
+        if (existingPayload is not null)
         {
-            _logger.LogWarning(
-                "Requisição duplicada detectada. Idempotency-Key: {IdempotencyKey}, Path: {Path}",
-                idempotencyKey,
-                context.Request.Path);
-
-            context.Response.StatusCode = StatusCodes.Status409Conflict;
-            context.Response.Headers["X-Duplicate-Request"] = "true";
-
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Duplicate request detected",
-                message = "Esta requisição já foi processada recentemente. Por favor, aguarde antes de tentar novamente.",
-                idempotencyKey,
-                originalRequestTime = existingEntry?.Timestamp
-            });
-
+            var existingEntry = JsonSerializer.Deserialize<DeduplicationEntry>(existingPayload, JsonOptions);
+            await WriteDuplicateResponseAsync(context, idempotencyKey, existingEntry?.Timestamp);
             return;
         }
 
-        if (_cache.TryGetValue(inFlightKey, out _))
+        var inFlight = await _cache.GetStringAsync(inFlightKey, context.RequestAborted);
+        if (inFlight is not null)
         {
-            _logger.LogWarning(
-                "Requisição duplicada em processamento. Idempotency-Key: {IdempotencyKey}, Path: {Path}",
-                idempotencyKey,
-                context.Request.Path);
-
-            context.Response.StatusCode = StatusCodes.Status409Conflict;
-            context.Response.Headers["X-Duplicate-Request"] = "true";
-
-            await context.Response.WriteAsJsonAsync(new
-            {
-                error = "Duplicate request detected",
-                message = "Esta requisição já está a ser processada. Por favor, aguarde antes de tentar novamente.",
-                idempotencyKey
-            });
-
+            await WriteDuplicateResponseAsync(context, idempotencyKey, null, processing: true);
             return;
         }
 
-        _cache.Set(inFlightKey, true, cacheOptions);
+        await _cache.SetStringAsync(inFlightKey, "1", cacheOptions, context.RequestAborted);
 
         try
         {
@@ -101,30 +71,54 @@ public class RequestDeduplicationMiddleware
                     IdempotencyKey = idempotencyKey,
                     Timestamp = DateTime.UtcNow,
                     Method = context.Request.Method,
-                    Path = context.Request.Path
+                    Path = context.Request.Path.Value ?? string.Empty
                 };
 
-                _cache.Set(cacheKey, entry, cacheOptions);
+                await _cache.SetStringAsync(
+                    cacheKey,
+                    JsonSerializer.Serialize(entry, JsonOptions),
+                    cacheOptions,
+                    context.RequestAborted);
 
-                _logger.LogDebug(
-                    "Requisição registrada para deduplicação. Key: {IdempotencyKey}",
-                    idempotencyKey);
+                _logger.LogDebug("Requisição registrada para deduplicação. Key: {IdempotencyKey}", idempotencyKey);
             }
         }
         finally
         {
-            _cache.Remove(inFlightKey);
+            await _cache.RemoveAsync(inFlightKey, context.RequestAborted);
         }
     }
 
-    private static bool ShouldCheckDuplication(string method)
+    private async Task WriteDuplicateResponseAsync(
+        HttpContext context,
+        string idempotencyKey,
+        DateTime? originalRequestTime,
+        bool processing = false)
     {
-        return method == HttpMethods.Post ||
-               method == HttpMethods.Put ||
-               method == HttpMethods.Patch;
+        _logger.LogWarning(
+            "Requisição duplicada detectada. Idempotency-Key: {IdempotencyKey}, Path: {Path}, Processing: {Processing}",
+            idempotencyKey,
+            context.Request.Path,
+            processing);
+
+        context.Response.StatusCode = StatusCodes.Status409Conflict;
+        context.Response.Headers["X-Duplicate-Request"] = "true";
+
+        await context.Response.WriteAsJsonAsync(new
+        {
+            error = "Duplicate request detected",
+            message = processing
+                ? "Esta requisição já está a ser processada. Por favor, aguarde antes de tentar novamente."
+                : "Esta requisição já foi processada recentemente. Por favor, aguarde antes de tentar novamente.",
+            idempotencyKey,
+            originalRequestTime
+        });
     }
 
-    private async Task<string> GenerateRequestHashAsync(HttpContext context)
+    private static bool ShouldCheckDuplication(string method) =>
+        method is HttpMethods.Post or HttpMethods.Put or HttpMethods.Patch;
+
+    private static async Task<string> GenerateRequestHashAsync(HttpContext context)
     {
         var sb = new StringBuilder();
         sb.Append(context.Request.Method);
@@ -136,23 +130,21 @@ public class RequestDeduplicationMiddleware
             context.Request.EnableBuffering();
             using var reader = new StreamReader(
                 context.Request.Body,
-                encoding: Encoding.UTF8,
+                Encoding.UTF8,
                 detectEncodingFromByteOrderMarks: false,
                 bufferSize: 1024,
                 leaveOpen: true);
 
             var body = await reader.ReadToEndAsync();
             sb.Append(body);
-
             context.Request.Body.Position = 0;
         }
 
-        using var sha256 = SHA256.Create();
-        var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
+        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(sb.ToString()));
         return Convert.ToBase64String(hashBytes);
     }
 
-    private class DeduplicationEntry
+    private sealed class DeduplicationEntry
     {
         public string IdempotencyKey { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }

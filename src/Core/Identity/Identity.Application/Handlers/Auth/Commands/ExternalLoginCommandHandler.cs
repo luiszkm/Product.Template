@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Kernel.Application.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Product.Template.Core.Identity.Application.Handlers.Auth.Commands;
 using Product.Template.Core.Identity.Domain.Repositories;
@@ -23,6 +24,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly IUserRolesProvider _userRolesProvider;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<ExternalLoginCommandHandler> _logger;
 
     public ExternalLoginCommandHandler(
@@ -33,6 +35,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
         IUserRolesProvider userRolesProvider,
+        IConfiguration configuration,
         ILogger<ExternalLoginCommandHandler> logger)
     {
         _providerFactory = providerFactory;
@@ -42,6 +45,7 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _userRolesProvider = userRolesProvider;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -88,6 +92,12 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
 
         if (user is null)
         {
+            if (!_configuration.GetValue("Identity:AllowExternalLoginAutoProvision", true))
+            {
+                _logger.LogWarning("External login auto-provision disabled for email: {Email}", email);
+                throw new BusinessRuleException("User account does not exist. Contact an administrator.");
+            }
+
             var firstName = authResult.UserInfo.GetValueOrDefault("firstName", "");
             var lastName = authResult.UserInfo.GetValueOrDefault("lastName", "");
 
@@ -98,13 +108,27 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
                 firstName: string.IsNullOrEmpty(firstName) ? email.Split('@')[0] : firstName,
                 lastName: string.IsNullOrEmpty(lastName) ? "External" : lastName);
 
-            user.ConfirmEmail();
+            if (_configuration.GetValue("Identity:ConfirmEmailOnExternalProvision", false))
+                user.ConfirmEmail();
+
             await _userRepository.AddAsync(user, cancellationToken);
             await _unitOfWork.Commit(cancellationToken);
 
             _logger.LogInformation(
                 "Novo usuário criado via autenticação externa: {Email}, Provider: {Provider}",
                 email, request.Provider);
+        }
+
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("External login failed for inactive user: {Email}", email);
+            throw new UnauthorizedAccessException("Autenticação externa falhou");
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            _logger.LogWarning("External login failed for unconfirmed email: {Email}", email);
+            throw new BusinessRuleException("Email address must be confirmed before login.");
         }
 
         user.UpdateLastLogin();
