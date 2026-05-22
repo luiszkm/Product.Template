@@ -8,10 +8,11 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
 
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
     <!-- CA1707: Test method names use {Method}_{Scenario}_{Result} convention with underscores -->
-    <NoWarn>$(NoWarn);CA1707</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;NU1605</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +23,7 @@
     </PackageReference>
     <PackageReference Include="MediatR" Version="14.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
       <PrivateAssets>all</PrivateAssets>
@@ -42,8 +44,11 @@
     <ProjectReference Include="..\CommonTests\CommonTests.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Infrastructure\Kernel.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Shared\Kernel.Domain\Kernel.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Api\Api.csproj" />
+    <ProjectReference Include="..\..\src\Core\Authorization\Authorization.Application\Authorization.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Application\Identity.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Identity\Identity.Domain\Identity.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Ai\Ai.Application\Ai.Application.csproj" />
   </ItemGroup>
 

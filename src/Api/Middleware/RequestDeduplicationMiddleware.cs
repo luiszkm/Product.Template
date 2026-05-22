@@ -116,7 +116,7 @@ public class RequestDeduplicationMiddleware
     }
 
     private static bool ShouldCheckDuplication(string method) =>
-        method is HttpMethods.Post or HttpMethods.Put or HttpMethods.Patch;
+        method is "POST" or "PUT" or "PATCH";
 
     private static async Task<string> GenerateRequestHashAsync(HttpContext context)
     {
