@@ -77,13 +77,13 @@ Base: implementação completa em main + suíte de testes verde (63 testes)
 ### 2.8 CI/CD e Docker
 - Dockerfile multi-stage em `src/Api/Dockerfile`.
 - Workflows em `.github/workflows/`.
-- Docker Compose com SQL Server + Seq + API.
+- Docker Compose com PostgreSQL + Seq + API + stack de observabilidade.
 - **Pendente**: auditar workflows para `--locked-mode`, `timeout-minutes`, Trivy scan, proibição de tag `latest`.
 
 ## 3) Lacunas pendentes (baixa prioridade)
 
 ### 3.1 Escalabilidade
-- ⚠️ **Idempotency**: `RequestDeduplicationMiddleware` usa `IMemoryCache` — não funciona em múltiplas réplicas K8s. Substituir por `IDistributedCache` (Redis ou SQL Server) antes de produção em cluster.
+- ✅ **Idempotency**: `RequestDeduplicationMiddleware` usa `IDistributedCache` (Redis quando `Redis:ConnectionString` está configurado; caso contrário memória local).
 - ⚠️ **Rate limit por tenant**: implementação atual é apenas por IP. Adicionar policy `fixed-by-tenant` usando `ITenantContext` como partition key.
 
 ### 3.2 CI/CD

@@ -16,12 +16,6 @@ public static class AiConfiguration
             return services;
         }
 
-        var redis = configuration["Redis:ConnectionString"];
-        if (!string.IsNullOrEmpty(redis))
-            services.AddStackExchangeRedisCache(o => o.Configuration = redis);
-        else
-            services.AddDistributedMemoryCache();
-
         services.AddAiServices(configuration);
         return services;
     }

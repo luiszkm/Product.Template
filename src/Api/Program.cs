@@ -10,6 +10,8 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", false);
 var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
 
+JwtStartupValidation.ValidateJwtConfiguration(builder.Configuration, builder.Environment);
+
 // Core Application Services (CQRS, Behaviors, Handlers)
 builder.Services.AddApplicationCore(builder.Configuration);
 
@@ -33,6 +35,8 @@ builder.Services.AddCompressionConfiguration();
 
 // Output Caching
 builder.Services.AddCachingConfiguration(builder.Configuration);
+
+builder.Services.AddDistributedCacheConfiguration(builder.Configuration);
 
 // Feature Flags
 builder.Services.AddFeatureFlagsConfiguration(builder.Configuration);

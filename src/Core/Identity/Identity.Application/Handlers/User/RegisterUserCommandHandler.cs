@@ -1,4 +1,5 @@
 using Kernel.Application.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Product.Template.Core.Identity.Application.Handlers.User.Commands;
 using Product.Template.Core.Identity.Application.Mappers;
@@ -17,6 +18,7 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
     private readonly IHashServices _hashServices;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<RegisterUserCommandHandler> _logger;
 
     public RegisterUserCommandHandler(
@@ -24,17 +26,24 @@ public class RegisterUserCommandHandler : ICommandHandler<RegisterUserCommand, U
         IHashServices hashServices,
         IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
+        IConfiguration configuration,
         ILogger<RegisterUserCommandHandler> logger)
     {
         _userRepository = userRepository;
         _hashServices = hashServices;
         _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
+        _configuration = configuration;
         _logger = logger;
     }
 
     public async Task<UserOutput> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        if (!_configuration.GetValue("Identity:AllowPublicRegistration", true))
+        {
+            _logger.LogWarning("Public registration attempt rejected by configuration");
+            throw new BusinessRuleException("Public registration is disabled.");
+        }
 
         var userExisits = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (userExisits is not null)
