@@ -33,6 +33,6 @@ public class DeactivateTenantCommandHandler : ICommandHandler<DeactivateTenantCo
         await _tenantRepository.UpdateAsync(tenant, cancellationToken);
         await _unitOfWork.Commit(cancellationToken, tenant);
 
-        _logger.LogInformation("Tenant {TenantId} deactivated", tenant.TenantId);
+        _logger.LogInformation("Tenant {TenantId} deactivated", tenant.Id);
     }
 }

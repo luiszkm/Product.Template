@@ -6,7 +6,7 @@ namespace Product.Template.Kernel.Domain.Audit;
 public sealed class AuditLog : IMultiTenantEntity
 {
     public Guid Id { get; private set; }
-    public long TenantId { get; private set; }
+    public Guid TenantId { get; private set; }
     public string Actor { get; private set; } = string.Empty;
     public string EntityType { get; private set; } = string.Empty;
     public string? EntityId { get; private set; }
@@ -19,7 +19,7 @@ public sealed class AuditLog : IMultiTenantEntity
     private AuditLog() { }
 
     public static AuditLog Record(
-        long tenantId,
+        Guid tenantId,
         string actor,
         string entityType,
         string? entityId,
@@ -44,15 +44,14 @@ public sealed class AuditLog : IMultiTenantEntity
         return log;
     }
 
-    private void SetTenant(long tenantId)
+    private void SetTenant(Guid tenantId)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
-        if (TenantId != 0 && TenantId != tenantId)
+        if (TenantId != Guid.Empty && TenantId != tenantId)
             throw new DomainException("TenantId cannot be changed once set.");
         TenantId = tenantId;
     }
 
-    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
+    void IMultiTenantEntity.AssignTenant(Guid tenantId) => SetTenant(tenantId);
 }
-

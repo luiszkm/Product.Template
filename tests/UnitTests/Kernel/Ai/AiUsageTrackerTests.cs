@@ -1,6 +1,7 @@
 using Kernel.Infrastructure.Ai;
 using Microsoft.Extensions.Logging.Abstractions;
 using Product.Template.Kernel.Application.Ai;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace UnitTests.Kernel.Ai;
 
@@ -17,7 +18,7 @@ public class AiUsageTrackerTests
             Model: "gpt-4o-mini",
             Module: "identity",
             Operation: "SummarizeUserCommandHandler",
-            TenantId: 1,
+            TenantId: WellKnownTenants.Public,
             TokensUsed: 150,
             Latency: TimeSpan.FromMilliseconds(320),
             Success: true);
@@ -38,7 +39,7 @@ public class AiUsageTrackerTests
             Model: "prebuilt-read",
             Module: "documents",
             Operation: "ExtractDocumentCommandHandler",
-            TenantId: 2,
+            TenantId: Guid.Parse("22222222-2222-2222-2222-222222222222"),
             TokensUsed: null,
             Latency: TimeSpan.FromMilliseconds(5000),
             Success: false,
@@ -60,7 +61,7 @@ public class AiUsageTrackerTests
             Model: "neural",
             Module: "notifications",
             Operation: "SynthesizeAudioCommandHandler",
-            TenantId: 1,
+            TenantId: WellKnownTenants.Public,
             TokensUsed: null,
             Latency: TimeSpan.FromMilliseconds(800),
             Success: true);

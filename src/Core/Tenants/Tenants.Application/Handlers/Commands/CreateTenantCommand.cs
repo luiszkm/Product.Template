@@ -5,7 +5,6 @@ using Product.Template.Kernel.Domain.MultiTenancy;
 namespace Product.Template.Core.Tenants.Application.Handlers.Commands;
 
 public record CreateTenantCommand(
-    long TenantId,
     string TenantKey,
     string DisplayName,
     string? ContactEmail,

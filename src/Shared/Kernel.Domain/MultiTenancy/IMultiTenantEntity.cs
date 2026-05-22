@@ -2,6 +2,6 @@ namespace Product.Template.Kernel.Domain.MultiTenancy;
 
 public interface IMultiTenantEntity
 {
-    long TenantId { get; }
-    void AssignTenant(long tenantId);
+    Guid TenantId { get; }
+    void AssignTenant(Guid tenantId);
 }

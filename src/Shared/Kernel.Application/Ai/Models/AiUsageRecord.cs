@@ -6,7 +6,7 @@ public sealed record AiUsageRecord(
     string Model,
     string Module,
     string Operation,
-    long TenantId,
+    Guid TenantId,
     int? TokensUsed,
     TimeSpan Latency,
     bool Success,

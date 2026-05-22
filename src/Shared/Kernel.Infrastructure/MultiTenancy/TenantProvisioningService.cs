@@ -15,13 +15,9 @@ public class TenantProvisioningService(
     public async Task<TenantConfig> CreateTenantAsync(string tenantKey, TenantIsolationMode isolationMode, CancellationToken cancellationToken = default)
     {
         var normalized = tenantKey.Trim().ToLowerInvariant();
-        var nextId = await hostDbContext.Tenants.AnyAsync(cancellationToken)
-            ? await hostDbContext.Tenants.MaxAsync(x => x.TenantId, cancellationToken) + 1
-            : 1;
-
         var tenant = new TenantConfig
         {
-            TenantId = nextId,
+            TenantId = Guid.NewGuid(),
             TenantKey = normalized,
             IsolationMode = isolationMode,
             SchemaName = isolationMode == TenantIsolationMode.SchemaPerTenant ? $"tenant_{normalized}" : null,

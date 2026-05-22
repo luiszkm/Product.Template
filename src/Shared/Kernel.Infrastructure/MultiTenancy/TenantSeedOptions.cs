@@ -9,7 +9,7 @@ public class TenantSeedOptions : System.Collections.Generic.List<TenantSeedDefin
 
 public class TenantSeedDefinition
 {
-    public long? TenantId { get; set; }
+    public Guid? TenantId { get; set; }
     public string TenantKey { get; set; } = string.Empty;
     public TenantIsolationMode IsolationMode { get; set; } = TenantIsolationMode.SharedDb;
     public bool IsActive { get; set; } = true;

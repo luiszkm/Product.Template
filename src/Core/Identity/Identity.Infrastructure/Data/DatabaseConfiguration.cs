@@ -86,7 +86,7 @@ public static class DatabaseConfiguration
         {
             tenantSeeds.Add(new TenantSeedDefinition
             {
-                TenantId = 1,
+                TenantId = WellKnownTenants.Public,
                 TenantKey = "public",
                 IsolationMode = TenantIsolationMode.SharedDb,
                 IsActive = true
@@ -120,7 +120,6 @@ public static class DatabaseConfiguration
     private static async Task EnsureTenantsAsync(HostDbContext hostDbContext, IEnumerable<TenantSeedDefinition> tenantSeeds)
     {
         var existingTenants = await hostDbContext.Tenants.ToListAsync();
-        var nextTenantId = existingTenants.Count > 0 ? existingTenants.Max(x => x.TenantId) + 1 : 1;
 
         foreach (var seed in tenantSeeds)
         {
@@ -132,9 +131,12 @@ public static class DatabaseConfiguration
 
             if (tenant is null)
             {
+                var tenantId = seed.TenantId
+                    ?? (normalizedKey == "public" ? WellKnownTenants.Public : Guid.NewGuid());
+
                 tenant = new TenantConfig
                 {
-                    TenantId = seed.TenantId ?? nextTenantId++,
+                    TenantId = tenantId,
                     TenantKey = normalizedKey,
                     IsolationMode = seed.IsolationMode,
                     SchemaName = seed.SchemaName,

@@ -4,7 +4,7 @@ namespace Product.Template.Kernel.Infrastructure.MultiTenancy;
 
 public class TenantContext : ITenantContext
 {
-    public long? TenantId => Tenant?.TenantId;
+    public Guid? TenantId => Tenant?.TenantId;
     public string? TenantKey => Tenant?.TenantKey;
     public TenantConfig? Tenant { get; private set; }
     public bool IsResolved => Tenant is not null;

@@ -2,7 +2,7 @@ namespace Product.Template.Kernel.Domain.MultiTenancy;
 
 public class TenantConfig
 {
-    public long TenantId { get; set; }
+    public Guid TenantId { get; set; }
     public string TenantKey { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
     public string? ContactEmail { get; set; }

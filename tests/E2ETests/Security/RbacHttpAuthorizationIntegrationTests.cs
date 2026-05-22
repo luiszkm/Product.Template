@@ -301,7 +301,7 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
         {
             hostDb.Tenants.Add(new TenantConfig
             {
-                TenantId = 1,
+                TenantId = WellKnownTenants.Public,
                 TenantKey = "public",
                 IsolationMode = TenantIsolationMode.SharedDb,
                 IsActive = true
@@ -312,7 +312,7 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
         var tenantContext = sp.GetRequiredService<ITenantContext>();
         tenantContext.SetTenant(new TenantConfig
         {
-            TenantId = 1,
+            TenantId = WellKnownTenants.Public,
             TenantKey = "public",
             IsolationMode = TenantIsolationMode.SharedDb,
             IsActive = true
@@ -323,7 +323,7 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
 
         if (!appDb.Users.IgnoreQueryFilters().Any(u => u.Id == SeededOwnerId))
         {
-            var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
+            var owner = User.Create(WellKnownTenants.Public, "owner@e2e.test", "dummyhash", "E2E", "Owner");
             typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
             appDb.Set<User>().Add(owner);
             appDb.SaveChanges();
@@ -362,7 +362,7 @@ internal sealed class TestTenantStore : ITenantStore
 {
     private static readonly TenantConfig PublicTenant = new()
     {
-        TenantId = 1,
+        TenantId = WellKnownTenants.Public,
         TenantKey = "public",
         IsolationMode = TenantIsolationMode.SharedDb,
         IsActive = true

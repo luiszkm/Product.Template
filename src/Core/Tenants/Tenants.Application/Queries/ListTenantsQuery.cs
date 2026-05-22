@@ -5,4 +5,10 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Tenants.Application.Queries;
 
-public record ListTenantsQuery(int PageNumber = 1, int PageSize = 20) : ListInput(PageNumber, PageSize), IQuery<PaginatedListOutput<TenantOutput>>;
+public record ListTenantsQuery(
+    int PageNumber = 1,
+    int PageSize = 20,
+    string? SearchTerm = null,
+    string? SortBy = null,
+    string? SortDirection = null
+) : ListInput(PageNumber, PageSize, SearchTerm, SortBy, SortDirection), IQuery<PaginatedListOutput<TenantOutput>>;

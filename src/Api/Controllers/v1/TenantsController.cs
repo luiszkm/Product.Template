@@ -36,13 +36,13 @@ public class TenantsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("{id:long}", Name = nameof(GetTenantById))]
+    [HttpGet("{id:guid}", Name = nameof(GetTenantById))]
     [Authorize(Policy = SecurityConfiguration.TenantsReadPolicy)]
     [ProducesResponseType(typeof(TenantOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TenantOutput>> GetTenantById(long id, CancellationToken cancellationToken)
+    public async Task<ActionResult<TenantOutput>> GetTenantById(Guid id, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetTenantByIdQuery(id), cancellationToken);
         return Ok(result);
@@ -60,14 +60,14 @@ public class TenantsController : ControllerBase
         return CreatedAtAction(nameof(GetTenantById), new { id = result.TenantId, version = "1.0" }, result);
     }
 
-    [HttpPut("{id:long}")]
+    [HttpPut("{id:guid}")]
     [Authorize(Policy = SecurityConfiguration.TenantsManagePolicy)]
     [ProducesResponseType(typeof(TenantOutput), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TenantOutput>> UpdateTenant(long id, [FromBody] UpdateTenantCommand command, CancellationToken cancellationToken)
+    public async Task<ActionResult<TenantOutput>> UpdateTenant(Guid id, [FromBody] UpdateTenantCommand command, CancellationToken cancellationToken)
     {
         if (id != command.TenantId)
             return BadRequest("ID in URL must match TenantId in the request body.");
@@ -76,13 +76,13 @@ public class TenantsController : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("{id:long}")]
+    [HttpDelete("{id:guid}")]
     [Authorize(Policy = SecurityConfiguration.TenantsManagePolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeactivateTenant(long id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeactivateTenant(Guid id, CancellationToken cancellationToken)
     {
         await _mediator.Send(new DeactivateTenantCommand(id), cancellationToken);
         return NoContent();

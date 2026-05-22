@@ -8,6 +8,6 @@ public sealed class DeactivateTenantCommandValidator : AbstractValidator<Deactiv
     public DeactivateTenantCommandValidator()
     {
         RuleFor(x => x.TenantId)
-            .GreaterThan(0).WithMessage("TenantId must be a positive number.");
+            .NotEqual(Guid.Empty).WithMessage("TenantId must be provided.");
     }
 }

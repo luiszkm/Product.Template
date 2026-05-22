@@ -7,7 +7,7 @@ namespace Product.Template.Core.Authorization.Domain.Entities;
 
 public class UserAssignment : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; private set; }
+    public Guid TenantId { get; private set; }
     public Guid UserId { get; private set; }
     public Guid RoleId { get; private set; }
     public DateTime AssignedAt { get; private set; }
@@ -16,7 +16,7 @@ public class UserAssignment : AggregateRoot, IMultiTenantEntity
 
     private UserAssignment() { }
 
-    private UserAssignment(Guid id, Guid userId, Guid roleId, long tenantId)
+    private UserAssignment(Guid id, Guid userId, Guid roleId, Guid tenantId)
     {
         Id = id;
         UserId = userId;
@@ -25,9 +25,9 @@ public class UserAssignment : AggregateRoot, IMultiTenantEntity
         AssignedAt = DateTime.UtcNow;
     }
 
-    public static UserAssignment Create(Guid userId, Guid roleId, long tenantId, string roleName)
+    public static UserAssignment Create(Guid userId, Guid roleId, Guid tenantId, string roleName)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
 
         if (userId == Guid.Empty)
@@ -41,14 +41,14 @@ public class UserAssignment : AggregateRoot, IMultiTenantEntity
         return assignment;
     }
 
-    private void SetTenant(long tenantId)
+    private void SetTenant(Guid tenantId)
     {
-        if (tenantId <= 0)
+        if (tenantId == Guid.Empty)
             throw new DomainException("TenantId must be provided for multi-tenant entities.");
-        if (TenantId != 0 && TenantId != tenantId)
+        if (TenantId != Guid.Empty && TenantId != tenantId)
             throw new DomainException("TenantId cannot be changed once set.");
         TenantId = tenantId;
     }
 
-    void IMultiTenantEntity.AssignTenant(long tenantId) => SetTenant(tenantId);
+    void IMultiTenantEntity.AssignTenant(Guid tenantId) => SetTenant(tenantId);
 }

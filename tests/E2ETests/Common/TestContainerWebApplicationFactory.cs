@@ -100,7 +100,7 @@ public sealed class TestContainerWebApplicationFactory : WebApplicationFactory<P
         var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
         tenantContext.SetTenant(new TenantConfig
         {
-            TenantId = 1,
+            TenantId = WellKnownTenants.Public,
             TenantKey = "public",
             IsolationMode = TenantIsolationMode.SharedDb,
             IsActive = true
@@ -109,7 +109,7 @@ public sealed class TestContainerWebApplicationFactory : WebApplicationFactory<P
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         if (!await db.Users.IgnoreQueryFilters().AnyAsync(u => u.Id == SeededOwnerId))
         {
-            var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
+            var owner = User.Create(WellKnownTenants.Public, "owner@e2e.test", "dummyhash", "E2E", "Owner");
             typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
             db.Set<User>().Add(owner);
             await db.SaveChangesAsync();
@@ -137,7 +137,7 @@ internal sealed class ContainerTestTenantStore : ITenantStore
 {
     private static readonly TenantConfig PublicTenant = new()
     {
-        TenantId = 1,
+        TenantId = WellKnownTenants.Public,
         TenantKey = "public",
         IsolationMode = TenantIsolationMode.SharedDb,
         IsActive = true

@@ -49,8 +49,8 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
         ExternalLoginCommand request,
         CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.TenantId ?? 0;
-        if (tenantId <= 0)
+        var tenantId = _tenantContext.TenantId ?? Guid.Empty;
+        if (tenantId == Guid.Empty)
         {
             _logger.LogWarning("Tentativa de external login sem tenant resolvido");
             throw new BusinessRuleException("Tenant must be resolved before external login.");

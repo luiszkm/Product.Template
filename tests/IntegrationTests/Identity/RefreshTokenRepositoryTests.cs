@@ -1,6 +1,7 @@
 using IntegrationTests.Common;
 using Product.Template.Core.Identity.Domain.Entities;
 using Product.Template.Core.Identity.Infrastructure.Data.Persistence;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace IntegrationTests.Identity;
 
@@ -12,7 +13,7 @@ public class RefreshTokenRepositoryTests : IDisposable
     public async Task TryRevokeAsync_ShouldReturnFalse_WhenTokenAlreadyRevoked()
     {
         var user = await _fixture.SeedUserAsync();
-        var token = RefreshToken.Create(1, user.Id, "raw-refresh-token", 30, "127.0.0.1");
+        var token = RefreshToken.Create(WellKnownTenants.Public, user.Id, "raw-refresh-token", 30, "127.0.0.1");
         await _fixture.DbContext.RefreshTokens.AddAsync(token);
         await _fixture.DbContext.SaveChangesAsync();
         _fixture.DbContext.ChangeTracker.Clear();

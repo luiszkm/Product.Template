@@ -35,7 +35,7 @@ public class UpdateTenantCommandHandler : ICommandHandler<UpdateTenantCommand, T
         await _tenantRepository.UpdateAsync(tenant, cancellationToken);
         await _unitOfWork.Commit(cancellationToken, tenant);
 
-        _logger.LogInformation("Tenant {TenantId} updated", tenant.TenantId);
+        _logger.LogInformation("Tenant {TenantId} updated", tenant.Id);
 
         return tenant.ToOutput();
     }

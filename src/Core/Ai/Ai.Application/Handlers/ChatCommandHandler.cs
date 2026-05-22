@@ -60,7 +60,7 @@ internal sealed class ChatCommandHandler : ICommandHandler<ChatCommand, ChatOutp
                 Model: "agent",
                 Module: "ai",
                 Operation: "chat",
-                TenantId: _tenantContext.TenantId ?? 0,
+                TenantId: _tenantContext.TenantId ?? Guid.Empty,
                 TokensUsed: result?.TotalTokens,
                 Latency: latency,
                 Success: errorCode is null,

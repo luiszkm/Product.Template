@@ -33,7 +33,6 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, T
             throw new BusinessRuleException($"Tenant with key '{request.TenantKey}' already exists.");
 
         var tenant = Tenant.Create(
-            request.TenantId,
             request.TenantKey,
             request.DisplayName,
             request.ContactEmail,
@@ -42,7 +41,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, T
         await _tenantRepository.AddAsync(tenant, cancellationToken);
         await _unitOfWork.Commit(cancellationToken, tenant);
 
-        _logger.LogInformation("Tenant {TenantKey} created with ID {TenantId}", tenant.TenantKey, tenant.TenantId);
+        _logger.LogInformation("Tenant {TenantKey} created with ID {TenantId}", tenant.TenantKey, tenant.Id);
 
         return tenant.ToOutput();
     }
