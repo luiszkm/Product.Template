@@ -84,7 +84,7 @@ O módulo **Identity** (`src/Core/Identity/`) é a implementação de referênci
 
 ### Entidades de domínio
 - Herdam de `Entity` ou `AggregateRoot` (de `Kernel.Domain.SeedWorks`).
-- Implementam `IMultiTenantEntity` (`TenantId long`).
+- Implementam `IMultiTenantEntity` (`TenantId` como `Guid`).
 - Construtor privado + factory `static Create(...)` com validação de invariantes.
 - Properties com `private set`.
 - Mudança de estado via métodos explícitos (ex: `Deactivate()`, `UpdateLastLogin()`).

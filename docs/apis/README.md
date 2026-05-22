@@ -23,5 +23,6 @@ Sem exemplos ou codigo de frontend.
 - Content-Type: `application/json`
 - Endpoints protegidos usam policy explicita (`[Authorize(Policy = ...)]`)
 - Multi-tenancy: enviar header `X-Tenant` quando aplicavel
-- Paginacao usa `PaginatedListOutput<T>`
+- Identificador de tenant na API de gestão: `Guid` (`tenantId`); ver `docs/guides/tenant-identifiers.md`
+- Paginacao usa `PaginatedListOutput<T>` com `ListInput` (`searchTerm`, `sortBy`, `sortDirection`)
 

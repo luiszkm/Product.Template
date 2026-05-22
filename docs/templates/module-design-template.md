@@ -122,7 +122,7 @@ public void {Action2}({params}) { }
 ```csharp
 public class {EntityName} : AggregateRoot, IMultiTenantEntity
 {
-    public long TenantId { get; set; }
+    public Guid TenantId { get; set; }
     
     // TODO: adicionar propriedades
 }
