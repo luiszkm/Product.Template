@@ -45,6 +45,17 @@ public class UserRepository : IUserRepository
     {
         var query = _context.Users.AsQueryable();
 
+        if (!string.IsNullOrWhiteSpace(listInput.SearchTerm))
+        {
+            var term = listInput.SearchTerm.Trim();
+            query = query.Where(u =>
+                u.FirstName.Contains(term) ||
+                u.LastName.Contains(term) ||
+                u.Email.Value.Contains(term));
+        }
+
+        query = ApplySort(query, listInput.SortBy, listInput.SortDirection);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var users = await query
@@ -63,5 +74,33 @@ public class UserRepository : IUserRepository
     {
         _context.Users.Update(user);
         return Task.CompletedTask;
+    }
+
+    private static IQueryable<User> ApplySort(IQueryable<User> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+            return query.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id);
+
+        var descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.Trim().ToLowerInvariant() switch
+        {
+            "email" => descending
+                ? query.OrderByDescending(u => u.Email.Value).ThenBy(u => u.Id)
+                : query.OrderBy(u => u.Email.Value).ThenBy(u => u.Id),
+            "firstname" => descending
+                ? query.OrderByDescending(u => u.FirstName).ThenBy(u => u.Id)
+                : query.OrderBy(u => u.FirstName).ThenBy(u => u.Id),
+            "lastname" => descending
+                ? query.OrderByDescending(u => u.LastName).ThenBy(u => u.Id)
+                : query.OrderBy(u => u.LastName).ThenBy(u => u.Id),
+            "emailconfirmed" => descending
+                ? query.OrderByDescending(u => u.EmailConfirmed).ThenBy(u => u.Id)
+                : query.OrderBy(u => u.EmailConfirmed).ThenBy(u => u.Id),
+            "createdat" => descending
+                ? query.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id)
+                : query.OrderBy(u => u.CreatedAt).ThenBy(u => u.Id),
+            _ => query.OrderByDescending(u => u.CreatedAt).ThenBy(u => u.Id)
+        };
     }
 }
