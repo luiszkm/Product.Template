@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using E2ETests.Common;
 using E2ETests.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,8 @@ using Product.Template.Kernel.Infrastructure.Persistence;
 
 namespace E2ETests.Identity;
 
-public class IdentityUsersE2ETests : IClassFixture<RbacWebApplicationFactory>
+[Collection(RbacE2ECollection.Name)]
+public class IdentityUsersE2ETests
 {
     private readonly HttpClient _client;
     private readonly RbacWebApplicationFactory _factory;

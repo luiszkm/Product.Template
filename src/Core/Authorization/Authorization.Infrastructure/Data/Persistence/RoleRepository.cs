@@ -48,6 +48,17 @@ public class RoleRepository : IRoleRepository
     public async Task<PaginatedListOutput<Role>> ListAllAsync(ListInput listInput, CancellationToken cancellationToken = default)
     {
         var query = _context.Set<Role>().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(listInput.SearchTerm))
+        {
+            var term = listInput.SearchTerm.Trim();
+            query = query.Where(r =>
+                r.Name.Contains(term) ||
+                r.Description.Contains(term));
+        }
+
+        query = ApplySort(query, listInput.SortBy, listInput.SortDirection);
+
         var totalCount = await query.CountAsync(cancellationToken);
 
         var roles = await query
@@ -60,5 +71,27 @@ public class RoleRepository : IRoleRepository
             PageSize: listInput.PageSize,
             TotalCount: totalCount,
             Data: roles);
+    }
+
+    private static IQueryable<Role> ApplySort(IQueryable<Role> query, string? sortBy, string? sortDirection)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy))
+            return query.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id);
+
+        var descending = string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase);
+
+        return sortBy.Trim().ToLowerInvariant() switch
+        {
+            "name" => descending
+                ? query.OrderByDescending(r => r.Name).ThenBy(r => r.Id)
+                : query.OrderBy(r => r.Name).ThenBy(r => r.Id),
+            "description" => descending
+                ? query.OrderByDescending(r => r.Description).ThenBy(r => r.Id)
+                : query.OrderBy(r => r.Description).ThenBy(r => r.Id),
+            "createdat" => descending
+                ? query.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id)
+                : query.OrderBy(r => r.CreatedAt).ThenBy(r => r.Id),
+            _ => query.OrderByDescending(r => r.CreatedAt).ThenBy(r => r.Id)
+        };
     }
 }

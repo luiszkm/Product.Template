@@ -5,4 +5,4 @@ using Product.Template.Kernel.Domain.SeedWorks;
 
 namespace Product.Template.Core.Authorization.Application.Queries.Permission;
 
-public record ListPermissionsQuery(int PageNumber = 1, int PageSize = 50) : ListInput(PageNumber, PageSize), IQuery<PaginatedListOutput<PermissionOutput>>;
+public record ListPermissionsQuery() : ListInput(PageSize: 50), IQuery<PaginatedListOutput<PermissionOutput>>;

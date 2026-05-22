@@ -21,9 +21,12 @@ using Product.Template.Kernel.Infrastructure.Persistence;
 using Product.Template.Kernel.Infrastructure.HostDb;
 using Product.Template.Kernel.Infrastructure.MultiTenancy;
 
+using E2ETests.Common;
+
 namespace E2ETests.Security;
 
-public class RbacHttpAuthorizationIntegrationTests : IClassFixture<RbacWebApplicationFactory>
+[Collection(RbacE2ECollection.Name)]
+public class RbacHttpAuthorizationIntegrationTests
 {
     private readonly HttpClient _client;
     private readonly RbacWebApplicationFactory _factory;
@@ -318,10 +321,13 @@ public class RbacWebApplicationFactory : WebApplicationFactory<Program>
         var appDb = sp.GetRequiredService<AppDbContext>();
         appDb.Database.EnsureCreated();
 
-        var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
-        typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
-        appDb.Set<User>().Add(owner);
-        appDb.SaveChanges();
+        if (!appDb.Users.IgnoreQueryFilters().Any(u => u.Id == SeededOwnerId))
+        {
+            var owner = User.Create(1L, "owner@e2e.test", "dummyhash", "E2E", "Owner");
+            typeof(User).BaseType!.GetProperty("Id")!.SetValue(owner, SeededOwnerId);
+            appDb.Set<User>().Add(owner);
+            appDb.SaveChanges();
+        }
     }
 
     private static void RemoveDbContextRegistrations<TContext>(IServiceCollection services)
