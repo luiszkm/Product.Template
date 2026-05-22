@@ -55,7 +55,6 @@ public class TenantRepository : ITenantRepository
     {
         var config = MapToConfig(tenant);
         await _hostDbContext.Tenants.AddAsync(config, cancellationToken);
-        await _hostDbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Tenant tenant, CancellationToken cancellationToken = default)
@@ -69,8 +68,6 @@ public class TenantRepository : ITenantRepository
         config.DisplayName = tenant.DisplayName;
         config.ContactEmail = tenant.ContactEmail;
         config.IsActive = tenant.IsActive;
-
-        await _hostDbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static Tenant MapToTenant(TenantConfig config) =>
