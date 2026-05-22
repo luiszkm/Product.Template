@@ -6,6 +6,9 @@ public static class JwtStartupValidation
 
     public static void ValidateJwtConfiguration(IConfiguration configuration, IHostEnvironment environment)
     {
+        if (!configuration.GetValue<bool>("Jwt:Enabled", true))
+            return;
+
         var secret = configuration["Jwt:Secret"];
         if (string.IsNullOrWhiteSpace(secret))
             throw new InvalidOperationException("Jwt:Secret must be configured.");
