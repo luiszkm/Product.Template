@@ -166,10 +166,15 @@ public class IdentityController : ControllerBase
     [HttpPost("{id:guid}/confirm-email")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ConfirmEmail(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> ConfirmEmail(
+        Guid id,
+        [FromBody] ConfirmEmailRequest request,
+        CancellationToken cancellationToken)
     {
-        await _mediator.Send(new ConfirmEmailCommand(id), cancellationToken);
+        await _mediator.Send(new ConfirmEmailCommand(id, request.Token), cancellationToken);
         return NoContent();
     }
 

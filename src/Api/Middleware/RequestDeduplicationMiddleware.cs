@@ -26,25 +26,26 @@ public class RequestDeduplicationMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Apenas para POST, PUT, PATCH (operações que modificam estado)
         if (!ShouldCheckDuplication(context.Request.Method))
         {
             await _next(context);
             return;
         }
 
-        // Verificar se há X-Idempotency-Key no header
         var idempotencyKey = context.Request.Headers["X-Idempotency-Key"].FirstOrDefault();
 
         if (string.IsNullOrEmpty(idempotencyKey))
         {
-            // Se não houver chave, gera uma baseada no conteúdo da requisição
             idempotencyKey = await GenerateRequestHashAsync(context);
         }
 
         var cacheKey = $"dedup:{idempotencyKey}";
+        var inFlightKey = $"dedup:processing:{idempotencyKey}";
+        var cacheOptions = new MemoryCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = _deduplicationWindow
+        };
 
-        // Verificar se já existe uma requisição com essa chave
         if (_cache.TryGetValue(cacheKey, out DeduplicationEntry? existingEntry))
         {
             _logger.LogWarning(
@@ -66,25 +67,54 @@ public class RequestDeduplicationMiddleware
             return;
         }
 
-        // Registrar a requisição no cache
-        var entry = new DeduplicationEntry
+        if (_cache.TryGetValue(inFlightKey, out _))
         {
-            IdempotencyKey = idempotencyKey,
-            Timestamp = DateTime.UtcNow,
-            Method = context.Request.Method,
-            Path = context.Request.Path
-        };
+            _logger.LogWarning(
+                "Requisição duplicada em processamento. Idempotency-Key: {IdempotencyKey}, Path: {Path}",
+                idempotencyKey,
+                context.Request.Path);
 
-        _cache.Set(cacheKey, entry, new MemoryCacheEntryOptions
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.Headers["X-Duplicate-Request"] = "true";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "Duplicate request detected",
+                message = "Esta requisição já está a ser processada. Por favor, aguarde antes de tentar novamente.",
+                idempotencyKey
+            });
+
+            return;
+        }
+
+        _cache.Set(inFlightKey, true, cacheOptions);
+
+        try
         {
-            AbsoluteExpirationRelativeToNow = _deduplicationWindow
-        });
+            await _next(context);
 
-        _logger.LogDebug(
-            "Requisição registrada para deduplicação. Key: {IdempotencyKey}",
-            idempotencyKey);
+            if (context.Response.StatusCode >= StatusCodes.Status200OK &&
+                context.Response.StatusCode < StatusCodes.Status300MultipleChoices)
+            {
+                var entry = new DeduplicationEntry
+                {
+                    IdempotencyKey = idempotencyKey,
+                    Timestamp = DateTime.UtcNow,
+                    Method = context.Request.Method,
+                    Path = context.Request.Path
+                };
 
-        await _next(context);
+                _cache.Set(cacheKey, entry, cacheOptions);
+
+                _logger.LogDebug(
+                    "Requisição registrada para deduplicação. Key: {IdempotencyKey}",
+                    idempotencyKey);
+            }
+        }
+        finally
+        {
+            _cache.Remove(inFlightKey);
+        }
     }
 
     private static bool ShouldCheckDuplication(string method)
@@ -96,13 +126,11 @@ public class RequestDeduplicationMiddleware
 
     private async Task<string> GenerateRequestHashAsync(HttpContext context)
     {
-        // Criar hash baseado em: método + path + body (se houver)
         var sb = new StringBuilder();
         sb.Append(context.Request.Method);
         sb.Append(context.Request.Path);
         sb.Append(context.Request.QueryString);
 
-        // Adicionar corpo da requisição ao hash (se houver)
         if (context.Request.ContentLength > 0)
         {
             context.Request.EnableBuffering();
@@ -116,11 +144,9 @@ public class RequestDeduplicationMiddleware
             var body = await reader.ReadToEndAsync();
             sb.Append(body);
 
-            // Reset the stream position
             context.Request.Body.Position = 0;
         }
 
-        // Gerar hash SHA256
         using var sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()));
         return Convert.ToBase64String(hashBytes);
@@ -134,4 +160,3 @@ public class RequestDeduplicationMiddleware
         public string Path { get; set; } = string.Empty;
     }
 }
-

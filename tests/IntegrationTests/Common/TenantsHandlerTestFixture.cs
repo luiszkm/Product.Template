@@ -6,11 +6,6 @@ using Product.Template.Kernel.Infrastructure.HostDb;
 
 namespace IntegrationTests.Common;
 
-/// <summary>
-/// Fixture for Tenants handler integration tests.
-/// Uses EF InMemory — Tenants do not use owned value objects
-/// or EF.Property queries, so the InMemory provider is sufficient.
-/// </summary>
 public sealed class TenantsHandlerTestFixture : IDisposable
 {
     public HostDbContext HostDbContext { get; }
@@ -26,6 +21,7 @@ public sealed class TenantsHandlerTestFixture : IDisposable
     }
 
     public TenantRepository TenantRepository() => new(HostDbContext);
+    public HostUnitOfWork HostUnitOfWork() => new(HostDbContext, NoopPublisher.Instance);
 
     public async Task<Tenant> SeedTenantAsync(string? key = null)
     {

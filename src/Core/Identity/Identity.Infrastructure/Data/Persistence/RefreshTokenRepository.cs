@@ -24,6 +24,42 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
                 cancellationToken);
     }
 
+    public async Task<bool> TryRevokeAsync(
+        string token,
+        string revokedByIp,
+        string? replacedByToken,
+        CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+
+        if (_context.Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
+        {
+            var tokenEntity = await _context.RefreshTokens
+                .FirstOrDefaultAsync(
+                    rt => rt.Token == token && !rt.IsRevoked && rt.ExpiresAt > now,
+                    cancellationToken);
+
+            if (tokenEntity is null)
+                return false;
+
+            tokenEntity.Revoke(revokedByIp, replacedByToken);
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        var rowsAffected = await _context.RefreshTokens
+            .Where(rt => rt.Token == token && !rt.IsRevoked && rt.ExpiresAt > now)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(rt => rt.IsRevoked, true)
+                    .SetProperty(rt => rt.RevokedAt, now)
+                    .SetProperty(rt => rt.RevokedByIp, revokedByIp)
+                    .SetProperty(rt => rt.ReplacedByToken, replacedByToken),
+                cancellationToken);
+
+        return rowsAffected > 0;
+    }
+
     public async Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
     {
         await _context.RefreshTokens.AddAsync(refreshToken, cancellationToken);

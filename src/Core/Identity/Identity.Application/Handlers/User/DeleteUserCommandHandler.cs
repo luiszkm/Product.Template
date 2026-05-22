@@ -4,6 +4,7 @@ using Product.Template.Core.Identity.Domain.Repositories;
 using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Identity.Application.Handlers.User;
 
@@ -11,14 +12,17 @@ public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand>
 {
     private readonly IUserRepository _userRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<DeleteUserCommandHandler> _logger;
 
     public DeleteUserCommandHandler(IUserRepository userRepository,
         IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
         ILogger<DeleteUserCommandHandler> logger)
     {
         _userRepository = userRepository;
         _unitOfWork = unitOfWork;
+        _currentUserService = currentUserService;
         _logger = logger;
     }
 
@@ -30,6 +34,13 @@ public class DeleteUserCommandHandler : ICommandHandler<DeleteUserCommand>
             _logger.LogWarning("Tentativa de exclusão de usuário inexistente: {UserId}", request.UserId);
             throw new NotFoundException($"User with ID {request.UserId} not found.");
         }
+
+        var deletedBy = _currentUserService.UserId?.ToString()
+            ?? _currentUserService.Email
+            ?? "system";
+
+        user.Deactivate();
+        user.SoftDelete(deletedBy);
 
         await _userRepository.DeleteAsync(user, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);

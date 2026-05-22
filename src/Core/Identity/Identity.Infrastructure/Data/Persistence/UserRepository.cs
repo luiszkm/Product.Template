@@ -61,7 +61,7 @@ public class UserRepository : IUserRepository
 
     public Task DeleteAsync(User user, CancellationToken cancellationToken = default)
     {
-        _context.Users.Remove(user);
+        _context.Users.Update(user);
         return Task.CompletedTask;
     }
 }

@@ -3,6 +3,7 @@ using Product.Template.Core.Tenants.Application.Handlers.Commands;
 using Product.Template.Core.Tenants.Application.Mappers;
 using Product.Template.Core.Tenants.Application.Outputs;
 using Product.Template.Core.Tenants.Domain.Repositories;
+using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 
@@ -11,13 +12,16 @@ namespace Product.Template.Core.Tenants.Application.Handlers;
 public class UpdateTenantCommandHandler : ICommandHandler<UpdateTenantCommand, TenantOutput>
 {
     private readonly ITenantRepository _tenantRepository;
+    private readonly IHostUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateTenantCommandHandler> _logger;
 
     public UpdateTenantCommandHandler(
         ITenantRepository tenantRepository,
+        IHostUnitOfWork unitOfWork,
         ILogger<UpdateTenantCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -29,6 +33,7 @@ public class UpdateTenantCommandHandler : ICommandHandler<UpdateTenantCommand, T
         tenant.Update(request.DisplayName, request.ContactEmail);
 
         await _tenantRepository.UpdateAsync(tenant, cancellationToken);
+        await _unitOfWork.Commit(cancellationToken, tenant);
 
         _logger.LogInformation("Tenant {TenantId} updated", tenant.TenantId);
 

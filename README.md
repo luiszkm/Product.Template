@@ -1,4 +1,4 @@
-﻿﻿# Product.Template
+﻿# Product.Template
 
 A production-ready .NET 10 backend template following Clean Architecture, DDD, and CQRS — designed for **AI-first development** with LLMs and coding agents.
 
@@ -59,9 +59,9 @@ src/
 tests/
 ├── ArchitectureTests/            → Layer & naming enforcement
 ├── UnitTests/                    → Domain, handlers, validators
-├── IntegrationTests/             → HTTP authorization tests
+├── IntegrationTests/             → Handler tests with in-memory infrastructure
 ├── CommonTests/                  → Shared fixtures
-└── E2ETests/                     → End-to-end (future)
+└── E2ETests/                     → HTTP pipeline, RBAC, and authorization tests
 ```
 
 ## Getting Started
@@ -385,6 +385,7 @@ dotnet test
 # Run specific test project
 dotnet test tests/UnitTests
 dotnet test tests/IntegrationTests
+dotnet test tests/E2ETests
 dotnet test tests/ArchitectureTests
 ```
 

@@ -1,3 +1,4 @@
+using FluentValidation;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
@@ -45,6 +46,25 @@ namespace Product.Template.Api.GlobalFilter.Exceptions
                 details.Title = "Business rule violation";
                 details.Status = StatusCodes.Status400BadRequest;
                 details.Type = "BusinessRuleViolation";
+                details.Detail = exception.Message;
+            }
+            else if (exception is ValidationException validationException)
+            {
+                details.Title = "One or more validation errors occurred.";
+                details.Status = StatusCodes.Status400BadRequest;
+                details.Type = "ValidationError";
+                details.Detail = "One or more validation errors occurred.";
+                details.Extensions["errors"] = validationException.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(e => e.ErrorMessage).ToArray());
+            }
+            else if (exception is UnauthorizedAccessException)
+            {
+                details.Title = "Unauthorized";
+                details.Status = StatusCodes.Status401Unauthorized;
+                details.Type = "Unauthorized";
                 details.Detail = exception.Message;
             }
             else

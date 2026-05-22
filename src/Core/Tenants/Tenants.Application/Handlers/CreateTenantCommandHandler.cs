@@ -4,6 +4,7 @@ using Product.Template.Core.Tenants.Application.Mappers;
 using Product.Template.Core.Tenants.Application.Outputs;
 using Product.Template.Core.Tenants.Domain.Entities;
 using Product.Template.Core.Tenants.Domain.Repositories;
+using Product.Template.Kernel.Application.Data;
 using Product.Template.Kernel.Application.Exceptions;
 using Product.Template.Kernel.Application.Messaging.Interfaces;
 
@@ -12,13 +13,16 @@ namespace Product.Template.Core.Tenants.Application.Handlers;
 public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, TenantOutput>
 {
     private readonly ITenantRepository _tenantRepository;
+    private readonly IHostUnitOfWork _unitOfWork;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
         ITenantRepository tenantRepository,
+        IHostUnitOfWork unitOfWork,
         ILogger<CreateTenantCommandHandler> logger)
     {
         _tenantRepository = tenantRepository;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -36,6 +40,7 @@ public class CreateTenantCommandHandler : ICommandHandler<CreateTenantCommand, T
             request.IsolationMode);
 
         await _tenantRepository.AddAsync(tenant, cancellationToken);
+        await _unitOfWork.Commit(cancellationToken, tenant);
 
         _logger.LogInformation("Tenant {TenantKey} created with ID {TenantId}", tenant.TenantKey, tenant.TenantId);
 

@@ -13,6 +13,7 @@ public class CreateTenantCommandHandlerTests : IDisposable
 
     private CreateTenantCommandHandler CreateHandler() => new(
         _fixture.TenantRepository(),
+        _fixture.HostUnitOfWork(),
         NullLogger<CreateTenantCommandHandler>.Instance);
 
     [Fact]

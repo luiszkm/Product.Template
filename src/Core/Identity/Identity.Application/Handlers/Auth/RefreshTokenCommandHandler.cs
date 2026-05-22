@@ -77,7 +77,18 @@ public sealed class RefreshTokenCommandHandler : ICommandHandler<RefreshTokenCom
         var clientIp = _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
         var newRawToken = _jwtTokenService.GenerateRefreshToken();
-        existing.Revoke(clientIp, replacedByToken: newRawToken);
+
+        var revoked = await _refreshTokenRepository.TryRevokeAsync(
+            request.RefreshToken,
+            clientIp,
+            newRawToken,
+            cancellationToken);
+
+        if (!revoked)
+        {
+            _logger.LogWarning("Refresh token já revogado ou reutilizado");
+            throw new UnauthorizedAccessException("Refresh token inválido ou expirado.");
+        }
 
         var newRefreshToken = RefreshToken.Create(
             tenantId,
