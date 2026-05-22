@@ -106,6 +106,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiting();
 
+app.UseMonitoringApiKey();
+
 // Health Checks Endpoints
 app.UseHealthChecksConfiguration();
 

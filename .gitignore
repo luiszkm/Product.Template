@@ -388,6 +388,7 @@ appsettings.*.local.json
 .env
 .env.local
 .env.*.local
+compose.env
 
 # Test coverage
 coverage/
