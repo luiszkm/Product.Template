@@ -22,6 +22,8 @@ public class LayerDependencyTests
     private static readonly Assembly TenantsDomainAssembly = typeof(Product.Template.Core.Tenants.Domain.Entities.Tenant).Assembly;
     private static readonly Assembly TenantsApplicationAssembly = typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly;
     private static readonly Assembly TenantsInfrastructureAssembly = typeof(Product.Template.Core.Tenants.Infrastructure.DependencyInjection).Assembly;
+    private static readonly Assembly AiApplicationAssembly = typeof(Product.Template.Core.Ai.Application.Handlers.ChatCommand).Assembly;
+    private static readonly Assembly AiInfrastructureAssembly = typeof(Product.Template.Core.Ai.Infrastructure.DependencyInjection).Assembly;
     private static readonly Assembly ApiAssembly = typeof(Product.Template.Api.Configurations.SecurityConfiguration).Assembly;
 
     // Namespace constants
@@ -37,6 +39,8 @@ public class LayerDependencyTests
     private const string TenantsDomainNamespace = "Product.Template.Core.Tenants.Domain";
     private const string TenantsApplicationNamespace = "Product.Template.Core.Tenants.Application";
     private const string TenantsInfrastructureNamespace = "Product.Template.Core.Tenants.Infrastructure";
+    private const string AiApplicationNamespace = "Product.Template.Core.Ai.Application";
+    private const string AiInfrastructureNamespace = "Product.Template.Core.Ai.Infrastructure";
     private const string ApiNamespace = "Product.Template.Api";
 
     [Fact]
@@ -253,6 +257,30 @@ public class LayerDependencyTests
 
         Assert.True(result.IsSuccessful,
             $"Tenants.Application should not depend on Api. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void AiApplication_ShouldNotDependOn_Infrastructure()
+    {
+        var result = Types.InAssembly(AiApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(AiInfrastructureNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Ai.Application should not depend on Infrastructure. Violations: {FormatFailures(result)}");
+    }
+
+    [Fact]
+    public void AiApplication_ShouldNotDependOn_Api()
+    {
+        var result = Types.InAssembly(AiApplicationAssembly)
+            .ShouldNot()
+            .HaveDependencyOn(ApiNamespace)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            $"Ai.Application should not depend on Api. Violations: {FormatFailures(result)}");
     }
 
     private static string FormatFailures(TestResult result)

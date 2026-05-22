@@ -8,17 +8,25 @@ namespace E2ETests.Security;
 
 public class RbacMatrixConsistencyTests
 {
-    [Fact]
-    public void IdentityProtectedEndpoints_ShouldBeMappedInRbacMatrix_WithMatchingPolicy()
+    public static IEnumerable<object[]> ProtectedControllerCases =>
+    [
+        [typeof(IdentityController), "/api/v1/identity"],
+        [typeof(AuthorizationController), "/api/v1/authorization"],
+        [typeof(TenantsController), "/api/v1/tenants"],
+        [typeof(AiController), "/api/v1/ai"],
+    ];
+
+    [Theory]
+    [MemberData(nameof(ProtectedControllerCases))]
+    public void ProtectedEndpoints_ShouldBeMappedInRbacMatrix_WithMatchingPolicy(
+        Type controller,
+        string routePrefix)
     {
         var matrixEntries = LoadMatrixEntries()
-            .Where(x => x.Route.StartsWith("/api/v1/identity", StringComparison.OrdinalIgnoreCase))
+            .Where(x => x.Route.StartsWith(routePrefix, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         Assert.NotEmpty(matrixEntries);
-
-        var controller = typeof(IdentityController);
-        const string routePrefix = "/api/v1/identity";
 
         var protectedEndpoints = controller
             .GetMethods(BindingFlags.Instance | BindingFlags.Public)
@@ -68,6 +76,7 @@ public class RbacMatrixConsistencyTests
     {
         return route
             .Replace(":guid", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace(":long", string.Empty, StringComparison.OrdinalIgnoreCase)
             .Replace("//", "/", StringComparison.Ordinal)
             .TrimEnd('/');
     }
@@ -121,4 +130,3 @@ public class RbacMatrixConsistencyTests
 
     private sealed record RbacMatrixEntry(string HttpMethod, string Route, string Policy);
 }
-

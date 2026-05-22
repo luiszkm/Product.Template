@@ -24,6 +24,8 @@ public class NamingConventionTests
         typeof(Product.Template.Core.Tenants.Domain.Entities.Tenant).Assembly,
         typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly,
         typeof(Product.Template.Core.Tenants.Infrastructure.DependencyInjection).Assembly,
+        typeof(Product.Template.Core.Ai.Application.Handlers.ChatCommand).Assembly,
+        typeof(Product.Template.Core.Ai.Infrastructure.DependencyInjection).Assembly,
         typeof(Product.Template.Api.Configurations.SecurityConfiguration).Assembly,
     ];
 

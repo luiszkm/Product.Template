@@ -33,6 +33,8 @@
     <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Domain\Tenants.Domain.csproj" />
     <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Application\Tenants.Application.csproj" />
     <ProjectReference Include="..\..\src\Core\Tenants\Tenants.Infrastructure\Tenants.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Core\Ai\Ai.Application\Ai.Application.csproj" />
+    <ProjectReference Include="..\..\src\Core\Ai\Ai.Infrastructure\Ai.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Api\Api.csproj" />
   </ItemGroup>
 

@@ -15,6 +15,7 @@ public class CqrsConventionTests
         typeof(Product.Template.Core.Identity.Application.Handlers.Auth.LoginCommandHandler).Assembly,
         typeof(Product.Template.Core.Authorization.Application.Permissions.AuthorizationPermissions).Assembly,
         typeof(Product.Template.Core.Tenants.Application.Permissions.TenantsPermissions).Assembly,
+        typeof(Product.Template.Core.Ai.Application.Handlers.ChatCommand).Assembly,
     ];
 
     [Fact]
