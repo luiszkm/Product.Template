@@ -144,4 +144,4 @@ Resolved from `X-Tenant` header or subdomain → `ITenantContext`. `MultiTenantS
 
 ## Additional rules and AI resources
 
-Detailed rules by layer live in `.ai/rules/` (00–14). Reusable prompts are in `prompts/`. Specialized GitHub Copilot agents (e.g., `@feature-builder`, `@code-reviewer`) are in `.github/agents/`. Layer-specific Copilot instructions are in `.github/instructions/`. Implementation checklists are in `.ai/checklists/`.
+Detailed rules by layer live in `.cursor/rules/` — see `agent-behavior.mdc` for agent instructions, `architecture.mdc` for layer rules, and each layer's dedicated rule. Reusable prompts are in `prompts/`. Implementation checklists are in `.ai/checklists/`.

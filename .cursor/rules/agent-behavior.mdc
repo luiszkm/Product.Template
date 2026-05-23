@@ -93,3 +93,34 @@ The `Identity` module (`src/Core/Identity/`) is the canonical reference for:
 
 When in doubt, follow the Identity module's patterns.
 
+## Plan Mode Workflow
+
+| Scope | Action |
+|-------|--------|
+| Single file, ≤20 lines, no layer crossing | Edit directly |
+| 2+ files OR 2+ layers OR public contract change (DTO/route/event) | Enter Plan Mode → save plan to `.cursor/plans/{yyyy-mm-dd}-{slug}.md` → execute |
+| Unclear scope or intent | Ask first |
+
+Plan file format:
+```
+# Plan: {slug}
+Date: {yyyy-mm-dd}
+Scope: {description}
+Affected files: {list}
+Inputs: {preconditions}
+Expected output: {result}
+Acceptance: {command to verify}
+Rollback: {how to undo}
+```
+
+Loop detection: same failure 3× → stop and escalate. Do not introduce workarounds or bypass verification.
+
+## Forbidden Auto-Actions
+- `git commit` without showing diff first
+- `git push --force*`
+- `rm -rf`, `dotnet ef database drop`
+- `--no-verify`, `--skip-tests`, any bypass flag
+- Deleting RBAC matrix entries without corresponding endpoint removal
+- Modifying `.env*`, `*.sln`, `Directory.Build.props`, `global.json` without user confirmation
+- Running `dotnet ef migrations remove` on an applied migration
+

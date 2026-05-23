@@ -1,5 +1,7 @@
 ---
-description: Analyze and optimize EF Core / Dapper queries — detect N+1, over-fetching, missing pagination, and propose AsNoTracking, AsSplitQuery, or Dapper read service
+name: optimize-query
+version: 1
+description: "Analyze and optimize EF Core / Dapper queries — detect N+1, missing indexes, over-fetching, and TenantId filter bypasses. TRIGGER: \"optimize query\", \"query is slow\", \"N+1 problem\", \"missing index\", \"query performance\", \"EF Core performance\". SKIP: scaffolding new queries (use new-query), schema migrations (use new-migration)."
 tools: Read, Edit, Write, Glob, Grep
 ---
 

@@ -1,5 +1,7 @@
 ---
-description: Scaffold a CQRS Command + Handler + Validator + Unit Tests
+name: new-command
+version: 1
+description: "Scaffold a CQRS Command + Handler + Validator + Output DTO + Unit Tests following the Identity module pattern. TRIGGER: \"add command\", \"create command\", \"new command for\", \"scaffold command\", \"I need a command that\". SKIP: query operations (use new-query), endpoint routing (use new-endpoint), entity creation (use new-entity)."
 tools: Read, Edit, Write, Glob, Grep
 disable-model-invocation: true
 ---

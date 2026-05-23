@@ -1,7 +1,7 @@
 ---
 name: Architecture
 description: Clean Architecture layer dependencies, forbidden references, module structure, patterns (CQRS, Repository, UoW, Domain Events)
-alwaysApply: false
+alwaysApply: true
 ---
 
 ## Layers & Projects

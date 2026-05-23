@@ -1,5 +1,7 @@
 ---
-description: Scaffold a complete vertical slice (Domain → Application → Infrastructure → API → Tests) for a new feature
+name: new-feature
+version: 1
+description: "Scaffold a complete vertical slice — Entity + Command + Query + Handler + Validator + Mapper + Controller endpoint + EF config + Integration tests — in an existing module. TRIGGER: \"add feature\", \"implement feature\", \"new feature for\", \"build the X feature\", \"I need the full stack for\". SKIP: use new-module when you need a new bounded context; use new-command or new-query for partial slices."
 tools: Read, Edit, Write, Bash, Glob, Grep
 disable-model-invocation: true
 ---

@@ -1,5 +1,7 @@
 ---
-description: Add a controller endpoint with the correct RBAC policy, ProducesResponseType attributes, and integration test
+name: new-endpoint
+version: 1
+description: "Add a controller endpoint with the correct RBAC policy, ProducesResponseType, and CancellationToken following api.mdc. TRIGGER: \"add endpoint\", \"new route\", \"add controller action\", \"create API endpoint\", \"add a GET/POST/PUT/DELETE route\". SKIP: generating the command/query behind the endpoint (use new-command or new-query for that)."
 tools: Read, Edit, Write, Glob, Grep
 disable-model-invocation: true
 ---

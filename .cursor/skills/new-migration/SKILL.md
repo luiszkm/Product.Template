@@ -1,8 +1,9 @@
 ---
-description: Guide EF Core migration creation — verify configurations, run dotnet ef migrations add, validate output
+name: new-migration
+version: 1
+description: "Guide EF Core migration creation — verify entity configs, run dotnet ef migrations add, review the generated SQL, and confirm apply steps. TRIGGER: \"add migration\", \"create migration\", \"new migration\", \"EF migration for\", \"schema change\". SKIP: do not use for query optimization or entity scaffolding."
 tools: Read, Edit, Write, Bash, Glob, Grep
 disable-model-invocation: true
-allowed-tools: Read, Edit, Write, Bash, Glob, Grep
 ---
 
 # Skill: /new-migration

@@ -1,0 +1,45 @@
+---
+name: Global Commits
+description: Conventional Commits format and scope definitions for Product.Template. Apply to every commit message in this repository.
+alwaysApply: true
+---
+
+# Conventional Commits
+
+## Format
+```
+<type>(<scope>): <subject>
+
+[optional body — why, not what]
+
+[optional footer: BREAKING CHANGE, Closes #issue]
+```
+
+## Types
+| Type | Use |
+|------|-----|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `refactor` | Code change, no behavior change |
+| `test` | Adding or fixing tests |
+| `docs` | Documentation only |
+| `chore` | Tooling, deps, config |
+| `ci` | CI/CD pipeline |
+| `perf` | Performance improvement |
+
+## Scopes
+`identity` · `authorization` · `tenants` · `api` · `infra` · `tests` · `docs` · `ci` · `docker` · `ai`
+
+## Rules
+- Subject ≤72 chars, imperative mood, no period.
+- Body: explain *why*, not *what* (code shows what).
+- `BREAKING CHANGE:` footer required for any public contract change.
+- Never scope to a file name — use the bounded context or layer.
+
+## Examples
+```
+feat(identity): add refresh token rotation
+fix(authorization): prevent role assignment to non-existent tenant
+test(tenants): add integration test for tenant isolation
+ci: add Trivy HIGH/CRITICAL gate to build-push workflow
+```

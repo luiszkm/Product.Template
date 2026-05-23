@@ -1,5 +1,7 @@
 ---
-description: Scaffold a CQRS Query + Handler + Output DTO + Mapper + Unit Tests
+name: new-query
+version: 1
+description: "Scaffold a CQRS Query + Handler + Output DTO + Mapper + Unit Tests following the Identity module pattern. TRIGGER: \"add query\", \"create query\", \"new query for\", \"scaffold query\", \"I need a query that returns\". SKIP: command mutations, endpoint scaffolding, entity creation."
 tools: Read, Edit, Write, Glob, Grep
 disable-model-invocation: true
 ---

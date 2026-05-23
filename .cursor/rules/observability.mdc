@@ -1,6 +1,7 @@
 ---
 name: Observability Rules
 description: Structured logging (Serilog), OpenTelemetry, correlation IDs, health checks, metrics
+globs: src/**
 alwaysApply: false
 ---
 

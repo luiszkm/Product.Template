@@ -1,6 +1,7 @@
 ---
-name? Folder Structure
+name: Folder Structure
 description: Repository folder structure for modules, tests, and shared kernel
+globs: src/**, tests/**
 alwaysApply: false
 ---
 

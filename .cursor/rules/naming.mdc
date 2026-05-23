@@ -1,7 +1,7 @@
 ---
 name: Naming Conventions
 description: Naming conventions for commands, queries, handlers, validators, DTOs, repositories, EF configs, domain events
-alwaysApply: false
+alwaysApply: true
 ---
 
 ## Files & Types

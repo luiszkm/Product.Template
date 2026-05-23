@@ -1,6 +1,7 @@
 ---
 name: Security Rules
 description: Security rules — authentication, RBAC policies, input validation, secrets handling, tenant isolation
+globs: src/Api/**, src/**/Security/**
 alwaysApply: false
 ---
 ## Authentication
@@ -79,3 +80,11 @@ The test `RbacMatrixConsistencyTests` enforces this automatically.
 - HTTPS redirection is enforced.
 - CORS origins are configurable — default is `*` (restrict in production).
 
+## Pre-deploy checklist
+Before merging any PR that touches security-sensitive code:
+- [ ] `trivy image --exit-code 1 --severity HIGH,CRITICAL <image>` passes
+- [ ] No secrets or credentials in diff (`git diff` review)
+- [ ] JWT secret ≥32 chars confirmed in environment config
+- [ ] RBAC_MATRIX.md updated if new endpoint added
+- [ ] `dotnet test tests/ArchitectureTests` passes
+- [ ] `dotnet list package --vulnerable` shows no critical vulnerabilities

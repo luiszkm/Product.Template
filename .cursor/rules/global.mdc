@@ -1,7 +1,7 @@
 ---
 name: Global Rules
-description: Stack overview, core principles, universal rules for all agents working in this repo
-alwaysApply: false
+description: Stack overview, universal principles, and cross-cutting boundaries for Product.Template. Always active.
+alwaysApply: true
 ---
 
 > Canonical reference for every agent, LLM, or human working in this repository.

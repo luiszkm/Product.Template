@@ -1,5 +1,6 @@
 ---
 name: Code Style
+description: C# code style, async/await, records, LINQ, error handling, and Serilog conventions. Always active for all source files.
 alwaysApply: true
 ---
 ## General

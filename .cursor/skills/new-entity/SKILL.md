@@ -1,5 +1,7 @@
 ---
-description: Scaffold a DDD domain entity or aggregate root with factory method, private setters, IMultiTenantEntity, domain events, and repository interface
+name: new-entity
+version: 1
+description: "Scaffold a DDD domain entity or aggregate root with private constructor, static Create factory, private setters, and EF Core configuration. TRIGGER: \"add entity\", \"new entity\", \"create aggregate\", \"scaffold domain entity\", \"add aggregate root\". SKIP: application layer (commands/queries) — use new-command/new-query for those."
 tools: Read, Edit, Write, Glob, Grep
 disable-model-invocation: true
 ---

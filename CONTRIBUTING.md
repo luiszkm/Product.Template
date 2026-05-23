@@ -3,9 +3,9 @@
 ## Before You Start
 
 1. Read `README.md` for project overview and AI-first setup.
-2. Read `.github/copilot-instructions.md` — loaded automatically by Copilot, contains all conventions.
-3. Read `.ai/rules/01-architecture.md` for layer boundaries.
-4. Read `.ai/rules/12-folder-structure.md` for file placement.
+2. Read `.cursor/rules/global.mdc` — contains all conventions.
+3. Read `.cursor/rules/architecture.mdc` for layer boundaries.
+4. Read `.cursor/rules/folder-structure.mdc` for file placement.
 
 ## Development Workflow
 
@@ -24,16 +24,16 @@ git checkout -b fix/{short-description}
 
 ### 3. Implement
 
-Use the right GitHub Copilot agent for the task (see [Using AI Agents](#using-ai-agents)), or follow the `.ai/rules/` for the relevant layer:
+Use the right GitHub Copilot agent for the task (see [Using AI Agents](#using-ai-agents)), or follow the `.cursor/rules/` for the relevant layer:
 
 | Layer | Rule File |
 |-------|-----------|
-| Domain | `.ai/rules/02-domain.md` |
-| Application | `.ai/rules/03-application.md` |
-| Infrastructure | `.ai/rules/04-infrastructure.md` |
-| API | `.ai/rules/05-api.md` |
-| Tests | `.ai/rules/06-tests.md` |
-| Security | `.ai/rules/08-security.md` |
+| Domain | `.cursor/rules/domain.mdc` |
+| Application | `.cursor/rules/application.mdc` |
+| Infrastructure | `.cursor/rules/infrastructure.mdc` |
+| API | `.cursor/rules/api.mdc` |
+| Tests | `.cursor/rules/tests.mdc` |
+| Security | `.cursor/rules/security.mdc` |
 
 ### 4. Validate
 
@@ -71,7 +71,7 @@ Use `.ai/checklists/pull-request.md` as the review checklist.
 
 ### GitHub Copilot Agents (Copilot Chat)
 
-Este repositório tem agents especializados configurados em `.github/agents/`. Use-os com `@nome-do-agent` no Copilot Chat:
+Este repositório tem agents especializados configurados em `AGENTS.md`. Use-os com `@nome-do-agent` no Copilot Chat:
 
 | Agent | Como usar | Quando usar |
 |-------|-----------|-------------|
@@ -91,31 +91,16 @@ Arquivos em `prompts/` são templates prontos para copiar no Copilot Chat. Abra 
 | Otimizar query | `prompts/optimize-query.prompt.md` | Diagnóstico de gargalo + proposta EF Core ou Dapper |
 | Revisão de código | `prompts/code-review.prompt.md` | Levantamento de brechas (segurança, arq., persistência, testes) + correções |
 
-### Prompts avançados (`.ai/prompts/`)
-
-Para tarefas mais granulares, use os prompts em `.ai/prompts/` com o master-prompt como sistema:
-
-```
-Sistema: conteúdo de .ai/prompts/master-prompt.md
-```
-
-| Task | Prompt |
-|------|--------|
-| New entity only | `.ai/prompts/create-entity.md` |
-| New endpoint only | `.ai/prompts/create-endpoint.md` |
-| New command only | `.ai/prompts/create-command.md` |
-| New query only | `.ai/prompts/create-query.md` |
-| Create migration | `.ai/prompts/create-migration.md` |
-
 ### O que agentes devem ler antes de gerar código
 
-O `copilot-instructions.md` é carregado automaticamente pelo Copilot. Para outros modelos/agentes, instrua-os a ler:
+Para modelos/agentes, instrua-os a ler:
 
-1. `.github/copilot-instructions.md` — regras globais
-2. `.github/instructions/backend.instructions.md` — padrão de handlers, validators, DTOs
-3. `.github/instructions/api.instructions.md` — padrão de controllers, RBAC
-4. `.github/instructions/infrastructure.instructions.md` — persistência, DI
-5. A regra específica para a camada sendo modificada (`.ai/rules/02` a `09`)
+1. `.cursor/rules/global.mdc` — regras globais
+2. `.cursor/rules/architecture.mdc` — layer boundaries
+3. `.cursor/rules/application.mdc` — padrão de handlers, validators, DTOs
+4. `.cursor/rules/api.mdc` — padrão de controllers, RBAC
+5. `.cursor/rules/infrastructure.mdc` — persistência, DI
+6. A regra específica para a camada sendo modificada (`.cursor/rules/domain.mdc` a `.cursor/rules/security.mdc`)
 
 ---
 
@@ -126,7 +111,7 @@ O `copilot-instructions.md` é carregado automaticamente pelo Copilot. Para outr
 - Private fields: `_camelCase`.
 - All public members: PascalCase.
 - Interfaces: `I` prefix.
-- See `.ai/rules/07-style.md` for complete guidelines.
+- See `.cursor/rules/style.mdc` for complete guidelines.
 
 ## Commit Messages
 
@@ -150,7 +135,7 @@ refactor: extract shared pagination logic to base repository
    └── {Module}.Infrastructure/{Module}.Infrastructure.csproj
    ```
 
-2. Set project references per `.ai/rules/01-architecture.md`.
+2. Set project references per `.cursor/rules/architecture.mdc`.
 
 3. Add projects to `Product.Template.sln`.
 

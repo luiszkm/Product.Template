@@ -1,5 +1,7 @@
 ---
-description: DDD design session for a new bounded context — produces bounded context canvas, aggregates, entities, VOs, events, and policies (no code)
+name: new-module
+version: 1
+description: "DDD design session for a new bounded context — produces module structure, entity list, and aggregate boundaries. Design-only, no code generated. TRIGGER: \"new module\", \"new bounded context\", \"add a module for\", \"design module\", \"I need a new domain for\". SKIP: use new-feature to scaffold code inside an existing module; use new-entity for a single entity."
 tools: Read, Glob, Grep
 ---
 

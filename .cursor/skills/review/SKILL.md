@@ -1,5 +1,7 @@
 ---
-description: Comprehensive code review across 6 areas (security, architecture, validation, persistence, observability, tests) with severity categorization
+name: review
+version: 1
+description: "Comprehensive code review across 6 areas: architecture, domain model, application layer, API, tests, and security. TRIGGER: \"review this\", \"code review\", \"review my PR\", \"check this implementation\", \"review the diff\". SKIP: scaffolding new code, running tests, performance profiling."
 tools: Read, Glob, Grep, Bash
 context: fork
 ---
