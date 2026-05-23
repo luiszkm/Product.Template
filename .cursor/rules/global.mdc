@@ -46,13 +46,13 @@ alwaysApply: false
 
 - **Read `.cursor/rules/` before generating code.** Start with this file, then the rule file for the layer you are modifying.
 - **Never add a NuGet package** without checking `Directory.Build.props` and existing `.csproj` files first.
-- **Never create a file outside the established folder structure** (see `12-folder-structure.md`).
+- **Never create a file outside the established folder structure** (see `folder-structure.mdc`).
 - **Always provide the full file path** relative to the repository root when creating or modifying files.
 - **Always run `dotnet build` mentally** — ensure `using` directives, namespaces, and project references are correct.
 - **Preserve the existing code style** defined in `.editorconfig`.
 - **Use English for code, types, and file names.** Comments and user-facing docs may be bilingual (PT-BR / EN).
 - **Every change must be testable.** If you create a handler, create its test. If you create an endpoint, update `RBAC_MATRIX.md`.
-- **Docker**: follow `13-docker.md` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
-- **CI/CD**: follow `14-cicd.md` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
-- **AI features**: follow `15-ai-features.md` — SDK only in Kernel.Infrastructure, ITool via IMediator, TrackAsync in finally, Nunca invente no SystemPrompt.
+- **Docker**: follow `docker.mdc` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
+- **CI/CD**: follow `cicd.mdc` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
+- **AI features**: follow `ai-features.mdc` — SDK only in Kernel.Infrastructure, ITool via IMediator, TrackAsync in finally, Nunca invente no SystemPrompt.
 

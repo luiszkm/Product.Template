@@ -8,18 +8,18 @@ alwaysApply: false
 
 ## Before Generating Code
 
-1. **Read `.ai/rules/00-global.md`** to understand the stack and principles.
-2. **Read the rule file for the layer you are modifying** (e.g., `02-domain.md` for domain changes).
-3. **Read `12-folder-structure.md`** to know where to place new files.
-4. **Read `11-naming.md`** to ensure consistent naming.
-5. If creating an endpoint, read `05-api.md` and `08-security.md`.
-6. If creating tests, read `06-tests.md`.
+1. **Read `.cursor/rules/global.mdc`** to understand the stack and principles.
+2. **Read the rule file for the layer you are modifying** (e.g., `domain.mdc` for domain changes).
+3. **Read `folder-structure.mdc`** to know where to place new files.
+4. **Read `naming.mdc`** to ensure consistent naming.
+5. If creating an endpoint, read `api.mdc` and `security.mdc`.
+6. If creating tests, read `tests.mdc`.
 
 ## When Generating Code
 
 ### Structure
 - Always provide the **full file path** relative to the repository root.
-- Place files in the correct folder per `12-folder-structure.md`.
+- Place files in the correct folder per `folder-structure.mdc`.
 - Follow the established namespace pattern: `Product.Template.{Layer}.{Module}.{Folder}`.
 
 ### Code Quality
