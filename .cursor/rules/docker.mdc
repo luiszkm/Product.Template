@@ -1,8 +1,8 @@
 ---
+name: Docker Rules
 globs: Dockerfile*, docker-compose*, .dockerignore
 alwaysApply: false
 ---
-# 13 — Docker Rules
 
 > Regras para geração e manutenção de Dockerfiles de qualidade para este repositório .NET 10 / Clean Architecture.
 

@@ -1,8 +1,8 @@
 ---
+name: Agent Behavior
 description: How AI agents should operate in this repo — reading rules, NuGet policy, file creation, testability requirements
 alwaysApply: false
 ---
-﻿# 10 — Agent Behavior
 
 > Instructions for LLMs and AI coding agents working in this repository.
 

@@ -1,8 +1,8 @@
 ---
+name: Application Rules
 globs: src/Core/**/*.Application/**, src/Shared/Kernel.Application/**
 alwaysApply: false
 ---
-﻿# 03 — Application Rules
 
 ## CQRS Pattern
 

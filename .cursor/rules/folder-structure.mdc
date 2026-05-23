@@ -1,8 +1,8 @@
 ---
+name? Folder Structure
 description: Repository folder structure for modules, tests, and shared kernel
 alwaysApply: false
 ---
-# 12 — Folder Structure
 
 ## Root
 

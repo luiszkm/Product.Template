@@ -1,9 +1,8 @@
 ---
+name: Infrastructure Rules
 globs: src/Core/**/*.Infrastructure/**, src/Shared/Kernel.Infrastructure/**
 alwaysApply: false
 ---
-﻿# 04 — Infrastructure Rules
-
 ## Entity Framework Core
 
 ### DbContext

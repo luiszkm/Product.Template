@@ -1,8 +1,8 @@
 ---
+name: Observability Rules
 description: Structured logging (Serilog), OpenTelemetry, correlation IDs, health checks, metrics
 alwaysApply: false
 ---
-﻿# 09 — Observability Rules
 
 ## Structured Logging (Serilog)
 

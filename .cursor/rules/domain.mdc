@@ -1,8 +1,8 @@
 ---
+name: Domain Rules
 globs: src/Core/**/*.Domain/**, src/Shared/Kernel.Domain/**
 alwaysApply: false
 ---
-﻿# 02 — Domain Rules
 
 ## Base Types (Kernel.Domain)
 

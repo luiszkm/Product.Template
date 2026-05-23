@@ -1,8 +1,8 @@
 ---
+name: API Rules
 globs: src/Api/**
 alwaysApply: false
 ---
-﻿# 05 — API Rules
 
 ## Controllers
 

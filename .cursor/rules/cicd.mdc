@@ -1,8 +1,9 @@
 ---
+name: CI/CD Rules
 globs: .github/**, azure-pipelines*
 alwaysApply: false
 ---
-# 14 — CI/CD Rules
+
 
 > Regras para geração e manutenção de pipelines de CI/CD para este repositório .NET 10.
 > Cobertura: **GitHub Actions** (padrão) e **Azure DevOps Pipelines** (alternativo).

@@ -1,8 +1,7 @@
 ---
+name: Code Style
 alwaysApply: true
 ---
-# 07 — Code Style
-
 ## General
 
 - **Language version**: `latest` (set in `Directory.Build.props`).

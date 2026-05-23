@@ -1,9 +1,8 @@
 ---
+name: Security Rules
 description: Security rules — authentication, RBAC policies, input validation, secrets handling, tenant isolation
 alwaysApply: false
 ---
-﻿# 08 — Security Rules
-
 ## Authentication
 
 - **JWT Bearer** is the primary authentication scheme.

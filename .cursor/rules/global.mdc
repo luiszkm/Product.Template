@@ -1,8 +1,8 @@
 ---
+name: Global Rules
 description: Stack overview, core principles, universal rules for all agents working in this repo
 alwaysApply: false
 ---
-﻿# 00 — Global Rules
 
 > Canonical reference for every agent, LLM, or human working in this repository.
 

@@ -1,8 +1,8 @@
 ---
+name: Test Rules
 globs: tests/**
 alwaysApply: false
 ---
-﻿# 06 — Test Rules
 
 ## Test Projects
 

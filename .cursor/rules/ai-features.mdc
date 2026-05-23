@@ -1,8 +1,8 @@
 ---
+name: AI Features Rules
 globs: src/**/Ai/**
 alwaysApply: false
 ---
-# 15 — AI Features Rules
 
 > Regras canónicas para implementar capacidades de Inteligência Artificial neste repositório.
 > Referência de implementação: `src/Core/Ai/` e `src/Shared/Kernel.Infrastructure/Ai/`.
