@@ -1,6 +1,7 @@
 using Kernel.Application.Security;
 using Kernel.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Product.Template.Core.Identity.Infrastructure.Data.Seeders;
@@ -27,10 +28,13 @@ public static class DatabaseConfiguration
         services.AddScoped<ITenantConnectionStringResolver, TenantConnectionStringResolver>();
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
 
+        var auditTrailEnabled = configuration.GetValue<bool>("FeatureFlags:EnableAuditTrail", true);
+
         services.AddScoped<AuditableEntityInterceptor>();
         services.AddScoped<MultiTenantSaveChangesInterceptor>();
         services.AddScoped<SearchPathConnectionInterceptor>();
-        services.AddScoped<AuditLogInterceptor>();
+        if (auditTrailEnabled)
+            services.AddScoped<AuditLogInterceptor>();
 
         services.AddDbContext<HostDbContext>((sp, options) =>
         {
@@ -59,11 +63,15 @@ public static class DatabaseConfiguration
 
             options.EnableSensitiveDataLogging();
             options.EnableDetailedErrors();
-            options.AddInterceptors(
+            var interceptors = new List<IInterceptor>
+            {
                 sp.GetRequiredService<AuditableEntityInterceptor>(),
                 sp.GetRequiredService<MultiTenantSaveChangesInterceptor>(),
-                sp.GetRequiredService<SearchPathConnectionInterceptor>(),
-                sp.GetRequiredService<AuditLogInterceptor>());
+                sp.GetRequiredService<SearchPathConnectionInterceptor>()
+            };
+            if (auditTrailEnabled)
+                interceptors.Add(sp.GetRequiredService<AuditLogInterceptor>());
+            options.AddInterceptors(interceptors.ToArray());
         });
 
         return services;

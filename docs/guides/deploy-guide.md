@@ -24,6 +24,8 @@ Configuração de ambiente para containers (Docker, Kubernetes, Azure Container 
 | `Monitoring__RequireApiKey` | `false` (dev), `true` (prod) | Protege `/metrics` e `/health/ready` |
 | `Monitoring__RequireApiKeyInDevelopment` | `false` | Exige chave também em Development |
 | `FeatureFlags__EnableAI` | `false` | Endpoints `/api/v1/ai/*` retornam 404 quando desligado |
+| `FeatureFlags__EnableCaching` | `true` | Output cache desligado quando `false` |
+| `FeatureFlags__EnableAuditTrail` | `true` | Interceptor `AuditLogInterceptor` omitido quando `false` |
 | `FeatureFlags__EnableRequestDeduplication` | `true` | Middleware de deduplicação POST/PUT/PATCH |
 | `FeatureFlags__EnableAdvancedLogging` | `true` | Middleware de log detalhado com body mascarado |
 | `Redis__ConnectionString` | *(vazio)* | Redis para cache distribuído; vazio usa memória |
@@ -74,13 +76,17 @@ Controllers ou actions com `[FeatureGate(FeatureFlags.Nome)]` retornam **404** q
 
 Flags atuais: `EnableAI`, `EnableCaching`, `EnableAuditTrail`, `EnableRequestDeduplication`, `EnableAdvancedLogging`, `EnableExperimentalFeatures`.
 
-Middleware (dedup, logging avançado) usa as mesmas chaves via `IConfiguration` no pipeline.
+Middleware (dedup, logging avançado, caching) usa as mesmas chaves via `IConfiguration` no pipeline.
+
+Documentação completa: [feature-flags.md](./feature-flags.md).
 
 ## Health Checks UI
 
 O dashboard `/healthchecks-ui` (pacote Xabaril) permanece **desligado**. A avaliação em `HealthChecksUiSupport` indica que a versão NuGet mais recente (9.0.0) ainda conflita com IdentityModel no .NET 10.
 
 Monitorização recomendada: `/health/ready`, `/health`, Grafana/Prometheus e Seq. Acompanhar [AspNetCore.Diagnostics.HealthChecks](https://github.com/Xabaril/AspNetCore.Diagnostics.HealthChecks).
+
+Reavaliar periodicamente (ex.: trimestralmente ou antes de upgrades de major .NET): executar `HealthChecksUiSupport.Evaluate()` ou consultar NuGet por uma versão do pacote `AspNetCore.HealthChecks.UI` compatível com .NET 10 sem conflito IdentityModel. O campo `LastCheckedUtc` regista a última verificação manual ou em CI.
 
 ## Checklist antes de produção
 

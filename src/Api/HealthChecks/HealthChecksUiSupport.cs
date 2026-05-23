@@ -10,7 +10,8 @@ public static class HealthChecksUiSupport
             IsSupported: false,
             LatestKnownPackageVersion: "9.0.0",
             BlockingReason: "AspNetCore.HealthChecks.UI 9.0.0 pulls Duende.IdentityModel 5.2.0, which conflicts with Microsoft.IdentityModel 8.x required by .NET 10.",
-            Recommendation: "Use /health, /health/ready, and /health/live JSON endpoints. Re-evaluate when NuGet lists a release built for .NET 10 without the IdentityModel conflict.");
+            Recommendation: "Use /health, /health/ready, and /health/live JSON endpoints. Re-evaluate when NuGet lists a release built for .NET 10 without the IdentityModel conflict.",
+            LastCheckedUtc: DateTime.UtcNow);
     }
 }
 
@@ -18,4 +19,5 @@ public sealed record HealthChecksUiStatus(
     bool IsSupported,
     string LatestKnownPackageVersion,
     string BlockingReason,
-    string Recommendation);
+    string Recommendation,
+    DateTime LastCheckedUtc);

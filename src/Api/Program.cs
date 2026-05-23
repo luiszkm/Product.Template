@@ -70,8 +70,8 @@ if (!app.Configuration.GetValue<bool>("DisableDatabaseInitialization"))
 // Response Compression
 app.UseResponseCompression();
 
-// Output Caching
-app.UseCachingConfiguration();
+if (app.Configuration.GetValue<bool>("FeatureFlags:EnableCaching", true))
+    app.UseCachingConfiguration();
 
 // Serilog Request Logging (captura todas as requisições de forma performática)
 app.UseSerilogConfiguration();
