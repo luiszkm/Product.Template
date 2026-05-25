@@ -21,7 +21,6 @@ Example: `/new-entity Products Product`
 - `.cursor/rules/domain.mdc`
 - `.cursor/rules/naming.mdc`
 - `.cursor/rules/folder-structure.mdc`
-- `.ai/prompts/create-entity.md`
 - `src/Core/Identity/Identity.Domain/Entities/User.cs` — canonical reference
 
 ## Instruction

@@ -23,7 +23,6 @@ Where `{QUERY_NAME}` is the full query name without the `Query` suffix (e.g., `G
 - `.cursor/rules/application.mdc`
 - `.cursor/rules/naming.mdc`
 - `.cursor/rules/folder-structure.mdc`
-- `.ai/prompts/create-query.md`
 - `src/Core/Identity/Identity.Application/Queries/` — canonical reference
 
 ## Instruction

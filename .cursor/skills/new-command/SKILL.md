@@ -23,7 +23,6 @@ Where `{COMMAND_NAME}` is the verb+noun without the `Command` suffix (e.g., `Reg
 - `.cursor/rules/application.mdc`
 - `.cursor/rules/naming.mdc`
 - `.cursor/rules/folder-structure.mdc`
-- `.ai/prompts/create-command.md`
 - `src/Core/Identity/Identity.Application/` — canonical reference
 
 ## Instruction

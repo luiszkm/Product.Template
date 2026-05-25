@@ -21,7 +21,6 @@ Examples:
 
 - `.cursor/rules/infrastructure.mdc`
 - `.cursor/rules/observability.mdc`
-- `.ai/prompts/optimize-query.md`
 - `.github/agents/query-optimizer.agent.md`
 
 ## Instruction

@@ -28,7 +28,6 @@ Example: `/new-feature Products Product`
 - `.cursor/rules/naming.mdc`
 - `.cursor/rules/folder-structure.mdc`
 - `.ai/checklists/new-feature.md`
-- `.ai/prompts/create-feature.md`
 - `src/Core/Identity/` — canonical reference implementation
 
 ## Dynamic context

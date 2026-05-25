@@ -26,7 +26,6 @@ Current migrations (for naming conflicts and ordering awareness):
 ## Context — read these files before proceeding
 
 - `.cursor/rules/infrastructure.mdc`
-- `.ai/prompts/create-migration.md`
 
 ## Instruction
 

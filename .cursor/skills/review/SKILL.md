@@ -25,7 +25,6 @@ Examples:
 - `.cursor/rules/architecture.mdc`
 - `.cursor/rules/security.mdc`
 - `.cursor/rules/tests.mdc`
-- `.ai/prompts/review-feature.md`
 - `.github/agents/code-reviewer.agent.md`
 - `docs/security/RBAC_MATRIX.md`
 - `.ai/checklists/pull-request.md`

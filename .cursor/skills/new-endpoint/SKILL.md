@@ -21,7 +21,6 @@ Example: `/new-endpoint Products GET /products/{id}`
 - `.cursor/rules/api.mdc`
 - `.cursor/rules/security.mdc`
 - `.cursor/rules/naming.mdc`
-- `.ai/prompts/create-endpoint.md`
 - `src/Api/Controllers/v1/IdentityController.cs` — canonical reference
 - `src/Api/Configurations/SecurityConfiguration.cs` — existing policies
 - `docs/security/RBAC_MATRIX.md` — existing RBAC matrix
