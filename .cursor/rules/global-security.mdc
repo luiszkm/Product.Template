@@ -1,0 +1,44 @@
+---
+name: Global Security
+description: Security boundaries, credential handling, secrets, pre-deploy gates. All agents enforce always.
+alwaysApply: true
+---
+
+## Absolute Prohibitions
+
+- ❌ Never commit secrets — `.env*`, `appsettings.Development.json`, API keys, JWT secrets, connection strings
+- ❌ Never run `--no-verify`, `--force-push` to main, or skip architecture tests
+- ❌ Never delete RBAC entries without removing corresponding endpoints
+- ❌ Never return sensitive data (password hashes, tokens, internal IDs) in Output DTOs
+- ❌ Never log sensitive fields — mask PII, credentials, tokens in Serilog destructuring
+
+## Credential Exposure Procedure
+
+If a credential is found in code:
+1. Stop immediately — do not commit, do not push
+2. Alert user: file + line + secret type
+3. Suggest: `git filter-repo --path <file> --invert-paths` to purge history
+4. Rotate credential before continuing any work
+
+## Pre-Deploy Checklist (mandatory before merging to main)
+
+- [ ] `trivy image --exit-code 1 --severity HIGH,CRITICAL <image>` passes
+- [ ] `git diff` reviewed — no secrets or credentials in changeset
+- [ ] JWT secret ≥32 characters configured in environment (never `appsettings.json`)
+- [ ] `docs/security/RBAC_MATRIX.md` updated if endpoints were added or removed
+- [ ] `dotnet test tests/ArchitectureTests` passes
+- [ ] `dotnet list package --vulnerable` — no HIGH/CRITICAL packages
+- [ ] All protected endpoints use `[Authorize(Policy = "...")]` — never bare `[Authorize]`
+- [ ] No `AllowAnonymous` added without explicit user confirmation
+
+## Secrets Management Rules
+
+- Use `dotnet user-secrets` for local dev — never hardcode in any config file
+- Production secrets: environment variables or Azure Key Vault / AWS Secrets Manager
+- Password hashing: PBKDF2 (via `IPasswordHasher<T>`) — never MD5, SHA1, plain bcrypt without cost
+- Request logging must mask: `Password`, `Token`, `Secret`, `Key`, `Authorization`, `CreditCard`
+
+## Tenant Isolation
+
+- Every query against a multi-tenant table must filter by `TenantId` — enforced by `MultiTenantSaveChangesInterceptor`
+- Never bypass tenant filter with `.IgnoreQueryFilters()` without explicit user confirmation and documented justification

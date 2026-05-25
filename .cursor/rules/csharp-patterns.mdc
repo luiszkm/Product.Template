@@ -1,0 +1,67 @@
+---
+name: C# Patterns
+description: C# 12+ idioms, nullable reference types, record types, primary constructors, and .NET 10 patterns for this project.
+alwaysApply: true
+---
+
+## Language version: C# 12 / .NET 10
+
+### File structure
+
+- ✅ File-scoped namespaces: `namespace My.Namespace;`
+- ✅ Explicit `using` directives — no implicit usings in Domain/Application
+- ❌ Never `using static` in domain or application layers
+
+### Null safety
+
+- ✅ Nullable reference types enabled (`<Nullable>enable</Nullable>`) — treat all warnings as errors
+- ✅ Use `string?` for optional strings; never `string` + null check after the fact
+- ✅ Prefer `is null` / `is not null` over `== null` / `!= null`
+- ✅ Use null-coalescing throw: `value ?? throw new ArgumentNullException(nameof(value))`
+- ❌ Never suppress nullable warnings with `!` without a comment explaining why
+
+### Records
+
+- ✅ Output DTOs: `public sealed record UserOutput(Guid Id, string Name);`
+- ✅ Commands and queries: `public sealed record RegisterUserCommand(...) : ICommand<UserOutput>;`
+- ✅ Domain events: `public sealed record UserRegisteredEvent(Guid UserId) : IDomainEvent;`
+- ❌ Never use `record` for domain entities — use `class` with private setters
+
+### Primary constructors (C# 12)
+
+- ✅ Use for services/handlers with simple DI: `public class MyHandler(IMyRepo repo, IUnitOfWork uow)`
+- ❌ Avoid for domain entities — explicit private constructor + static `Create(...)` factory required
+
+### Collections
+
+- ✅ `IReadOnlyList<T>` for output collections — never expose `List<T>` from domain
+- ✅ Collection expressions: `List<string> items = [item1, item2];`
+- ✅ `[..existingList, newItem]` for spread
+- ✅ `Enumerable.Empty<T>()` or `[]` for empty collections — never `new List<T>()`
+
+### Pattern matching
+
+- ✅ Switch expressions over switch statements for mapping
+- ✅ `is { Property: value }` property patterns in guards
+- ❌ Never use `as` + null check — use `is T typed` pattern instead
+
+### Async
+
+- ✅ All async methods return `Task<T>` or `ValueTask<T>` — never `async void`
+- ✅ `ConfigureAwait(false)` in library/infrastructure code
+- ✅ `CancellationToken` as last parameter on all async public methods
+- ❌ Never `.Result` or `.Wait()` — always `await`
+
+### String handling
+
+- ✅ Raw string literals for multi-line: `"""..."""`
+- ✅ Interpolated strings for dynamic: `$"User {id} not found"`
+- ❌ Never string interpolation in Serilog templates — use structured `{Property}` syntax
+- ❌ Never `string.Format` — use interpolation
+
+### LINQ
+
+- ✅ Method syntax over query syntax
+- ✅ `FirstOrDefaultAsync` + null check — never `SingleOrDefault` in queries (use `FirstOrDefault` unless uniqueness is enforced at DB level)
+- ❌ Never `Count() > 0` — use `Any()`
+- ❌ Never `Where(...).FirstOrDefault()` — use `FirstOrDefault(predicate)`

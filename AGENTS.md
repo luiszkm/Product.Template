@@ -42,7 +42,7 @@ Hooks in `.claude/settings.json` enforce #1 on Stop and #2 on `git commit`.
 | 2+ files OR touches 2+ layers OR changes public contract (DTO/route/event) | Plan Mode → save plan to `.cursor/plans/{yyyy-mm-dd}-{slug}.md` → execute |
 | Unclear scope or business intent | Ask |
 
-Plan format: scope, affected files, inputs, expected output, acceptance command, rollback.
+Plan format: scope, affected files, inputs, expected output, acceptance command, rollback. Template: `.cursor/plans/_template.md`.
 
 Loop detection: same failure 3× → stop, escalate. Do not introduce workarounds.
 
@@ -75,7 +75,37 @@ Update `MEMORY.md` at end of each session: status per module, decisions taken, a
 If conversation > 50 turns or context feels saturated: finalize task, update `MEMORY.md`, request new chat.
 
 ## Parallel work
+
 Use `git worktree` for 2+ independent tasks. One agent per worktree. Never two agents editing the same file simultaneously. Main thread coordinates merge.
+
+### Subagent Coordination
+
+Spawn a subagent (worktree) when: 2+ independent modules touched OR task has a clear isolated boundary.
+
+**Steps:**
+1. `git worktree add ../<branch-name> -b <branch-name>`
+2. Update `MEMORY.md`: add branch name, scope, expected output
+3. Subagent works in isolation — no shared files with main thread during execution
+4. Main thread reviews diff before merge: `git diff main...<branch-name>`
+5. Merge + remove worktree: `git worktree remove ../<branch-name>`
+
+**When to delegate vs supervise inline:**
+- Delegate: independent feature slice, separate module, isolated refactor
+- Supervise inline: shared domain types, cross-cutting changes, migrations
+
+**Communication:** subagent updates its own MEMORY.md section; main thread reads it before merging.
+
+**Subagent blocker protocol:**
+If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3× loop failure):
+1. Stop work in the worktree
+2. Commit current state with message `wip: blocked — <reason>`
+3. Update MEMORY.md under the branch entry: `BLOCKED: <reason>`
+4. Return control to main thread — do not attempt workarounds
+
+**Background Agents (long-running tasks):**
+- Use for: full module scaffolding, mass refactors, test generation across multiple files
+- Do NOT use for: migrations, any change to protected files, changes requiring user confirmation
+- After background agent completes: main thread must run full verification gate before merge
 
 ## Rules and skills
 
@@ -92,9 +122,11 @@ Use `git worktree` for 2+ independent tasks. One agent per worktree. Never two a
 ### Always-active rules
 - `style.mdc` (alwaysApply: true)
 - `global.mdc`, `architecture.mdc`, `naming.mdc` (alwaysApply: true)
+- `global-security.mdc` (alwaysApply: true) — credential handling, pre-deploy checklist, tenant isolation
+- `global-commits.mdc` (alwaysApply: true) — Conventional Commits format
 
 ### Skills
-`.cursor/skills/{new-feature,new-command,new-query,new-endpoint,new-entity,new-module,new-migration,optimize-query,review}/SKILL.md`
+`.cursor/skills/{new-feature,new-command,new-query,new-endpoint,new-entity,new-module,new-migration,optimize-query,review,test-writer}/SKILL.md`
 
 ### Canonical reference module
 `src/Core/Identity/` — look here first for any pattern.
