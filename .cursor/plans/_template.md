@@ -39,6 +39,8 @@ dotnet test tests/ArchitectureTests
 dotnet test tests/UnitTests
 dotnet test tests/IntegrationTests --filter "FullyQualifiedName~{Feature}"
 dotnet format --verify-no-changes
+# If API running:
+curl -f http://localhost:5000/health
 ```
 
 ## Rollback

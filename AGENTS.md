@@ -26,11 +26,14 @@ docker compose up
 ```
 
 ## Verification Gate (MANDATORY before declaring task done)
+Shortcut: `make verify` (runs steps 1–4 in order).
+
 Run in order — all must pass:
 1. `dotnet build`
 2. `dotnet test tests/ArchitectureTests`
 3. `dotnet test tests/UnitTests`
 4. `dotnet format --verify-no-changes`
+5. (If API running) `make health` — must return HTTP 200
 
 Hooks in `.claude/settings.json` enforce #1 on Stop and #2 on `git commit`.
 
@@ -106,6 +109,12 @@ If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3�
 - Use for: full module scaffolding, mass refactors, test generation across multiple files
 - Do NOT use for: migrations, any change to protected files, changes requiring user confirmation
 - After background agent completes: main thread must run full verification gate before merge
+  ```bash
+  make verify
+  git diff main
+  # If API running:
+  make health
+  ```
 
 ## Rules and skills
 

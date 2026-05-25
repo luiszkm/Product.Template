@@ -4,45 +4,44 @@ globs: .github/**, azure-pipelines*
 alwaysApply: false
 ---
 
-
-> Regras para geração e manutenção de pipelines de CI/CD para este repositório .NET 10.
-> Cobertura: **GitHub Actions** (padrão) e **Azure DevOps Pipelines** (alternativo).
-
----
-
-## Princípios Fundamentais
-
-1. **Pipeline como código** — todo workflow vive em `.github/workflows/` (GHA) ou `azure-pipelines/` (AzDO); nunca configuração pela UI.
-2. **Fail fast, fail loud** — build, lint e testes rápidos executam primeiro; Docker e deploy executam após aprovação de qualidade.
-3. **Nenhum segredo em código** — usar GitHub Secrets / Azure Key Vault + Variable Groups; nunca hardcoded.
-4. **Idempotência** — deploy pode ser executado múltiplas vezes sem efeito colateral indesejado.
-5. **Ambientes protegidos** — `staging` e `production` requerem aprovação manual antes do deploy.
-6. **Imagem imutável** — a mesma imagem promovida por todos os ambientes; nunca rebuildar no deploy.
-7. **Versionamento semântico** — tag de imagem = `v{MAJOR}.{MINOR}.{PATCH}[-{sha}]`; nunca usar apenas `latest` para produção.
-8. **Observabilidade de pipeline** — gerar relatórios de cobertura, SBOM e scan de vulnerabilidades como artefatos.
-9. **Matriz de .NET** — não testar em múltiplos runtimes; o target é exclusivamente `.NET 10`.
-10. **Cache obrigatório** — cachear NuGet packages e layers Docker para reduzir tempo de execução.
+> Rules for generating and maintaining CI/CD pipelines for this .NET 10 repository.
+> Coverage: **GitHub Actions** (default) and **Azure DevOps Pipelines** (alternative).
 
 ---
 
-## GitHub Actions — Estrutura de Workflows
+## Core Principles
+
+1. **Pipeline as code** — all workflows live in `.github/workflows/` (GHA) or `azure-pipelines/` (AzDO); never configure via UI.
+2. **Fail fast, fail loud** — build, lint, and fast tests run first; Docker and deploy run after quality gates pass.
+3. **No secrets in code** — use GitHub Secrets / Azure Key Vault + Variable Groups; never hardcode.
+4. **Idempotence** — deploy can run multiple times without unwanted side effects.
+5. **Protected environments** — `staging` and `production` require manual approval before deploy.
+6. **Immutable image** — the same image is promoted across all environments; never rebuild on deploy.
+7. **Semantic versioning** — image tag = `v{MAJOR}.{MINOR}.{PATCH}[-{sha}]`; never use `latest` alone in production.
+8. **Pipeline observability** — generate coverage reports, SBOM, and vulnerability scan reports as artifacts.
+9. **.NET matrix** — do not test against multiple runtimes; target is exclusively `.NET 10`.
+10. **Mandatory cache** — cache NuGet packages and Docker layers to reduce execution time.
+
+---
+
+## GitHub Actions — Workflow Structure
 
 ```
 .github/
 └── workflows/
     ├── ci.yml                → PR validation (build + test + lint + format)
-    ├── build-push.yml        → Build Docker + push para registry (push em main/develop)
-    ├── deploy-staging.yml    → Deploy automático em staging (após push em develop)
-    ├── deploy-production.yml → Deploy manual/aprovado em production (após push em main)
-    ├── security-scan.yml     → Trivy + dotnet audit (agendado diariamente)
-    └── validate-template.yml → (existente) valida o template .NET
+    ├── build-push.yml        → Docker build + push to registry (push on main/develop)
+    ├── deploy-staging.yml    → Automatic deploy to staging (after push to develop)
+    ├── deploy-production.yml → Manual/approved deploy to production (after push to main)
+    ├── security-scan.yml     → Trivy + dotnet audit (scheduled daily)
+    └── validate-template.yml → (existing) validates the .NET template
 ```
 
 ---
 
 ## Workflow: CI (`ci.yml`)
 
-### Gatilhos
+### Triggers
 
 ```yaml
 on:
@@ -53,14 +52,14 @@ on:
   workflow_dispatch:
 ```
 
-### Jobs obrigatórios
+### Required jobs
 
 ```
 build-and-test  ──► integration-tests ──► arch-tests + security-audit
 format-check    ─┘
 ```
 
-### Template canônico `ci.yml`
+### Canonical `ci.yml` template
 
 ```yaml
 name: CI
@@ -177,13 +176,13 @@ jobs:
 
 ## Workflow: Build & Push Docker (`build-push.yml`)
 
-### Regras obrigatórias
+### Mandatory rules
 
-- Usar **`docker/build-push-action`** com BuildKit habilitado.
-- Gerar `SBOM` e `provenance` attestation (Supply Chain Security).
-- Assinar a imagem com `cosign` (Sigstore) em push para `main`.
-- Tags: `develop` (em develop), `v{version}` e SHA curto para `main`.
-- Scanear com `trivy` antes de fazer push — falhar em `HIGH`/`CRITICAL`.
+- Use **`docker/build-push-action`** with BuildKit enabled.
+- Generate `SBOM` and `provenance` attestation (Supply Chain Security).
+- Sign the image with `cosign` (Sigstore) on push to `main`.
+- Tags: `develop` (on develop), `v{version}` and short SHA for `main`.
+- Scan with `trivy` before pushing — fail on `HIGH`/`CRITICAL`.
 
 ```yaml
 name: Build & Push Docker
@@ -241,7 +240,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-,format=short
 
-      - name: Build (sem push — para scan)
+      - name: Build (no push — for scan)
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -306,12 +305,12 @@ jobs:
 
 ## Workflow: Deploy (`deploy-staging.yml` / `deploy-production.yml`)
 
-### Princípios
+### Principles
 
-- Deploy usa a **imagem já construída** (pelo digest) — nunca rebuilda.
-- `staging`: deploy automático após `build-push` em `develop`.
-- `production`: deploy após `build-push` em `main` + **aprovação manual** via `environment`.
-- Migrations EF Core executam como **job separado antes** do deploy da API.
+- Deploy uses the **already-built image** (by digest) — never rebuilds.
+- `staging`: automatic deploy after `build-push` on `develop`.
+- `production`: deploy after `build-push` on `main` + **manual approval** via `environment`.
+- EF Core migrations run as a **separate job before** the API deploy.
 
 ```yaml
 name: Deploy — Staging
@@ -356,7 +355,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Deploy to staging
-        # Substituir pelo orquestrador: K8s, Azure Container Apps, ECS, etc.
+        # Replace with orchestrator: K8s, Azure Container Apps, ECS, etc.
         run: |
           echo "Deploying ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop"
           # Ex: kubectl set image deployment/api api=$IMAGE:$TAG -n staging
@@ -364,47 +363,47 @@ jobs:
 
 ---
 
-## Segredos e Variáveis de Ambiente
+## Secrets and Environment Variables
 
-### GitHub Secrets obrigatórios
+### Required GitHub Secrets
 
-| Secret | Descrição |
-|--------|-----------|
-| `STAGING_CONNECTION_STRING` | Connection string do banco de staging |
-| `PRODUCTION_CONNECTION_STRING` | Connection string do banco de produção |
-| `JWT_SECRET_KEY` | Chave JWT (uma por ambiente) |
-| `SEQ_SERVER_URL` | URL do Seq para logs estruturados |
-| `REGISTRY_TOKEN` | Token para registry privado (se não usar GHCR) |
+| Secret | Description |
+|--------|-------------|
+| `STAGING_CONNECTION_STRING` | Staging database connection string |
+| `PRODUCTION_CONNECTION_STRING` | Production database connection string |
+| `JWT_SECRET_KEY` | JWT key (one per environment) |
+| `SEQ_SERVER_URL` | Seq URL for structured logs |
+| `REGISTRY_TOKEN` | Token for private registry (if not using GHCR) |
 
-### Regras de Segredos
+### Secrets Rules
 
-- **Nunca** declarar segredos em `env:` de nível de workflow — passar somente para steps específicos.
-- Prefixar variáveis de step: `APP_`, `DB_`, `JWT_`.
-- Rotacionar segredos a cada 90 dias.
-- Usar `gh secret set` via CLI para provisionamento programático.
+- **Never** declare secrets in workflow-level `env:` — pass only to specific steps.
+- Prefix step variables: `APP_`, `DB_`, `JWT_`.
+- Rotate secrets every 90 days.
+- Use `gh secret set` via CLI for programmatic provisioning.
 
 ---
 
-## Regras de Qualidade de Pipeline
+## Pipeline Quality Rules
 
-### Nomes
+### Naming
 
-- Jobs: `kebab-case` descritivo (`build-and-test`, `security-audit`, `deploy-staging`).
-- Steps: frase imperativa curta em inglês (`Run unit tests`, `Upload coverage report`).
+- Jobs: descriptive `kebab-case` (`build-and-test`, `security-audit`, `deploy-staging`).
+- Steps: short imperative phrase in English (`Run unit tests`, `Upload coverage report`).
 
-### `permissions` mínimas — obrigatórias em todo workflow
+### Minimum `permissions` — required in every workflow
 
 ```yaml
 permissions:
   contents: read        # checkout
-  packages: write       # apenas em build-push.yml
-  id-token: write       # apenas para cosign/OIDC
-  pull-requests: write  # apenas para comentários em PR
+  packages: write       # only in build-push.yml
+  id-token: write       # only for cosign/OIDC
+  pull-requests: write  # only for PR comments
 ```
 
-**Nunca usar `permissions: write-all`.**
+**Never use `permissions: write-all`.**
 
-### Timeouts obrigatórios
+### Required timeouts
 
 ```yaml
 jobs:
@@ -416,7 +415,7 @@ jobs:
     timeout-minutes: 15
 ```
 
-### Variáveis de ambiente globais obrigatórias
+### Required global environment variables
 
 ```yaml
 env:
@@ -426,7 +425,7 @@ env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 ```
 
-### Cache de NuGet
+### NuGet Cache
 
 ```yaml
 - uses: actions/cache@v4
@@ -437,30 +436,30 @@ env:
       nuget-${{ runner.os }}-
 ```
 
-Sempre incluir `packages.lock.json` no hash para cache determinístico.
+Always include `packages.lock.json` in the hash for deterministic cache.
 
-### Artefatos
+### Artifacts
 
-- Resultados de teste (`.trx`) → sempre publicados, mesmo em falha (`if: always()`).
-- Relatório de cobertura → publicado como artefato e comentado no PR.
-- SBOM → publicado como artefato e anexado ao release.
-- SARIF (Trivy/CodeQL) → enviado ao GitHub Security tab.
+- Test results (`.trx`) → always published, even on failure (`if: always()`).
+- Coverage report → published as artifact and commented on PR.
+- SBOM → published as artifact and attached to release.
+- SARIF (Trivy/CodeQL) → sent to GitHub Security tab.
 
 ---
 
-## Azure DevOps Pipelines (alternativo)
+## Azure DevOps Pipelines (alternative)
 
-### Estrutura de arquivos
+### File structure
 
 ```
 azure-pipelines/
 ├── ci.yml               → PR validation
-├── build-push.yml       → Docker build + push para ACR
-├── deploy-staging.yml   → Deploy staging
-└── deploy-prod.yml      → Deploy produção (aprovação manual)
+├── build-push.yml       → Docker build + push to ACR
+├── deploy-staging.yml   → Staging deploy
+└── deploy-prod.yml      → Production deploy (manual approval)
 ```
 
-### Template canônico `azure-pipelines/ci.yml`
+### Canonical `azure-pipelines/ci.yml` template
 
 ```yaml
 trigger:
@@ -587,70 +586,70 @@ stages:
                 $(Build.SourceBranchName)
 ```
 
-### Azure DevOps — Segredos e Variáveis
+### Azure DevOps — Secrets and Variables
 
-- Usar **Variable Groups** no Azure DevOps Library (nunca `variables:` inline para segredos).
-- Linkar Variable Group ao **Azure Key Vault** para rotação automática.
-- Referenciar com `$(SECRET_NAME)` — mascarados automaticamente nos logs.
-- Ambientes de produção: adicionar **Approval Gates** + **Business Hours** checks no Environment.
+- Use **Variable Groups** in Azure DevOps Library (never inline `variables:` for secrets).
+- Link Variable Group to **Azure Key Vault** for automatic rotation.
+- Reference with `$(SECRET_NAME)` — automatically masked in logs.
+- Production environments: add **Approval Gates** + **Business Hours** checks in Environment.
 
 ---
 
-## Regras de Nomenclatura de Branches
+## Branch Naming Rules
 
-| Branch | Finalidade | Deploy automático |
-|--------|-----------|-------------------|
-| `main` | Produção | Não (aprovação manual) |
-| `develop` | Staging | Sim |
-| `feature/*` | Feature branches | Não |
-| `hotfix/*` | Correções urgentes | Não |
+| Branch | Purpose | Automatic deploy |
+|--------|---------|-----------------|
+| `main` | Production | No (manual approval) |
+| `develop` | Staging | Yes |
+| `feature/*` | Feature branches | No |
+| `hotfix/*` | Urgent fixes | No |
 | `release/*` | Release candidates | Staging (manual) |
 
 ---
 
-## Versionamento de Imagem Docker no CI
+## Docker Image Versioning in CI
 
 ```
-Padrão: {REGISTRY}/{OWNER}/{NAME}:{TAG}
+Pattern: {REGISTRY}/{OWNER}/{NAME}:{TAG}
 
-Tags geradas automaticamente:
-  - sha-{short_sha}          → todo push (imutável, rastreabilidade)
-  - develop                  → push em develop (floating)
-  - v{major}.{minor}.{patch} → tag semântica (push de tag git)
+Auto-generated tags:
+  - sha-{short_sha}          → every push (immutable, traceability)
+  - develop                  → push to develop (floating)
+  - v{major}.{minor}.{patch} → semantic tag (git tag push)
   - v{major}.{minor}         → floating minor
-  - latest                   → APENAS em develop; NUNCA em main/production
+  - latest                   → ONLY on develop; NEVER on main/production
 ```
 
-**Imagem de produção NUNCA usa `latest`** — sempre digest SHA256 ou tag semântica fixa.
+**Production image NEVER uses `latest`** — always SHA256 digest or fixed semantic tag.
 
 ---
 
-## Checklist de Novo Workflow
+## New Workflow Checklist
 
-- [ ] `permissions:` mínimas declaradas explicitamente
-- [ ] `timeout-minutes:` definido em todos os jobs
-- [ ] Cache de NuGet configurado com hash de lock files
-- [ ] Artefatos de teste publicados com `if: always()`
-- [ ] Segredos referenciados via `${{ secrets.NAME }}`, nunca hardcoded
-- [ ] `DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true` e `DOTNET_CLI_TELEMETRY_OPTOUT: true`
-- [ ] `.NET 10.0.x` como versão alvo (nunca `latest`)
-- [ ] `dotnet restore --locked-mode` (requer `packages.lock.json`)
-- [ ] Scan de segurança (Trivy) antes de push Docker
-- [ ] Deploy em produção com aprovação manual via `environment:`
+- [ ] Minimum `permissions:` declared explicitly
+- [ ] `timeout-minutes:` defined on all jobs
+- [ ] NuGet cache configured with lock file hash
+- [ ] Test artifacts published with `if: always()`
+- [ ] Secrets referenced via `${{ secrets.NAME }}`, never hardcoded
+- [ ] `DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true` and `DOTNET_CLI_TELEMETRY_OPTOUT: true`
+- [ ] `.NET 10.0.x` as target version (never `latest`)
+- [ ] `dotnet restore --locked-mode` (requires `packages.lock.json`)
+- [ ] Security scan (Trivy) before Docker push
+- [ ] Production deploy with manual approval via `environment:`
 
 ---
 
-## O que o Copilot NÃO deve fazer
+## What the agent must NEVER do
 
-1. Usar `dotnet-version: 'latest'` — sempre pin para `10.0.x`.
-2. Usar `permissions: write-all` — sempre declarar permissões mínimas.
-3. Criar workflows sem `timeout-minutes`.
-4. Fazer push de imagem Docker sem scan de vulnerabilidades antes.
-5. Usar `latest` como tag de imagem em ambiente de produção.
-6. Colocar connection strings, JWT secrets ou API keys diretamente no YAML.
-7. Omitir cache de NuGet packages.
-8. Fazer build Docker na stage de deploy (imagem deve ser promovida, não reconstruída).
-9. Criar job de deploy sem `environment:` configurado (para ambientes protegidos).
-10. Omitir publicação de resultados de teste.
-11. Usar `continue-on-error: true` em steps críticos (build, test, security scan).
-12. Omitir `dotnet restore --locked-mode` (garantia de build determinístico).
+1. Use `dotnet-version: 'latest'` — always pin to `10.0.x`.
+2. Use `permissions: write-all` — always declare minimum permissions.
+3. Create workflows without `timeout-minutes`.
+4. Push Docker image without vulnerability scan first.
+5. Use `latest` as image tag in production environments.
+6. Put connection strings, JWT secrets, or API keys directly in YAML.
+7. Omit NuGet package cache.
+8. Build Docker in the deploy stage (image must be promoted, not rebuilt).
+9. Create deploy job without `environment:` configured (for protected environments).
+10. Omit test result publishing.
+11. Use `continue-on-error: true` on critical steps (build, test, security scan).
+12. Omit `dotnet restore --locked-mode` (guarantees deterministic build).
