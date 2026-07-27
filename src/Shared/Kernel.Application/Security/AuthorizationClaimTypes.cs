@@ -4,4 +4,5 @@ public static class AuthorizationClaimTypes
 {
     public const string Permission = "permission";
     public const string SecurityStamp = "security_stamp";
+    public const string TenantId = "tenant_id";
 }

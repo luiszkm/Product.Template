@@ -64,13 +64,13 @@ public class AssignUserToRoleCommandHandlerTests : IDisposable
     {
         public List<Guid> RegeneratedUserIds { get; } = [];
 
-        public Task RegenerateAsync(Guid userId, CancellationToken cancellationToken = default)
+        public Task RegenerateAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken = default)
         {
             RegeneratedUserIds.Add(userId);
             return Task.CompletedTask;
         }
 
-        public Task<bool> ValidateAsync(Guid userId, string stamp, CancellationToken cancellationToken = default)
+        public Task<bool> ValidateAsync(Guid tenantId, Guid userId, string stamp, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
     }
 }

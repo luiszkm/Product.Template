@@ -88,7 +88,8 @@ public class LoginCommandHandler : ICommandHandler<LoginCommand, AuthTokenOutput
             .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
         var extraClaims = permissionClaims
-            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp));
+            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp))
+            .Append(new Claim(AuthorizationClaimTypes.TenantId, tenantId.ToString()));
 
         var accessToken = _jwtTokenService.CreateAccessToken(
             userId: user.Id,
