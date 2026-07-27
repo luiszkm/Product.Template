@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Product.Template.Api.Authorization;
 using Product.Template.Kernel.Application.Security;
+using Product.Template.Kernel.Domain.MultiTenancy;
 
 namespace Product.Template.Api.Configurations;
 
@@ -109,8 +110,26 @@ public static class SecurityConfiguration
                             return;
                         }
 
+                        var tenantClaim = context.Principal?.FindFirst(AuthorizationClaimTypes.TenantId);
+                        if (tenantClaim is null || !Guid.TryParse(tenantClaim.Value, out var tokenTenantId))
+                        {
+                            logger.LogWarning("JWT rejected for user {UserId}: missing or invalid tenant_id claim", userId);
+                            context.Fail("Invalid token: missing tenant identifier.");
+                            return;
+                        }
+
+                        var tenantContext = context.HttpContext.RequestServices.GetRequiredService<ITenantContext>();
+                        if (tenantContext.TenantId != tokenTenantId)
+                        {
+                            logger.LogWarning(
+                                "JWT rejected for user {UserId}: token tenant {TokenTenantId} does not match resolved tenant {ResolvedTenantId}",
+                                userId, tokenTenantId, tenantContext.TenantId);
+                            context.Fail("Invalid token: tenant mismatch.");
+                            return;
+                        }
+
                         var stampService = context.HttpContext.RequestServices.GetRequiredService<ISecurityStampService>();
-                        var isValid = await stampService.ValidateAsync(userId, stampClaim.Value, context.HttpContext.RequestAborted);
+                        var isValid = await stampService.ValidateAsync(tokenTenantId, userId, stampClaim.Value, context.HttpContext.RequestAborted);
 
                         if (!isValid)
                         {

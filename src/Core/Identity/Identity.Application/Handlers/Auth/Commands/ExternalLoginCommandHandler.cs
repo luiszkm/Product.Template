@@ -141,7 +141,8 @@ public sealed class ExternalLoginCommandHandler : ICommandHandler<ExternalLoginC
             .Select(p => new Claim(AuthorizationClaimTypes.Permission, p));
 
         var extraClaims = permissionClaims
-            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp));
+            .Append(new Claim(AuthorizationClaimTypes.SecurityStamp, user.SecurityStamp))
+            .Append(new Claim(AuthorizationClaimTypes.TenantId, tenantId.ToString()));
 
         var token = _jwtTokenService.CreateAccessToken(
             userId: user.Id,

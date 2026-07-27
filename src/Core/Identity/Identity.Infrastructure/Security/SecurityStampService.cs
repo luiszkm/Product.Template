@@ -28,7 +28,7 @@ internal sealed class SecurityStampService : ISecurityStampService
         _logger = logger;
     }
 
-    public async Task RegenerateAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task RegenerateAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
             ?? throw new NotFoundException(nameof(userId), userId);
@@ -37,24 +37,24 @@ internal sealed class SecurityStampService : ISecurityStampService
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
 
-        _cache.Remove(CacheKey(userId));
+        _cache.Remove(CacheKey(tenantId, userId));
 
         _logger.LogInformation("Security stamp regenerated for user {UserId}", userId);
     }
 
-    public async Task<bool> ValidateAsync(Guid userId, string stamp, CancellationToken cancellationToken = default)
+    public async Task<bool> ValidateAsync(Guid tenantId, Guid userId, string stamp, CancellationToken cancellationToken = default)
     {
-        if (_cache.TryGetValue(CacheKey(userId), out string? cachedStamp))
+        if (_cache.TryGetValue(CacheKey(tenantId, userId), out string? cachedStamp))
             return cachedStamp == stamp;
 
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
-        if (user is null)
+        if (user is null || user.TenantId != tenantId)
             return false;
 
-        _cache.Set(CacheKey(userId), user.SecurityStamp, CacheTtl);
+        _cache.Set(CacheKey(tenantId, userId), user.SecurityStamp, CacheTtl);
 
         return user.SecurityStamp == stamp;
     }
 
-    private static string CacheKey(Guid userId) => $"security_stamp_{userId}";
+    private static string CacheKey(Guid tenantId, Guid userId) => $"security_stamp_{tenantId}_{userId}";
 }

@@ -55,7 +55,7 @@ public class AssignUserToRoleCommandHandler : ICommandHandler<AssignUserToRoleCo
         await _assignmentRepository.AddAsync(assignment, cancellationToken);
         await _unitOfWork.Commit(cancellationToken);
 
-        await _securityStampService.RegenerateAsync(request.UserId, cancellationToken);
+        await _securityStampService.RegenerateAsync(tenantId, request.UserId, cancellationToken);
 
         _logger.LogInformation("User {UserId} assigned to role {RoleName}", request.UserId, role.Name);
     }

@@ -53,10 +53,10 @@ public class GetUserAssignmentsQueryHandlerTests : IDisposable
 
     private sealed class FakeSecurityStampService : ISecurityStampService
     {
-        public Task RegenerateAsync(Guid userId, CancellationToken cancellationToken = default)
+        public Task RegenerateAsync(Guid tenantId, Guid userId, CancellationToken cancellationToken = default)
             => Task.CompletedTask;
 
-        public Task<bool> ValidateAsync(Guid userId, string stamp, CancellationToken cancellationToken = default)
+        public Task<bool> ValidateAsync(Guid tenantId, Guid userId, string stamp, CancellationToken cancellationToken = default)
             => Task.FromResult(true);
     }
 }
