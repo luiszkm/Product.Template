@@ -301,76 +301,45 @@ Use it to correlate a Seq log entry → Tempo trace → Prometheus metric for th
 
 ## AI-First Development
 
-This template has a built-in **GitHub Copilot AI-first layer** — persistent instructions, specialized agents, and reusable prompts that eliminate the need to repeat architecture rules in every session.
+This template includes a **Cursor agent harness** — rules, skills, patterns, and checklists that encode architecture conventions so agents do not rediscover them every session.
 
-### How it works
+### Cursor Skills (canonical workflows)
 
-GitHub Copilot reads `.github/copilot-instructions.md` automatically on every interaction in this repo. It contains the complete stack, architecture rules, naming conventions, and a list of what Copilot must never do — all derived from the actual code.
+Invoke in Cursor Chat with `/skill-name` or natural-language triggers from `AGENTS.md`:
 
-### GitHub Copilot Instructions
+| Skill | Trigger | Purpose |
+|-------|---------|---------|
+| `/new-module` | "new module", "design module" | DDD bounded context design (no code) |
+| `/new-feature` | "add feature", "vertical slice" | Full feature scaffold |
+| `/new-command` | "add command", "create command" | CQRS command slice |
+| `/new-query` | "add query", "create query" | CQRS query slice |
+| `/new-endpoint` | "add endpoint", "new route" | API endpoint + RBAC + auth tests |
+| `/optimize-query` | "optimize query", "N+1 problem" | Query diagnosis and optimisation |
+| `/review` | "review this file", "review the diff" | Local code review (6 areas) |
+| `/pr-review` | "review PR #N", "review this PR" | Multi-agent GitHub PR review |
+| `/harness-audit` | "audit harness", "harness gaps" | Harness health check |
 
-```
-.github/
-├── copilot-instructions.md          → Auto-loaded by Copilot on every session
-├── instructions/
-│   ├── backend.instructions.md      → Commands, Queries, Handlers, Validators, DTOs
-│   ├── api.instructions.md          → Controllers, HTTP contracts, RBAC, error handling
-│   └── infrastructure.instructions.md → EF Core, Repositories, Multi-tenancy, DI
-└── agents/
-    ├── backend-architect.agent.md   → Architectural review & drift detection
-    ├── feature-builder.agent.md     → Scaffold complete features following the template
-    ├── query-optimizer.agent.md     → EF Core / Dapper read optimisation
-    └── code-reviewer.agent.md       → Deep review: security gaps, violations + fix proposals
-```
+Full trigger table: `AGENTS.md` and `.cursor/rules/global.mdc`.
 
-### Specialized Agents (GitHub Copilot Chat)
-
-Use these agents in Copilot Chat with `@` to get context-aware, project-specific assistance:
-
-| Agent | Activate with | Purpose |
-|-------|--------------|---------|
-| Backend Architect | `@backend-architect` | Validate architecture, detect layer violations, review new modules |
-| Feature Builder | `@feature-builder` | Scaffold a full feature (entity → handler → endpoint → tests) |
-| Query Optimizer | `@query-optimizer` | Diagnose N+1, over-fetching, missing indexes, propose Dapper read services |
-| Code Reviewer | `@code-reviewer` | Deep code review — security gaps, architecture violations, missing tests, with fix proposals |
-
-### Reusable Prompts
+### Agent Harness (`.agents/` + `.cursor/`)
 
 ```
-prompts/
-├── create-feature.prompt.md   → Full feature scaffold checklist + expected output format
-├── review-feature.prompt.md   → Architectural review criteria by layer
-├── optimize-query.prompt.md   → Query diagnosis + optimisation proposal template
-└── code-review.prompt.md      → Deep review: security gaps, violations, missing tests + fix proposals
-```
+.cursor/
+├── rules/          → Layer constraints (always-on + glob-attached)
+└── skills/         → Procedural playbooks (/new-feature, /review, …)
 
-**Usage**: Open a prompt file, copy its content into Copilot Chat, and fill in the `{MODULE}`, `{ENTITY}` and other placeholders.
-
-### Agent Harness (`.agents/`)
-
-Checklists, patterns, and examples for AI-assisted development. Layer rules live in `.cursor/rules/`:
-
-```
 .agents/
-├── checklists/     → new-feature, api-endpoint, persistence, pull-request
-├── examples/       → Reference implementation guide (points to Identity module)
-└── patterns/       → Pattern docs (canonical structure for agents)
+├── checklists/     → Verification gates (new-feature, pull-request, …)
+├── patterns/       → Canonical structure docs (11/11 published)
+└── examples/       → Index to Identity reference files
 ```
-
-Rules by layer: `.cursor/rules/` (domain, application, infrastructure, api, tests, security, etc.)
 
 ### Quick start for agents
 
-When starting a new task in Copilot Chat:
-
-1. **Copilot already has context** — `copilot-instructions.md` is loaded automatically.
-2. **Use the right agent**:
-   - `@feature-builder` — scaffold a new feature end-to-end
-   - `@backend-architect` — validate architecture or review a new module
-   - `@query-optimizer` — diagnose and fix slow queries
-   - `@code-reviewer` — deep review with security gaps, violations, and fix proposals
-3. **Use a prompt file** — copy from `prompts/` to get a structured, checklist-driven response.
-4. **Read patterns first** — use `.agents/patterns/` and `.cursor/rules/` before referencing live code.
+1. Read `.cursor/rules/global.mdc` and the rule for the layer you are editing.
+2. Invoke the matching **skill** (e.g. `/new-feature`, `/review`).
+3. Read the matching **pattern** from `.agents/patterns/` when scaffolding code.
+4. Run `make verify` before declaring done.
 
 ## Key Features
 
@@ -403,7 +372,7 @@ dotnet test tests/ArchitectureTests
 ## Adding a New Module
 
 1. Create the project triple under `src/Core/{Module}/`
-2. Use `@feature-builder` in Copilot Chat — or copy `prompts/create-feature.prompt.md`
+2. Run `/new-module` for DDD design, then `/new-feature` to scaffold code
 3. Use `.agents/checklists/new-feature.md` to verify completeness
 4. See `CONTRIBUTING.md` for full guidelines
 
@@ -413,13 +382,12 @@ dotnet test tests/ArchitectureTests
 |----------|---------|
 | `README.md` | This file — stack, setup, Docker, observability, AI tooling |
 | `CONTRIBUTING.md` | How to contribute and use AI tools |
+| `AGENTS.md` | Agent commands, verification gates, skill trigger table |
 | `compose.yaml` | Local development environment (API + SQL Server + Seq + Tempo + Prometheus + Grafana) |
 | `src/Api/Dockerfile` | Multi-stage production build (Alpine + icu-libs, non-root, locked restore) |
-| `.github/copilot-instructions.md` | Persistent Copilot rules (auto-loaded) |
-| `.github/instructions/` | Layer-specific instructions for Copilot |
-| `.github/agents/` | Specialized agents for Copilot Chat |
-| `prompts/` | Reusable prompt templates |
+| `.cursor/skills/` | Canonical workflows (new-feature, review, optimize-query, etc.) |
 | `.cursor/rules/` | Architectural rules by layer |
+| `.agents/patterns/` | Pattern docs (canonical structure for agents) |
 | `.agents/checklists/` | Verification checklists for features and PRs |
 | `.agents/patterns/` | Pattern documentation for agents |
 | `docs/security/RBAC_MATRIX.md` | Authorization matrix |

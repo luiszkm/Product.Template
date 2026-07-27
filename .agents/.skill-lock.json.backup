@@ -1,0 +1,144 @@
+{
+  "version": 2,
+  "skills": {
+    "domain-analysis": {
+      "name": "domain-analysis",
+      "source": "local",
+      "contentHash": "5914beeaf1aa1fe57cd95cf0afb60ee1cccc58eedaddd123a43cad32d6a70077",
+      "installedAt": "2026-07-27T23:00:30.666Z",
+      "updatedAt": "2026-07-27T23:00:30.741Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "tlc-spec-driven": {
+      "name": "tlc-spec-driven",
+      "source": "local",
+      "contentHash": "69867b0e19be1fb556d2e697f0f18f1de0363d1aa2de9d36754d5b107156357c",
+      "installedAt": "2026-07-27T23:00:31.450Z",
+      "updatedAt": "2026-07-27T23:00:31.611Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "cursor-subagent-creator": {
+      "name": "cursor-subagent-creator",
+      "source": "local",
+      "contentHash": "658a170d783a694e638814bed35a738184795da2d0f0b36489cac94a478cd8d7",
+      "installedAt": "2026-07-27T23:00:35.665Z",
+      "updatedAt": "2026-07-27T23:00:35.722Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "skill-architect": {
+      "name": "skill-architect",
+      "source": "local",
+      "contentHash": "349b256153447631c3ed356996c3a62fec52493d07ba75e37b12c458f9fbf6bb",
+      "installedAt": "2026-07-27T23:00:52.806Z",
+      "updatedAt": "2026-07-27T23:00:52.875Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "create-adr": {
+      "name": "create-adr",
+      "source": "local",
+      "contentHash": "47ec663c849e8c1620c6f33a7be0055acdcf838c27ab7c16f44260244b80195a",
+      "installedAt": "2026-07-27T23:00:59.768Z",
+      "updatedAt": "2026-07-27T23:00:59.824Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "create-rfc": {
+      "name": "create-rfc",
+      "source": "local",
+      "contentHash": "3f391b6c4397bb1590bbad511eca95c297dd0467e65385fa28b3724851c42ea8",
+      "installedAt": "2026-07-27T23:01:02.828Z",
+      "updatedAt": "2026-07-27T23:01:02.882Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "technical-design-doc-creator": {
+      "name": "technical-design-doc-creator",
+      "source": "local",
+      "contentHash": "d05974df076f695f96b4e4c263ad19f2aaffe8ee6248c1b07a634dd9ed0ea51e",
+      "installedAt": "2026-07-27T23:01:14.549Z",
+      "updatedAt": "2026-07-27T23:01:14.607Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "spec-driven-eval": {
+      "name": "spec-driven-eval",
+      "source": "local",
+      "contentHash": "168d6860c6e84809a02c2abface032a4a625bdd81fec6131615e00a2cf87e311",
+      "installedAt": "2026-07-27T23:01:44.513Z",
+      "updatedAt": "2026-07-27T23:01:44.562Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "docs-writer": {
+      "name": "docs-writer",
+      "source": "local",
+      "contentHash": "c49827c59d2e27d313731dfd36314cfde0e8dbf15be0e8f813d2f8b751546b0c",
+      "installedAt": "2026-07-27T23:01:53.753Z",
+      "updatedAt": "2026-07-27T23:01:53.810Z",
+      "agents": [
+        "cursor",
+        "claude-code",
+        "windsurf"
+      ],
+      "method": "copy",
+      "global": false
+    },
+    "sentry": {
+      "name": "sentry",
+      "source": "local",
+      "contentHash": "aa0e533aff9a319b0aef86ad3e543f61b812bf159c27fc9ebb1c7ad97d5db937",
+      "installedAt": "2026-07-27T23:02:05.854Z",
+      "updatedAt": "2026-07-27T23:02:05.887Z",
+      "agents": [
+        "cursor",
+        "claude-code"
+      ],
+      "method": "copy",
+      "global": false
+    }
+  }
+}

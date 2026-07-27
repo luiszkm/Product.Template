@@ -1,12 +1,12 @@
-# Guia Rápido: Module Designer Agent
+# Guia Rápido: Module Designer (`/new-module`)
 
-> Como usar o agente `module-designer` para desenhar módulos DDD antes de codar.
+> Como usar a skill `/new-module` para desenhar módulos DDD antes de codar.
 
 ---
 
 ## Quando usar
 
-✅ **Use o module-designer quando:**
+✅ **Use `/new-module` quando:**
 - Iniciar um novo bounded context (ex: Orders, Payments, Shipping)
 - Adicionar um aggregate complexo a um módulo existente
 - Refatorar um módulo para DDD
@@ -14,32 +14,27 @@
 
 ❌ **NÃO use para:**
 - Adicionar um campo simples a uma entidade existente
-- Criar um CRUD básico (use feature-builder direto)
-- Implementar código (use feature-builder após o design)
+- Criar um CRUD básico (use `/new-feature` direto)
+- Implementar código (use `/new-feature` após o design)
 
 ---
 
 ## Como invocar
 
-### Opção 1: Copilot Chat no IDE
+### Opção 1: Cursor Chat
 
 ```
-@workspace /invoke module-designer
+/new-module Orders
 
 Preciso desenhar um módulo de Orders que gerencia pedidos de clientes.
 O pedido tem linhas (produtos + quantidade) e passa por estados (Pending → Confirmed → Shipped → Delivered).
 ```
 
-### Opção 2: Comment no GitHub
+### Opção 2: Comment no GitHub (referência ao design)
 
 ```markdown
-/invoke module-designer
-
-## Contexto
-Precisamos de um módulo de Pagamentos que:
-- Recebe pedidos do módulo Orders
-- Processa pagamento com gateway externo
-- Publica eventos de sucesso/falha
+Design do módulo Orders documentado em `docs/design/orders-design.md`.
+Próximo passo: `/new-feature Orders Order`.
 ```
 
 ---
@@ -98,14 +93,12 @@ git push
 
 ### 6. Implemente
 
-Agora passe o design para o `feature-builder`:
+Agora passe o design para `/new-feature`:
 
 ```
-@workspace /invoke feature-builder
+/new-feature Orders Order
 
-Implementar o módulo Orders conforme design em:
-docs/modules/orders-design.md
-
+Implementar conforme design em docs/design/orders-design.md.
 Comece pelo aggregate Order e suas entidades.
 ```
 
@@ -290,14 +283,13 @@ Após design aprovado:
 
 1. **Implementação:**
    ```
-   @workspace /invoke feature-builder
-   Implementar módulo conforme docs/modules/{module}-design.md
+   /new-feature {Module} {Entity}
+   Implementar conforme docs/design/{module}-design.md
    ```
 
 2. **Revisão:**
    ```
-   @workspace /invoke code-reviewer
-   Revisar implementação do módulo {Module}
+   /review src/Core/{Module}/
    ```
 
 3. **Validação arquitetural:**
@@ -309,15 +301,15 @@ Após design aprovado:
 
 ## Recursos complementares
 
-- **Agent:** `.github/agents/module-designer.agent.md`
-- **Instructions:** `.github/instructions/module-design.instructions.md`
+- **Skill:** `/new-module` (`.cursor/skills/new-module/SKILL.md`)
 - **Template:** `docs/templates/module-design-template.md`
 - **Exemplo:** `docs/templates/module-design-example-orders.md`
 - **Regras DDD:** `.cursor/rules/domain.mdc`
+- **Patterns:** `.agents/patterns/domain-aggregate.md`
 
 ---
 
 ## Contato
 
-Dúvidas sobre o agente? Abra issue com label `question` ou `agent:module-designer`.
+Dúvidas sobre o fluxo? Abra issue com label `question` ou invoque `/harness-audit` para validar o harness.
 

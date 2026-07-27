@@ -21,7 +21,7 @@ Examples:
 
 - `.cursor/rules/infrastructure.mdc`
 - `.cursor/rules/observability.mdc`
-- `.github/agents/query-optimizer.agent.md`
+- `.agents/checklists/persistence.md`
 
 ## Context — invoke if needed (skills)
 

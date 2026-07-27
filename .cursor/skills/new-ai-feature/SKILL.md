@@ -24,6 +24,7 @@ Examples:
 - `.cursor/rules/architecture.mdc` — layer dependency rules
 - `.cursor/rules/domain.mdc` — domain invariants
 - `.cursor/rules/application.mdc` — CQRS patterns
+- `.cursor/rules/ai-features.mdc` — AI SDK placement and ITool patterns
 - `.agents/checklists/new-feature.md` — completeness checklist
 - `src/Core/Ai/` — canonical AI module reference implementation
 - `src/Shared/Kernel.Application/Ai/` — AI interfaces

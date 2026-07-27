@@ -1,10 +1,16 @@
 ﻿# Examples
 
+> **Note:** Copy-pastable pattern docs live in `.agents/patterns/` (11/11 published). This folder is an **index** to the live Identity reference — not a duplicate of patterns.
+
 ## Purpose
 
-This folder is the place for concrete, copy-pastable examples that demonstrate how to implement common patterns in this template. Examples are more effective than rules alone because they show the **exact output** an agent or developer should produce.
+Point agents and developers to the canonical reference implementation when a pattern doc needs a concrete file to compare against.
 
-## Reference Implementation
+## Prefer patterns first
+
+1. Read `.agents/patterns/{pattern}.md` for structure and invariants.
+2. Use the table below only for drift checks or when the pattern doc says "see live reference".
+3. Validate against `.agents/checklists/`.
 
 The **Identity module** (`src/Core/Identity/`) is the canonical reference implementation for this template. Before creating examples here, study these files:
 
@@ -26,6 +32,7 @@ The **Identity module** (`src/Core/Identity/`) is the canonical reference implem
 | Controller | `src/Api/Controllers/v1/IdentityController.cs` |
 | DI registration | `src/Core/Identity/Identity.Infrastructure/DependencyInjection.cs` |
 | Auth handler test | `tests/UnitTests/Security/RbacRoleManagementHandlerTests.cs` |
+| RBAC matrix test | `tests/E2ETests/Security/RbacMatrixConsistencyTests.cs` |
 | Integration test | `tests/IntegrationTests/Authorization/RbacHttpAuthorizationIntegrationTests.cs` |
 | RBAC matrix | `docs/security/RBAC_MATRIX.md` |
 
@@ -40,23 +47,12 @@ A good example feature should:
 
 The Identity module meets all these criteria.
 
-## Suggested Examples to Add
-
-When the template grows, consider adding example files here for:
-
-| Example | Description |
-|---------|-------------|
-| `new-module-scaffold.md` | Step-by-step creation of a new module (e.g., `Catalog`) |
-| `dapper-read-service.md` | Optimized read query using Dapper |
-| `domain-event-handler.md` | Reacting to a domain event in another module |
-| `feature-flag-endpoint.md` | Using `FeatureGateAttribute` to conditionally enable an endpoint |
-| `custom-health-check.md` | Adding a health check for an external dependency |
-
-## How Agents Should Use Examples
+## How Agents Should Use This Folder
 
 1. Read the relevant **rules** from `.cursor/rules/`.
-2. Read the relevant **pattern** from `.agents/patterns/` (when available).
-3. Look at the **reference files** listed above for the specific pattern.
-4. Generate code that follows the same structure, naming, and conventions.
-5. Validate against the **checklist** from `.agents/checklists/`.
+2. Read the matching **pattern** from `.agents/patterns/`.
+3. Use the **reference files** table above only when you need a live drift check.
+4. Validate against the **checklist** from `.agents/checklists/`.
+
+Future standalone example write-ups (e.g. Dapper read service) may be added here; until then, patterns + Identity cover all workflows.
 

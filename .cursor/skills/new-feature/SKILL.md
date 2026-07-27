@@ -26,6 +26,17 @@ Example: `/new-feature Products Product`
 - `.cursor/rules/api.mdc`
 - `.cursor/rules/tests.mdc`
 - `.agents/checklists/new-feature.md`
+- `.agents/patterns/domain-aggregate.md`
+- `.agents/patterns/domain-value-object.md`
+- `.agents/patterns/domain-event.md`
+- `.agents/patterns/command-handler.md`
+- `.agents/patterns/query-handler.md`
+- `.agents/patterns/validator.md`
+- `.agents/patterns/repository.md`
+- `.agents/patterns/ef-configuration.md`
+- `.agents/patterns/controller-endpoint.md`
+- `.agents/patterns/unit-test-handler.md`
+- `.agents/patterns/integration-test-auth.md`
 - `src/Core/Identity/` — canonical reference implementation
 
 ## Context — invoke if needed (skills)
@@ -103,3 +114,14 @@ For each file:
 ```
 
 After all files, print the checklist from `.agents/checklists/new-feature.md` with completed items ticked.
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build
+dotnet test tests/ArchitectureTests
+dotnet test tests/UnitTests --filter "FullyQualifiedName~{MODULE_NAME}"
+dotnet test tests/IntegrationTests --filter "FullyQualifiedName~{MODULE_NAME}"  # if integration tests written
+```

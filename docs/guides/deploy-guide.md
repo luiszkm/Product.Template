@@ -122,4 +122,5 @@ Itens 1 e 4 são validados no startup (`JwtStartupValidation`, `ConnectionsConfi
 
 - [Observabilidade](./observability-guide.md)
 - [Tenant identifiers](./tenant-identifiers.md)
-- Instruções CI/CD: `.github/instructions/deploy.instructions.md`
+- Skill CI/CD: `/setup-cicd` (`.cursor/skills/setup-cicd/SKILL.md`)
+- Regras: `.cursor/rules/cicd.mdc`

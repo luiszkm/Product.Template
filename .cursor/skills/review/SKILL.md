@@ -1,7 +1,7 @@
 ---
 name: review
 version: 1
-description: "Comprehensive code review across 6 areas: architecture, domain model, application layer, API, tests, and security. TRIGGER: \"review this\", \"code review\", \"review my PR\", \"check this implementation\", \"review the diff\". SKIP: scaffolding new code, running tests, performance profiling."
+description: "Comprehensive local code review of a file or directory across 6 areas: architecture, domain, application, API, tests, and security. TRIGGER: \"review this file\", \"review this directory\", \"check this implementation\", \"review the diff\". SKIP: GitHub pull requests (use /pr-review), scaffolding new code, running tests, performance profiling."
 tools: Read, Glob, Grep, Bash
 context: fork
 ---
@@ -25,7 +25,6 @@ Examples:
 - `.cursor/rules/architecture.mdc`
 - `.cursor/rules/security.mdc`
 - `.cursor/rules/tests.mdc`
-- `.github/agents/code-reviewer.agent.md`
 - `docs/security/RBAC_MATRIX.md`
 - `.agents/checklists/pull-request.md`
 

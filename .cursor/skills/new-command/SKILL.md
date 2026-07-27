@@ -21,6 +21,9 @@ Where `{COMMAND_NAME}` is the verb+noun without the `Command` suffix (e.g., `Reg
 ## Context — invariants (rules)
 
 - `.cursor/rules/application.mdc`
+- `.cursor/rules/architecture.mdc`
+- `.agents/patterns/command-handler.md`
+- `.agents/patterns/validator.md`
 - `src/Core/Identity/Identity.Application/` — canonical reference
 
 ## Context — invoke if needed (skills)
@@ -71,6 +74,16 @@ Create these files:
 
 - Test that required fields produce validation errors when empty
 - Test that valid input passes
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build
+dotnet test tests/ArchitectureTests
+dotnet test tests/UnitTests --filter "FullyQualifiedName~{COMMAND_NAME}"
+```
 
 ## Output format
 

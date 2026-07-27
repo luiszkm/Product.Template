@@ -1,7 +1,7 @@
 # Guia — Como registrar permissões canônicas e consumir o catálogo
 
 Status: 2026-03-16  
-Base: `.github/copilot-instructions.md`, `ADR-004_catalogo_permissoes_rbac.md`, `docs/security/RBAC_MATRIX.md`
+Base: `AGENTS.md`, `.cursor/rules/security.mdc`, `ADR-004_catalogo_permissoes_rbac.md`, `docs/security/RBAC_MATRIX.md`
 
 ## 1. Objetivo
 Assegurar que todo novo módulo publique suas permissões canônicas no `IPermissionCatalog` **antes** de expor endpoints protegidos, garantindo alinhamento entre policies, RBAC Matrix e seeders de banco.

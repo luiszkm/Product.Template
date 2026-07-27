@@ -1,10 +1,9 @@
 ---
 name: pr-review
-description: Multi-agent PR reviewer for Product.Template. Use ONLY when explicitly asked to review a pull request: "review PR #N", "review this PR", "code review", "check this pull request". Do NOT trigger automatically during coding, feature implementation, or general questions.
-license: CC-BY-4.0
-metadata:
-  author: Product.Template Team
-  version: 1.0.0
+version: 1
+description: "Multi-agent PR reviewer for Product.Template. TRIGGER: \"review PR #N\", \"review this PR\", \"check this pull request\". SKIP: single-file or directory review without a PR (use /review), scaffolding new code, feature implementation."
+tools: Read, Glob, Grep, Bash
+disable-model-invocation: true
 ---
 
 # PR Review — Orchestration Protocol

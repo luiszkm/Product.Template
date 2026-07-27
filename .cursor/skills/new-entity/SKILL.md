@@ -19,6 +19,12 @@ Example: `/new-entity Products Product`
 ## Context — invariants (rules)
 
 - `.cursor/rules/domain.mdc`
+- `.cursor/rules/architecture.mdc`
+- `.agents/patterns/domain-aggregate.md`
+- `.agents/patterns/domain-value-object.md`
+- `.agents/patterns/domain-event.md`
+- `.agents/patterns/repository.md`
+- `.agents/patterns/ef-configuration.md`
 - `src/Core/Identity/Identity.Domain/Entities/User.cs` — canonical reference
 
 ## Context — invoke if needed (skills)
@@ -72,6 +78,15 @@ Namespace: `Product.Template.Core.{MODULE_NAME}.Domain.Repositories`
 - `record` type with init-only properties
 - Private constructor + public static `Create(...)` factory with validations
 - Throw `DomainException` for violations (not `ArgumentException`)
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build
+dotnet test tests/ArchitectureTests
+```
 
 ## Output format
 

@@ -26,6 +26,8 @@ Current migrations (for naming conflicts and ordering awareness):
 ## Context — read these files before proceeding
 
 - `.cursor/rules/infrastructure.mdc`
+- `.agents/checklists/persistence.md`
+- `.agents/patterns/ef-configuration.md`
 
 ## Instruction
 
@@ -71,6 +73,15 @@ Read the generated migration file and validate:
 - [ ] Migration compiles (`dotnet build src/Tools/Migrator`)
 - [ ] Seeder updated if new required data is needed
 - [ ] `Down()` method is correct and complete
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build src/Tools/Migrator
+dotnet test tests/ArchitectureTests
+```
 
 ## HostDb migrations
 

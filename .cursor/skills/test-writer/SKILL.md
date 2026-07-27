@@ -22,6 +22,9 @@ Examples:
 
 - `.cursor/rules/tests.mdc` — naming, forbidden patterns, minimum coverage
 - `.cursor/rules/application.mdc` — CQRS patterns (to understand what to test)
+- `.agents/patterns/unit-test-handler.md`
+- `.agents/patterns/validator.md`
+- `.agents/patterns/integration-test-auth.md`
 
 ## Context — reference
 
@@ -58,11 +61,14 @@ tests/
 │   │   └── {ValidatorName}Tests.cs
 │   ├── Security/
 │   │   ├── AuthorizationPolicyCoverageTests.cs
-│   │   └── RbacMatrixConsistencyTests.cs
+│   │   └── RbacRoleManagementHandlerTests.cs
 │   └── MultiTenancy/
 ├── IntegrationTests/
 │   └── {Module}/
 │       └── {Module}AuthorizationTests.cs
+├── E2ETests/
+│   └── Security/
+│       └── RbacMatrixConsistencyTests.cs
 └── ArchitectureTests/
     ├── LayerDependencyTests.cs
     ├── NamingConventionTests.cs

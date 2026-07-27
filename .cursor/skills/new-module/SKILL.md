@@ -20,7 +20,11 @@ Example: `/new-module Orders`
 
 - `.cursor/rules/domain.mdc`
 - `.cursor/rules/application.mdc`
-- `.github/agents/module-designer.agent.md`
+- `.cursor/rules/architecture.mdc`
+- `.cursor/rules/folder-structure.mdc`
+- `docs/templates/module-design-template.md` — output structure
+- `docs/templates/module-design-example-orders.md` — filled example
+- `docs/guides/module-designer-quickstart.md` — invocation guide
 - `src/Core/Identity/` — canonical reference implementation
 
 ## Context — invoke if needed (skills)
@@ -33,7 +37,7 @@ Parse `$ARGUMENTS` as `MODULE_NAME`.
 
 You are a Domain-Driven Design expert. You do **not** write code — you design, document, and validate the module before a single line is implemented.
 
-Follow the 5-phase process defined in `.github/agents/module-designer.agent.md`:
+Follow this 5-phase process:
 
 ### Phase 1 — Domain Discovery (Simplified Event Storming)
 
@@ -82,7 +86,7 @@ For each policy: type (domain vs application), trigger event, action pseudocode.
 
 ## Output format
 
-Deliver a structured design document following the template in `.github/agents/module-designer.agent.md`, including:
+Deliver a structured design document following `docs/templates/module-design-template.md`, including:
 
 1. Bounded Context Canvas
 2. Aggregates (with invariants, methods, events)

@@ -21,6 +21,8 @@ Where `{QUERY_NAME}` is the full query name without the `Query` suffix (e.g., `G
 ## Context — invariants (rules)
 
 - `.cursor/rules/application.mdc`
+- `.cursor/rules/architecture.mdc`
+- `.agents/patterns/query-handler.md`
 - `src/Core/Identity/Identity.Application/Queries/` — canonical reference
 
 ## Context — invoke if needed (skills)
@@ -75,6 +77,16 @@ Create these files:
 - At minimum: happy path returning correct output, not-found case
 - No mocking frameworks — use inline fakes/stubs at bottom of file
 - Use `NullLogger<T>.Instance` for loggers
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build
+dotnet test tests/ArchitectureTests
+dotnet test tests/UnitTests --filter "FullyQualifiedName~{QUERY_NAME}"
+```
 
 ## Output format
 

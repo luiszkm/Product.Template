@@ -128,6 +128,7 @@ If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3Ã
 | `global-commits.mdc` | Conventional Commits format |
 | `style.mdc` | C# style conventions |
 | `csharp-patterns.mdc` | C# 12 / nullable idioms |
+| `naming.mdc` | Naming conventions (types, files, DB) |
 | `agent-behavior.mdc` | Meta-instructions for this agent |
 
 ### Glob-attached rules (loaded when matching files are edited)
@@ -142,6 +143,10 @@ If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3Ã
 | `observability.mdc` | `src/**` |
 | `openapi-contracts.mdc` | `src/Core/**/*.Application/**`, `src/Api/**` |
 | `tests.mdc` | `tests/**` |
+| `folder-structure.mdc` | `src/**`, `tests/**` |
+| `cicd.mdc` | `.github/**`, `azure-pipelines*` |
+| `docker.mdc` | `Dockerfile*`, `docker-compose*`, `.dockerignore` |
+| `ai-features.mdc` | `src/**/Ai/**` |
 
 ### Skills (invoke on-demand)
 
@@ -155,24 +160,26 @@ If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3Ã
 | `/new-module` | "new module", "new bounded context", "design module" |
 | `/new-migration` | "add migration", "schema change", "EF migration" |
 | `/new-ai-feature` | "add AI", "LLM", "agent loop", "ITool", "embedding" |
-| `/setup-cicd` | "CI/CD", "GitHub Actions", "Azure Pipelines", "Trivy gate" |
+| `/setup-cicd` | "CI/CD", "GitHub Actions", "Azure Pipelines", "Trivy gate", "add workflow" |
 | `/docker-setup` | "Dockerfile", "docker compose", "containerize", "HEALTHCHECK" |
 | `/repo-layout` | "where to put file", "folder structure", "new module path" |
 | `/naming-conventions` | "how to name", "naming convention", "what to call" |
-| `/setup-observability` | "add OTel", "health check", "add metrics", "Grafana" |
+| `/setup-observability` | "add OTel", "health check", "add metrics", "Grafana", "custom span" |
 | `/optimize-query` | "optimize query", "query is slow", "N+1 problem" |
-| `/test-writer` | "write tests", "add tests", "missing tests" |
-| `/pr-review` | "review this PR", "code review", "review PR #N" |
+| `/test-writer` | "write tests", "add tests", "missing tests", "test coverage" |
+| `/review` | "review this file", "review this directory", "check this implementation", "review the diff" |
+| `/pr-review` | "review PR #N", "review this PR", "check this pull request" |
+| `/harness-audit` | "audit harness", "harness health check", "check skill coverage", "harness gaps" |
 
 ### Agent harness
 
 - `.agents/checklists/` â€” verification checklists per task type
-- `.agents/patterns/` â€” pattern documentation (preferred over live code references)
+- `.agents/patterns/` â€” full pattern library (11/11 published; see README)
 - `.agents/examples/` â€” reference implementation index
 
 ### Canonical reference module
 
-`src/Core/Identity/` â€” living implementation for drift validation; prefer `.agents/patterns/` for agent context.
+See `.agents/patterns/project-facts.md` for the current reference module and other project-specific facts (project name, test paths, docker/db names). Prefer `.agents/patterns/` for agent context over reading the reference module directly.
 
 ## Commits (Conventional Commits)
 Format: `<type>(<scope>): <subject>`

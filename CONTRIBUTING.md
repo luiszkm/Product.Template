@@ -24,7 +24,7 @@ git checkout -b fix/{short-description}
 
 ### 3. Implement
 
-Use the right GitHub Copilot agent for the task (see [Using AI Agents](#using-ai-agents)), or follow the `.cursor/rules/` for the relevant layer:
+Use the right Cursor skill for the task (see [Using AI Agents](#using-ai-agents-cursor)), or follow the `.cursor/rules/` for the relevant layer:
 
 | Layer | Rule File |
 |-------|-----------|
@@ -45,7 +45,7 @@ Run through the appropriate checklist in `.agents/checklists/`:
 
 ### 5. Review (antes do PR)
 
-Use `@code-reviewer` no Copilot Chat ou o prompt `prompts/code-review.prompt.md` para fazer um levantamento completo de brechas antes de abrir o PR:
+Use `/review` no Cursor Chat para fazer um levantamento completo de brechas antes de abrir o PR:
 
 ```
 Revise o código da feature {FEATURE} no módulo {MODULE}.
@@ -67,29 +67,17 @@ Use `.agents/checklists/pull-request.md` as the review checklist.
 
 ---
 
-## Using AI Agents
+## Using AI Agents (Cursor)
 
-### GitHub Copilot Agents (Copilot Chat)
+Skills live in `.cursor/skills/`. Invoke with `/skill-name` or the trigger phrases in `AGENTS.md`:
 
-Este repositório tem agents especializados configurados em `AGENTS.md`. Use-os com `@nome-do-agent` no Copilot Chat:
-
-| Agent | Como usar | Quando usar |
+| Skill | Como usar | Quando usar |
 |-------|-----------|-------------|
-| `@backend-architect` | `@backend-architect revise o módulo Catalog` | Validar arquitetura, detectar derive, revisar novo módulo |
-| `@feature-builder` | `@feature-builder crie feature Product no módulo Catalog` | Scaffold de feature completa (entity → endpoint → tests) |
-| `@query-optimizer` | `@query-optimizer analise ListProductsQueryHandler` | Diagnosticar N+1, over-fetching, propor Dapper read service |
-| `@code-reviewer` | `@code-reviewer revise src/Core/Catalog/` | Revisão profunda: brechas de segurança, arquitetura, testes — com código corrigido |
-
-### Reusable Prompts (`prompts/`)
-
-Arquivos em `prompts/` são templates prontos para copiar no Copilot Chat. Abra o arquivo, preencha os placeholders e cole:
-
-| Prompt | Arquivo | Uso |
-|--------|---------|-----|
-| Criar feature | `prompts/create-feature.prompt.md` | Scaffold completo com checklist e formato de resposta esperado |
-| Revisar arquitetura | `prompts/review-feature.prompt.md` | Revisão por camada (Domain → Api) com critérios explícitos |
-| Otimizar query | `prompts/optimize-query.prompt.md` | Diagnóstico de gargalo + proposta EF Core ou Dapper |
-| Revisão de código | `prompts/code-review.prompt.md` | Levantamento de brechas (segurança, arq., persistência, testes) + correções |
+| `/new-module` | `/new-module Orders` | Desenhar bounded context DDD antes de codar |
+| `/new-feature` | `/new-feature Catalog Product` | Scaffold de feature completa (entity → endpoint → tests) |
+| `/optimize-query` | `/optimize-query src/Core/Identity/.../GetUserByIdQueryHandler.cs` | Diagnosticar N+1, over-fetching, propor otimização |
+| `/review` | `/review src/Core/Catalog/` | Revisão local: segurança, arquitetura, testes |
+| `/pr-review` | `/pr-review` (PR #N) | Revisão multi-agent em pull request GitHub |
 
 ### O que agentes devem ler antes de gerar código
 
@@ -143,20 +131,20 @@ refactor: extract shared pagination logic to base repository
 
 5. Register MediatR assembly in `Api/Configurations/KernelConfigurations.cs`.
 
-6. Use `@feature-builder` or `prompts/create-feature.prompt.md` to scaffold the first feature.
+6. Use `/new-feature` to scaffold the first feature.
 
 7. Follow `.agents/checklists/new-feature.md` for completeness.
 
-8. Run `@code-reviewer` before opening the PR.
+8. Run `/review` on the changed paths before opening the PR.
 
 ## RBAC Matrix
 
 Every protected endpoint must be documented in `docs/security/RBAC_MATRIX.md`.
 
-This is enforced by `RbacMatrixConsistencyTests` — PRs that add endpoints without updating the matrix will fail CI.
+This is enforced by `tests/E2ETests/Security/RbacMatrixConsistencyTests.cs` — PRs that add endpoints without updating the matrix will fail CI.
 
 ## Questions?
 
 If unsure about a pattern, look at the **Identity module** (`src/Core/Identity/`) — it's the canonical reference implementation.
 
-For code review and gap analysis, use `@code-reviewer` in Copilot Chat.
+For code review, use `/review` (local) or `/pr-review` (GitHub PR).

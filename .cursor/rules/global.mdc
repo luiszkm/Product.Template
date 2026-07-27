@@ -63,7 +63,9 @@ Each skill in `.cursor/skills/` has a `description` with `TRIGGER` and `SKIP` cl
 | `setup-observability` | "add OTel", "health check", "add metrics", "Grafana", "custom span" |
 | `optimize-query` | "optimize query", "query is slow", "N+1 problem" |
 | `test-writer` | "write tests", "add tests", "missing tests", "test coverage" |
-| `review` | "review this", "code review", "review PR" |
+| `review` | "review this file", "review this directory", "check this implementation", "review the diff" |
+| `pr-review` | "review PR #N", "review this PR", "check this pull request" |
+| `harness-audit` | "audit harness", "harness health check", "check skill coverage", "harness gaps" |
 
 ## Universal Rules for Agents
 

@@ -20,6 +20,10 @@ Example: `/new-endpoint Products GET /products/{id}`
 
 - `.cursor/rules/api.mdc`
 - `.cursor/rules/security.mdc`
+- `.cursor/rules/openapi-contracts.mdc`
+- `.agents/checklists/api-endpoint.md`
+- `.agents/patterns/controller-endpoint.md`
+- `.agents/patterns/integration-test-auth.md`
 - `src/Api/Controllers/v1/IdentityController.cs` — canonical reference
 - `src/Api/Configurations/SecurityConfiguration.cs` — existing policies
 - `docs/security/RBAC_MATRIX.md` — existing RBAC matrix
@@ -81,6 +85,16 @@ Create (or update) `tests/IntegrationTests/Authorization/{MODULE_NAME}Authorizat
 - Test 403 (authenticated but wrong role)
 - Test 200/201/204 (authenticated with correct role via `X-Test-Roles` header)
 - No mocking frameworks — use `WebApplicationFactory<Program>` + `TestAuthHandler`
+
+### Verification
+
+Run before declaring done:
+
+```bash
+dotnet build
+dotnet test tests/ArchitectureTests
+dotnet test tests/IntegrationTests --filter "FullyQualifiedName~{MODULE_NAME}Authorization"
+```
 
 ## Output format
 

@@ -137,7 +137,9 @@ tests/
 │   └── {Feature}/
 │       └── {Feature}IntegrationTests.cs
 ├── CommonTests/            # Shared fixtures (BaseFixture, Bogus)
-└── E2ETests/
+└── E2ETests/               # RBAC matrix ↔ controller alignment
+    └── Security/
+        └── RbacMatrixConsistencyTests.cs
 ```
 
 ## Quick placement guide
