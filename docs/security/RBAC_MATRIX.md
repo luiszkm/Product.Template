@@ -67,6 +67,8 @@ Matriz inicial de autorização por endpoint para eliminar `[Authorize]` genéri
 |---|---|---|---|---|---|
 | POST | `/api/v1/ai/chat` | Protegido | `Authenticated` | - | Requer JWT válido; qualquer utilizador autenticado pode usar |
 
+Enforcement adicional por ferramenta (não visível na policy do endpoint): `get_tenant_info` exige `tenants.read` e `get_users_summary` exige `identity.user.read` (role `Admin` sempre passa), checado em `ToolAuthorization.EnsurePermission` no momento da chamada da tool. Ver [ai.md](../apis/v1/ai.md#ferramentas-do-agente-itool).
+
 ## Regras de revisão (gate)
 1. Não introduzir endpoint protegido com `[Authorize]` sem `Policy` explícita.
 2. Todo endpoint novo deve entrar nesta matriz no mesmo PR.

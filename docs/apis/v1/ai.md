@@ -45,3 +45,14 @@ Campos:
 - `reply` (string)
 - `iterationsUsed` (int)
 
+## Ferramentas do agente (`ITool`)
+
+O agente pode chamar ferramentas registradas durante a conversa. Cada ferramenta valida sua própria permissão via `ToolAuthorization.EnsurePermission` (role `Admin` **ou** a claim de permissão indicada) — independente da policy `Authenticated` do endpoint. Falha lança `UnauthorizedAccessException`.
+
+| Ferramenta | Permissão exigida |
+|------------|--------------------|
+| `get_tenant_info` | `TenantsPermissions.Read` (`tenants.read`) |
+| `get_users_summary` | `IdentityPermissions.UserRead` (`identity.user.read`) |
+
+Ou seja: um usuário autenticado sem a permissão do módulo consegue conversar com `/chat`, mas o modelo recebe erro ao tentar invocar a ferramenta correspondente — não há dados vazados de tenants/usuários fora do RBAC do usuário.
+
