@@ -118,27 +118,61 @@ If a subagent hits a blocker (ambiguous requirement, protected file conflict, 3�
 
 ## Rules and skills
 
-### Layer rules (glob-attached)
-- `domain.mdc` — `src/Core/**/*.Domain/**`
-- `application.mdc` — `src/Core/**/*.Application/**`
-- `infrastructure.mdc` — `src/Core/**/*.Infrastructure/**`
-- `api.mdc` — `src/Api/**`
-- `tests.mdc` — `tests/**`
-- `cicd.mdc` — `.github/**`
-- `docker.mdc` — `Dockerfile*, docker-compose*`
-- `ai-features.mdc` — `src/**/Ai/**`
+### Always-active rules (loaded in every conversation)
 
-### Always-active rules
-- `style.mdc` (alwaysApply: true)
-- `global.mdc`, `architecture.mdc`, `naming.mdc` (alwaysApply: true)
-- `global-security.mdc` (alwaysApply: true) — credential handling, pre-deploy checklist, tenant isolation
-- `global-commits.mdc` (alwaysApply: true) — Conventional Commits format
+| Rule | Purpose |
+|------|---------|
+| `global.mdc` | Stack, principles, skill trigger map |
+| `architecture.mdc` | Layer dependency invariants (ArchitectureTests enforce) |
+| `global-security.mdc` | Credential prohibitions, pre-deploy checklist |
+| `global-commits.mdc` | Conventional Commits format |
+| `style.mdc` | C# style conventions |
+| `csharp-patterns.mdc` | C# 12 / nullable idioms |
+| `agent-behavior.mdc` | Meta-instructions for this agent |
 
-### Skills
-`.cursor/skills/{new-feature,new-command,new-query,new-endpoint,new-entity,new-module,new-migration,optimize-query,review,test-writer}/SKILL.md`
+### Glob-attached rules (loaded when matching files are edited)
+
+| Rule | Glob |
+|------|------|
+| `domain.mdc` | `src/Core/**/*.Domain/**` |
+| `application.mdc` | `src/Core/**/*.Application/**` |
+| `infrastructure.mdc` | `src/Core/**/*.Infrastructure/**` |
+| `api.mdc` | `src/Api/**` |
+| `security.mdc` | `src/Api/**`, `src/**/Security/**` |
+| `observability.mdc` | `src/**` |
+| `openapi-contracts.mdc` | `src/Core/**/*.Application/**`, `src/Api/**` |
+| `tests.mdc` | `tests/**` |
+
+### Skills (invoke on-demand)
+
+| Skill | Trigger |
+|-------|---------|
+| `/new-feature` | "add feature", "implement feature", "vertical slice" |
+| `/new-command` | "add command", "create command", "new command for" |
+| `/new-query` | "add query", "create query", "fetch", "list", "get by" |
+| `/new-endpoint` | "add endpoint", "new route", "expose via API" |
+| `/new-entity` | "add entity", "new aggregate", "create domain entity" |
+| `/new-module` | "new module", "new bounded context", "design module" |
+| `/new-migration` | "add migration", "schema change", "EF migration" |
+| `/new-ai-feature` | "add AI", "LLM", "agent loop", "ITool", "embedding" |
+| `/setup-cicd` | "CI/CD", "GitHub Actions", "Azure Pipelines", "Trivy gate" |
+| `/docker-setup` | "Dockerfile", "docker compose", "containerize", "HEALTHCHECK" |
+| `/repo-layout` | "where to put file", "folder structure", "new module path" |
+| `/naming-conventions` | "how to name", "naming convention", "what to call" |
+| `/setup-observability` | "add OTel", "health check", "add metrics", "Grafana" |
+| `/optimize-query` | "optimize query", "query is slow", "N+1 problem" |
+| `/test-writer` | "write tests", "add tests", "missing tests" |
+| `/pr-review` | "review this PR", "code review", "review PR #N" |
+
+### Agent harness
+
+- `.agents/checklists/` — verification checklists per task type
+- `.agents/patterns/` — pattern documentation (preferred over live code references)
+- `.agents/examples/` — reference implementation index
 
 ### Canonical reference module
-`src/Core/Identity/` — look here first for any pattern.
+
+`src/Core/Identity/` — living implementation for drift validation; prefer `.agents/patterns/` for agent context.
 
 ## Commits (Conventional Commits)
 Format: `<type>(<scope>): <subject>`

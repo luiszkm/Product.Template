@@ -94,7 +94,7 @@ Linear is the source of truth for specs and acceptance criteria in this project.
 3. Extract from the issue body: acceptance criteria (lines after `## Acceptance Criteria` or checkboxes `- [ ]`), design goals, non-goals, and any explicit DoD items.
 4. If no Linear ID in branch name, check PR title and body for a mention like `PT-42`, `Closes PT-42`, or a Linear URL.
 
-### Track B — PR Checklist (`.ai/checklists/pull-request.md`)
+### Track B — PR Checklist (`.agents/checklists/pull-request.md`)
 
 Always load this file. It defines the universal DoD for every PR in this project. Use it as the baseline requirements checklist regardless of Track A.
 
@@ -131,7 +131,7 @@ Compare the merged requirements against the PR diff and post a summary with `gh 
 
 **Marker:** `<!-- pt-review:tests -->`
 
-Load `.cursor/rules/tests.mdc` and section 6 of `.ai/checklists/new-feature.md`. Use those rules as the reference for what correct tests look like. Review the PR diff for:
+Load `.cursor/rules/tests.mdc` and section 6 of `.agents/checklists/new-feature.md`. Use those rules as the reference for what correct tests look like. Review the PR diff for:
 
 **Missing tests (🚨 Critical):**
 - New command handler without at least one happy-path **and** one failure-path unit test
@@ -176,10 +176,10 @@ Load every document listed below before touching the diff:
 3. `.cursor/rules/application.mdc`
 4. `.cursor/rules/infrastructure.mdc`
 5. `.cursor/rules/api.mdc`
-6. `.cursor/rules/naming.mdc`
-7. `.cursor/rules/csharp-patterns.mdc`
-8. `.ai/checklists/new-feature.md`
-9. `.ai/checklists/pull-request.md`
+6. `.cursor/rules/csharp-patterns.mdc`
+7. `.agents/checklists/new-feature.md`
+8. `.agents/checklists/pull-request.md`
+9. Invoke `/naming-conventions` to check naming deviations
 
 Then scan the diff for directory structure: note which layers (`Domain`, `Application`, `Infrastructure`, `Api`) are touched.
 
@@ -296,8 +296,8 @@ After all 6 subagents complete, spawn one more subagent via Task tool to consoli
 | | |
 |---|---|
 | **Subagents invoked** | {N} of 6 (Security · Requirements · Test Coverage · Architecture · Regression · Performance) |
-| **Rules loaded** | `.cursor/rules/architecture.mdc`, `.cursor/rules/global-security.mdc`, `.cursor/rules/tests.mdc`, `.cursor/rules/infrastructure.mdc`, + 5 others |
-| **Docs loaded** | `docs/security/RBAC_MATRIX.md`, `.ai/checklists/pull-request.md`, `.ai/checklists/new-feature.md` |
+| **Rules loaded** | `.cursor/rules/architecture.mdc`, `.cursor/rules/global-security.mdc`, `.cursor/rules/tests.mdc`, `.cursor/rules/infrastructure.mdc`, + 4 others |
+| **Docs loaded** | `docs/security/RBAC_MATRIX.md`, `.agents/checklists/pull-request.md`, `.agents/checklists/new-feature.md` |
 | **Findings** | {N} across {M} files |
 
 ---

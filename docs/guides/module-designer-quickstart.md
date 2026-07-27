@@ -313,7 +313,7 @@ Após design aprovado:
 - **Instructions:** `.github/instructions/module-design.instructions.md`
 - **Template:** `docs/templates/module-design-template.md`
 - **Exemplo:** `docs/templates/module-design-example-orders.md`
-- **Regras DDD:** `.ai/rules/02-domain.md`
+- **Regras DDD:** `.cursor/rules/domain.mdc`
 
 ---
 

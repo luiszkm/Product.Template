@@ -1,6 +1,6 @@
 # =============================================================================
 # .dockerignore — Product.Template
-# Follows .ai/rules/13-docker.md
+# Follows .cursor/rules/docker.mdc
 # =============================================================================
 
 # Build artifacts
@@ -27,7 +27,7 @@ tests/
 # Docs / tooling / AI rules
 docs/
 prompts/
-.ai/
+.agents/
 .github/
 setup.ps1
 setup.sh

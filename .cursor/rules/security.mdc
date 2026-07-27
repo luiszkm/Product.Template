@@ -1,90 +1,54 @@
 ---
 name: Security Rules
-description: Security rules — authentication, RBAC policies, input validation, secrets handling, tenant isolation
+description: Authentication, RBAC policies, input validation, secrets handling, and tenant isolation invariants.
 globs: src/Api/**, src/**/Security/**
 alwaysApply: false
 ---
+
 ## Authentication
 
-- **JWT Bearer** is the primary authentication scheme.
-- Configured in `Api/Configurations/SecurityConfiguration.cs`.
-- Token generation: `JwtTokenService` using `JsonWebTokenHandler` with HMAC-SHA256.
-- Secret: `Jwt:Secret` in `appsettings.json` (use User Secrets or env vars in production).
-- External providers (Microsoft OAuth2) are optional and configured via `AuthenticationConfiguration`.
+- **JWT Bearer** — configured in `Api/Configurations/SecurityConfiguration.cs`.
+- Token generation: `JwtTokenService` with HMAC-SHA256. Secret ≥32 chars via User Secrets / env vars.
+- External OAuth2 (Microsoft) optional — configured via `AuthenticationConfiguration`.
 
 ## Authorization (RBAC)
 
-### Policies
+- **Every protected endpoint** uses `[Authorize(Policy = "...")]` with an explicit policy — never bare `[Authorize]`.
+- **Public endpoints** use `[AllowAnonymous]`.
+- New policy → add to `SecurityConfiguration.cs` as `public const string` + register requirement.
+- Permission claims use claim type `permission` (`AuthorizationClaimTypes.Permission`).
+- Every protected endpoint must be in `docs/security/RBAC_MATRIX.md` (`RbacMatrixConsistencyTests` enforces this).
 
-| Policy Name | Constant | Rule |
-|-------------|----------|------|
-| `Authenticated` | `SecurityConfiguration.AuthenticatedPolicy` | Any authenticated user. |
-| `AdminOnly` | `SecurityConfiguration.AdminOnlyPolicy` | Role = `Admin`. |
-| `UserOnly` | `SecurityConfiguration.UserOnlyPolicy` | Role ∈ {`User`, `Admin`, `Manager`}. |
-| `UsersRead` | `SecurityConfiguration.UsersReadPolicy` | Role = `Admin` OR claim `permission=users.read`. |
-| `UsersManage` | `SecurityConfiguration.UsersManagePolicy` | Role = `Admin` OR claim `permission=users.manage`. |
+> For adding a new endpoint with RBAC → invoke `/new-endpoint`.
 
-### Rules
+## Built-in Policies
 
-1. **Every protected endpoint** uses `[Authorize(Policy = "...")]` with an explicit policy — never bare `[Authorize]`.
-2. **Public endpoints** use `[AllowAnonymous]`.
-3. When adding a new policy, define it in `SecurityConfiguration.cs` and add a `public const string` for it.
-4. **Permission claims** use the claim type `permission` (from `AuthorizationClaimTypes.Permission`).
-5. Permissions are stored in the DB (`Permission` entity) and assigned to roles via `RolePermission`.
-6. The `LoginCommandHandler` populates both role claims AND permission claims in the JWT.
-
-### RBAC Matrix
-
-Every protected endpoint must be documented in `docs/security/RBAC_MATRIX.md`.
-The test `RbacMatrixConsistencyTests` enforces this automatically.
+| Policy | Constant | Rule |
+|--------|----------|------|
+| `Authenticated` | `AuthenticatedPolicy` | Any authenticated user |
+| `AdminOnly` | `AdminOnlyPolicy` | Role = `Admin` |
+| `UserOnly` | `UserOnlyPolicy` | Role ∈ {`User`, `Admin`, `Manager`} |
 
 ## Input Validation
 
-- All user input is validated by FluentValidation before reaching the handler.
+- All input validated by FluentValidation before reaching the handler.
 - Never trust client input — validate even `Guid` route parameters.
 - Use `[FromBody]`, `[FromQuery]`, `[FromRoute]` explicitly.
 
 ## Secrets Management
 
-- Never commit secrets to source control.
-- Use `appsettings.json` for **structure only** (with placeholder values).
-- Use **User Secrets** (`dotnet user-secrets`) in development.
-- Use **environment variables** or a vault (Azure Key Vault, AWS Secrets Manager) in production.
-- JWT secret must be ≥32 characters.
-
-## Data Protection
-
-- Passwords are hashed with **PBKDF2-SHA256** (100K iterations) via `HashServices`.
-- Never log passwords, tokens, or secrets.
-- `RequestLoggingMiddleware` masks sensitive headers (`Authorization`, `Cookie`, `X-Api-Key`) and fields (`password`, `token`, `secret`).
+- Never commit secrets. Use `dotnet user-secrets` in dev; environment variables or vault in production.
+- Passwords hashed with PBKDF2-SHA256 (100K iterations) via `HashServices`.
+- `RequestLoggingMiddleware` masks `Authorization`, `Cookie`, `X-Api-Key`, `password`, `token`, `secret`.
 
 ## Tenant Isolation
 
-- Every data query is filtered by `TenantId` via EF global query filters.
-- The `AddUserRoleCommandHandler` and `RemoveUserRoleCommandHandler` enforce cross-tenant checks.
-- The `TenantResolutionMiddleware` rejects requests without a valid tenant.
+- Every query filtered by `TenantId` via EF global query filters.
+- `TenantResolutionMiddleware` rejects requests without a valid tenant.
+- Cross-tenant checks enforced in `AddUserRoleCommandHandler` and `RemoveUserRoleCommandHandler`.
 
-## IP Security
+## Rate Limiting & Headers
 
-- `IpWhitelistMiddleware` supports configurable whitelist/blacklist.
-- Disabled by default (`IpSecurity:EnableWhitelist = false`).
-
-## Rate Limiting
-
-- ASP.NET Core rate limiting is enabled per configuration.
-- Login endpoints should have stricter rate limits to prevent brute-force.
-
-## Headers
-
-- `ForwardedHeaders` is enabled for `X-Forwarded-For` and `X-Forwarded-Proto`.
-- HTTPS redirection is enforced.
-- CORS origins are configurable — default is `*` (restrict in production).
-
-## Pre-deploy checklist
-Before merging any PR that touches security-sensitive code:
-- [ ] `trivy image --exit-code 1 --severity HIGH,CRITICAL <image>` passes
-- [ ] No secrets or credentials in diff (`git diff` review)
-- [ ] JWT secret ≥32 chars confirmed in environment config
-- [ ] RBAC_MATRIX.md updated if new endpoint added
-- [ ] `dotnet test tests/ArchitectureTests` passes
-- [ ] `dotnet list package --vulnerable` shows no critical vulnerabilities
+- ASP.NET Core rate limiting enabled — login endpoints need stricter limits.
+- `ForwardedHeaders` enabled for `X-Forwarded-For` / `X-Forwarded-Proto`.
+- CORS origins configurable — restrict from `*` before production.

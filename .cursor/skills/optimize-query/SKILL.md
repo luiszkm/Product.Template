@@ -17,11 +17,15 @@ Examples:
 - `/optimize-query src/Core/Products/Products.Infrastructure/`
 - `/optimize-query src/Core/Identity/Identity.Application/Queries/User/GetUserByIdQueryHandler.cs`
 
-## Context — read these files before analyzing
+## Context — invariants (rules)
 
 - `.cursor/rules/infrastructure.mdc`
 - `.cursor/rules/observability.mdc`
 - `.github/agents/query-optimizer.agent.md`
+
+## Context — invoke if needed (skills)
+
+- `/setup-observability` — when adding custom spans or metrics for the optimized query
 
 ## Instruction
 

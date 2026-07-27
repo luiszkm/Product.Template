@@ -18,12 +18,15 @@ Example: `/new-query Identity GetUserById`
 
 Where `{QUERY_NAME}` is the full query name without the `Query` suffix (e.g., `GetUserById` → generates `GetUserByIdQuery`).
 
-## Context — read these files before generating any code
+## Context — invariants (rules)
 
 - `.cursor/rules/application.mdc`
-- `.cursor/rules/naming.mdc`
-- `.cursor/rules/folder-structure.mdc`
 - `src/Core/Identity/Identity.Application/Queries/` — canonical reference
+
+## Context — invoke if needed (skills)
+
+- `/naming-conventions` — when naming a query, handler, or output DTO
+- `/repo-layout` — when file placement is unclear
 
 ## Instruction
 

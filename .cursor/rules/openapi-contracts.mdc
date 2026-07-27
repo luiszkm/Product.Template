@@ -1,7 +1,8 @@
 ---
 name: OpenAPI Contracts
-description: API contract discipline between backend Output DTOs and API consumers. Enforce DTO-first changes.
+description: API contract discipline — Output records are the contract; prohibitions and breaking change rules.
 globs: src/Core/**/*.Application/**, src/Api/**
+alwaysApply: false
 ---
 
 ## Source of Truth
@@ -9,28 +10,24 @@ globs: src/Core/**/*.Application/**, src/Api/**
 `record *Output` types in the Application layer ARE the API contract.
 Never change a response shape without updating the DTO first.
 
-## This Project's Contract Delivery
-
-API contract served via Scalar at `/scalar` (no file codegen). Consumers read the OpenAPI spec — no generated client files to commit.
+Contract served via Scalar at `/scalar`. Consumers use `/openapi/v1.json` — no generated client files to commit.
 
 ## Change Flow
 
 ```
-Modify Output record → dotnet build → update controller [ProducesResponseType] → dotnet test → commit
+Modify Output record → dotnet build → update [ProducesResponseType] → dotnet test → commit
 ```
-
-If a consumer needs updated types: point them to `/scalar` or the exported OpenAPI JSON (`GET /openapi/v1.json`).
 
 ## Prohibitions
 
 - ❌ Never edit response shape via anonymous types — always named `record *Output`
 - ❌ Never add `[JsonIgnore]` to work around a consumer issue — fix the DTO contract
-- ❌ Never remove or rename an Output property without checking if it's a breaking change
+- ❌ Never remove or rename an Output property without checking for breaking change
 - ❌ Never return domain entities directly from handlers — map to Output first
 
 ## Breaking Change Protocol
 
-If renaming/removing a property on an existing Output:
-1. Check if any integration test asserts on that field
-2. Bump API version (`/api/v2/...`) if the endpoint is publicly consumed
-3. Document the change in the PR description with migration note for consumers
+If renaming/removing a property on a publicly consumed Output:
+1. Check integration tests that assert on that field.
+2. Bump API version (`/api/v2/...`) if publicly consumed.
+3. Document the change in the PR description with a migration note for consumers.

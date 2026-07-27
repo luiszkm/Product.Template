@@ -1,6 +1,6 @@
 # =============================================================================
 # Product.Template API — Production Dockerfile
-# Follows .ai/rules/13-docker.md
+# Follows .cursor/rules/docker.mdc
 #
 # Stages:
 #   base    → minimal runtime image (Alpine, non-root user)

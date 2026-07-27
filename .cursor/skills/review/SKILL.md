@@ -27,7 +27,7 @@ Examples:
 - `.cursor/rules/tests.mdc`
 - `.github/agents/code-reviewer.agent.md`
 - `docs/security/RBAC_MATRIX.md`
-- `.ai/checklists/pull-request.md`
+- `.agents/checklists/pull-request.md`
 
 ## Dynamic context
 

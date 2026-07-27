@@ -55,6 +55,12 @@ Each skill in `.cursor/skills/` has a `description` with `TRIGGER` and `SKIP` cl
 | `new-entity` | "add entity", "new aggregate", "create domain entity" |
 | `new-module` | "new module", "new bounded context", "design module" |
 | `new-migration` | "add migration", "schema change", "EF migration" |
+| `new-ai-feature` | "add AI", "LLM", "agent loop", "ITool", "embedding" |
+| `setup-cicd` | "CI/CD", "GitHub Actions", "Azure Pipelines", "Trivy gate", "add workflow" |
+| `docker-setup` | "Dockerfile", "docker compose", "containerize", "HEALTHCHECK" |
+| `repo-layout` | "where to put file", "folder structure", "new module path" |
+| `naming-conventions` | "how to name", "naming convention", "what to call" |
+| `setup-observability` | "add OTel", "health check", "add metrics", "Grafana", "custom span" |
 | `optimize-query` | "optimize query", "query is slow", "N+1 problem" |
 | `test-writer` | "write tests", "add tests", "missing tests", "test coverage" |
 | `review` | "review this", "code review", "review PR" |
@@ -63,13 +69,13 @@ Each skill in `.cursor/skills/` has a `description` with `TRIGGER` and `SKIP` cl
 
 - **Read `.cursor/rules/` before generating code.** Start with this file, then the rule file for the layer you are modifying.
 - **Never add a NuGet package** without checking `Directory.Build.props` and existing `.csproj` files first.
-- **Never create a file outside the established folder structure** (see `folder-structure.mdc`).
+- **Never create a file outside the established folder structure** — invoke `/repo-layout` if placement is unclear.
 - **Always provide the full file path** relative to the repository root when creating or modifying files.
 - **Always run `dotnet build` mentally** — ensure `using` directives, namespaces, and project references are correct.
 - **Preserve the existing code style** defined in `.editorconfig`.
 - **Use English for code, types, and file names.** Comments and user-facing docs may be bilingual (PT-BR / EN).
 - **Every change must be testable.** If you create a handler, create its test. If you create an endpoint, update `RBAC_MATRIX.md`.
-- **Docker**: follow `docker.mdc` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
-- **CI/CD**: follow `cicd.mdc` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
-- **AI features**: follow `ai-features.mdc` — SDK only in Kernel.Infrastructure, ITool via IMediator, TrackAsync in finally, Nunca invente no SystemPrompt.
+- **Docker**: invoke `/docker-setup` — multi-stage build, non-root user, HEALTHCHECK, no secrets in image.
+- **CI/CD**: invoke `/setup-cicd` — explicit permissions, timeouts, NuGet cache, Trivy scan before push, locked-mode restore.
+- **AI features**: invoke `/new-ai-feature` — SDK only in Kernel.Infrastructure, ITool via IMediator, TrackAsync in finally.
 

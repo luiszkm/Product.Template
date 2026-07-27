@@ -5,7 +5,7 @@
 1. Read `README.md` for project overview and AI-first setup.
 2. Read `.cursor/rules/global.mdc` — contains all conventions.
 3. Read `.cursor/rules/architecture.mdc` for layer boundaries.
-4. Read `.cursor/rules/folder-structure.mdc` for file placement.
+4. Invoke `/repo-layout` skill when file placement is unclear.
 
 ## Development Workflow
 
@@ -37,11 +37,11 @@ Use the right GitHub Copilot agent for the task (see [Using AI Agents](#using-ai
 
 ### 4. Validate
 
-Run through the appropriate checklist in `.ai/checklists/`:
+Run through the appropriate checklist in `.agents/checklists/`:
 
-- New feature → `.ai/checklists/new-feature.md`
-- New endpoint → `.ai/checklists/api-endpoint.md`
-- Database changes → `.ai/checklists/persistence.md`
+- New feature → `.agents/checklists/new-feature.md`
+- New endpoint → `.agents/checklists/api-endpoint.md`
+- Database changes → `.agents/checklists/persistence.md`
 
 ### 5. Review (antes do PR)
 
@@ -63,7 +63,7 @@ All tests must pass. Architecture tests enforce layer boundaries automatically.
 
 ### 7. Submit PR
 
-Use `.ai/checklists/pull-request.md` as the review checklist.
+Use `.agents/checklists/pull-request.md` as the review checklist.
 
 ---
 
@@ -145,7 +145,7 @@ refactor: extract shared pagination logic to base repository
 
 6. Use `@feature-builder` or `prompts/create-feature.prompt.md` to scaffold the first feature.
 
-7. Follow `.ai/checklists/new-feature.md` for completeness.
+7. Follow `.agents/checklists/new-feature.md` for completeness.
 
 8. Run `@code-reviewer` before opening the PR.
 

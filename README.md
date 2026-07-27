@@ -346,16 +346,18 @@ prompts/
 
 **Usage**: Open a prompt file, copy its content into Copilot Chat, and fill in the `{MODULE}`, `{ENTITY}` and other placeholders.
 
-### Deep Rules (`.ai/`)
+### Agent Harness (`.agents/`)
 
-For more detailed, layer-by-layer rules used by the `.github/instructions/` files:
+Checklists, patterns, and examples for AI-assisted development. Layer rules live in `.cursor/rules/`:
 
 ```
-.ai/
-├── rules/          → 13 rule files (00-global → 12-folder-structure)
+.agents/
 ├── checklists/     → new-feature, api-endpoint, persistence, pull-request
-└── examples/       → Reference implementation guide (points to Identity module)
+├── examples/       → Reference implementation guide (points to Identity module)
+└── patterns/       → Pattern docs (canonical structure for agents)
 ```
+
+Rules by layer: `.cursor/rules/` (domain, application, infrastructure, api, tests, security, etc.)
 
 ### Quick start for agents
 
@@ -368,7 +370,7 @@ When starting a new task in Copilot Chat:
    - `@query-optimizer` — diagnose and fix slow queries
    - `@code-reviewer` — deep review with security gaps, violations, and fix proposals
 3. **Use a prompt file** — copy from `prompts/` to get a structured, checklist-driven response.
-4. **Reference is always Identity** — any pattern question can be answered by looking at `src/Core/Identity/`.
+4. **Read patterns first** — use `.agents/patterns/` and `.cursor/rules/` before referencing live code.
 
 ## Key Features
 
@@ -402,7 +404,7 @@ dotnet test tests/ArchitectureTests
 
 1. Create the project triple under `src/Core/{Module}/`
 2. Use `@feature-builder` in Copilot Chat — or copy `prompts/create-feature.prompt.md`
-3. Use `.ai/checklists/new-feature.md` to verify completeness
+3. Use `.agents/checklists/new-feature.md` to verify completeness
 4. See `CONTRIBUTING.md` for full guidelines
 
 ## Documentation
@@ -417,8 +419,9 @@ dotnet test tests/ArchitectureTests
 | `.github/instructions/` | Layer-specific instructions for Copilot |
 | `.github/agents/` | Specialized agents for Copilot Chat |
 | `prompts/` | Reusable prompt templates |
-| `.ai/rules/` | Detailed architectural rules by layer |
-| `.ai/checklists/` | Verification checklists for features and PRs |
+| `.cursor/rules/` | Architectural rules by layer |
+| `.agents/checklists/` | Verification checklists for features and PRs |
+| `.agents/patterns/` | Pattern documentation for agents |
 | `docs/security/RBAC_MATRIX.md` | Authorization matrix |
 
 ## License

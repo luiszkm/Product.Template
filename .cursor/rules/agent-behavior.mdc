@@ -10,17 +10,19 @@ alwaysApply: true
 
 1. **Read `.cursor/rules/global.mdc`** to understand the stack and principles.
 2. **Read the rule file for the layer you are modifying** (e.g., `domain.mdc` for domain changes).
-3. **Read `folder-structure.mdc`** to know where to place new files.
-4. **Read `naming.mdc`** to ensure consistent naming.
+3. **Invoke `/repo-layout`** if file placement is unclear.
+4. **Invoke `/naming-conventions`** if naming is ambiguous.
 5. If creating an endpoint, read `api.mdc` and `security.mdc`.
-6. If creating tests, read `tests.mdc`.
+6. If creating tests, invoke `/test-writer` for patterns and structure (invariants are in `tests.mdc`, loaded automatically via glob).
+7. If implementing a feature, invoke the relevant skill (e.g., `/new-feature`) and read `.agents/checklists/` for the task type.
+8. **Prefer skills for procedural tasks** — if a task has a matching skill trigger, invoke the skill rather than generating ad-hoc.
 
 ## When Generating Code
 
 ### Structure
 - Always provide the **full file path** relative to the repository root.
-- Place files in the correct folder per `folder-structure.mdc`.
-- Follow the established namespace pattern: `Product.Template.{Layer}.{Module}.{Folder}`.
+- Place files following the layout in `/repo-layout`.
+- Follow the established namespace pattern: `{RootNamespace}.{Layer}.{Module}.{Folder}`.
 
 ### Code Quality
 - Follow `.editorconfig` rules (file-scoped namespaces, `_camelCase` private fields, PascalCase for everything else).
@@ -76,10 +78,10 @@ When creating or modifying code, always structure your response as:
 8. ❌ Using `IQueryable<T>` in return types of repositories.
 9. ❌ Forgetting to update `RBAC_MATRIX.md` when adding protected endpoints.
 10. ❌ Forgetting to register new services in `DependencyInjection.cs`.
-11. ❌ Writing a Dockerfile without multi-stage build, HEALTHCHECK, or running as root.
-12. ❌ Creating a CI/CD workflow without `permissions:`, `timeout-minutes:`, NuGet cache, or Trivy scan.
+11. ❌ Writing a Dockerfile without multi-stage build, HEALTHCHECK, or running as root — invoke `/docker-setup`.
+12. ❌ Creating a CI/CD workflow without `permissions:`, `timeout-minutes:`, NuGet cache, or Trivy scan — invoke `/setup-cicd`.
 13. ❌ Using string interpolation in Serilog log templates.
-14. ❌ Adding a new external dependency without a corresponding health check.
+14. ❌ Adding a new external dependency without a corresponding health check — invoke `/setup-observability`.
 
 ## Identity Module as Reference
 

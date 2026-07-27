@@ -54,9 +54,9 @@ When the template grows, consider adding example files here for:
 
 ## How Agents Should Use Examples
 
-1. Read the relevant **prompt** from `.ai/prompts/`.
-2. Read the relevant **rules** from `.ai/rules/`.
+1. Read the relevant **rules** from `.cursor/rules/`.
+2. Read the relevant **pattern** from `.agents/patterns/` (when available).
 3. Look at the **reference files** listed above for the specific pattern.
 4. Generate code that follows the same structure, naming, and conventions.
-5. Validate against the **checklist** from `.ai/checklists/`.
+5. Validate against the **checklist** from `.agents/checklists/`.
 

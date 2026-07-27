@@ -16,13 +16,16 @@ disable-model-invocation: true
 
 Example: `/new-module Orders`
 
-## Context — read these files before designing
+## Context — invariants (rules)
 
 - `.cursor/rules/domain.mdc`
 - `.cursor/rules/application.mdc`
-- `.cursor/rules/folder-structure.mdc`
 - `.github/agents/module-designer.agent.md`
 - `src/Core/Identity/` — canonical reference implementation
+
+## Context — invoke if needed (skills)
+
+- `/repo-layout` — when verifying folder/project structure for the new module
 
 ## Instruction
 

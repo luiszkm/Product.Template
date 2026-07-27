@@ -16,12 +16,15 @@ disable-model-invocation: true
 
 Example: `/new-entity Products Product`
 
-## Context — read these files before generating any code
+## Context — invariants (rules)
 
 - `.cursor/rules/domain.mdc`
-- `.cursor/rules/naming.mdc`
-- `.cursor/rules/folder-structure.mdc`
 - `src/Core/Identity/Identity.Domain/Entities/User.cs` — canonical reference
+
+## Context — invoke if needed (skills)
+
+- `/naming-conventions` — when naming a new entity, event, value object, or repository
+- `/repo-layout` — when file placement is unclear
 
 ## Instruction
 

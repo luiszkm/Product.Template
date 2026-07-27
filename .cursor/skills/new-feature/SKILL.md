@@ -16,7 +16,7 @@ disable-model-invocation: true
 
 Example: `/new-feature Products Product`
 
-## Context — read these files before generating any code
+## Context — invariants (rules)
 
 - `.cursor/rules/global.mdc`
 - `.cursor/rules/architecture.mdc`
@@ -25,10 +25,13 @@ Example: `/new-feature Products Product`
 - `.cursor/rules/infrastructure.mdc`
 - `.cursor/rules/api.mdc`
 - `.cursor/rules/tests.mdc`
-- `.cursor/rules/naming.mdc`
-- `.cursor/rules/folder-structure.mdc`
-- `.ai/checklists/new-feature.md`
+- `.agents/checklists/new-feature.md`
 - `src/Core/Identity/` — canonical reference implementation
+
+## Context — invoke if needed (skills)
+
+- `/naming-conventions` — when naming is ambiguous
+- `/repo-layout` — when file placement is unclear
 
 ## Dynamic context
 
@@ -99,4 +102,4 @@ For each file:
 {complete file content with correct namespaces}
 ```
 
-After all files, print the checklist from `.ai/checklists/new-feature.md` with completed items ticked.
+After all files, print the checklist from `.agents/checklists/new-feature.md` with completed items ticked.

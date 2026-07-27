@@ -18,12 +18,15 @@ Example: `/new-command Identity RegisterUser`
 
 Where `{COMMAND_NAME}` is the verb+noun without the `Command` suffix (e.g., `RegisterUser` → generates `RegisterUserCommand`).
 
-## Context — read these files before generating any code
+## Context — invariants (rules)
 
 - `.cursor/rules/application.mdc`
-- `.cursor/rules/naming.mdc`
-- `.cursor/rules/folder-structure.mdc`
 - `src/Core/Identity/Identity.Application/` — canonical reference
+
+## Context — invoke if needed (skills)
+
+- `/naming-conventions` — when naming a command, handler, or validator
+- `/repo-layout` — when file placement is unclear
 
 ## Instruction
 

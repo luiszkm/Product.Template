@@ -6,8 +6,8 @@
 
 - [ ] No layer dependency violations (Domain → App → Infra → Api)
 - [ ] No circular references between modules
-- [ ] New files are in the correct folder per `.ai/rules/12-folder-structure.md`
-- [ ] Naming follows `.ai/rules/11-naming.md`
+- [ ] New files are in the correct folder (invoke `/repo-layout` if unclear)
+- [ ] Naming follows conventions (invoke `/naming-conventions` if unclear)
 
 ## Code Quality
 
@@ -64,7 +64,7 @@
 
 - [ ] `RBAC_MATRIX.md` updated (if endpoints changed)
 - [ ] XML doc comments on public API actions
-- [ ] `.ai/rules/12-folder-structure.md` updated (if new folder patterns introduced)
+- [ ] `README.md` or `AGENTS.md` updated (if new folder patterns or skills introduced)
 
 ## Observability
 

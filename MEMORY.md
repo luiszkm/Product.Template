@@ -14,7 +14,7 @@ Next review: 2026-06-07
 
 | Date | Decision | Reason |
 |------|----------|--------|
-| 2026-05-23 | Rules migrated from `.ai/rules/NN-foo.md` to `.cursor/rules/{slug}.mdc` | Refactor commits aba7b9e / 419dc41 |
+| 2026-05-23 | Rules migrated from `.agents/rules/NN-foo.md` (formerly `.ai/rules/`) to `.cursor/rules/{slug}.mdc` | Refactor commits aba7b9e / 419dc41 |
 | 2026-05-23 | No mocking frameworks — inline fakes/stubs only | Prior mock/prod divergence caused undetected migration failure |
 | 2026-05-23 | Identity is the canonical reference module | First complete module with all patterns implemented |
 

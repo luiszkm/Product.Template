@@ -16,14 +16,17 @@ disable-model-invocation: true
 
 Example: `/new-endpoint Products GET /products/{id}`
 
-## Context — read these files before generating any code
+## Context — invariants (rules)
 
 - `.cursor/rules/api.mdc`
 - `.cursor/rules/security.mdc`
-- `.cursor/rules/naming.mdc`
 - `src/Api/Controllers/v1/IdentityController.cs` — canonical reference
 - `src/Api/Configurations/SecurityConfiguration.cs` — existing policies
 - `docs/security/RBAC_MATRIX.md` — existing RBAC matrix
+
+## Context — invoke if needed (skills)
+
+- `/naming-conventions` — when naming a new policy constant or action method
 
 ## Instruction
 
