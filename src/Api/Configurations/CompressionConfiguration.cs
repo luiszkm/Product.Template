@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.ResponseCompression;
 
 namespace Product.Template.Api.Configurations;
@@ -42,6 +43,37 @@ public static class CompressionConfiguration
         });
 
         return services;
+    }
+
+    // Endpoints de auth retornam AccessToken/RefreshToken (secret) junto com dados do corpo
+    // da requisição (email, etc.) na mesma resposta — combinação clássica de risco BREACH sob
+    // compressão HTTPS. Excluídos da compressão como mitigação defensiva.
+    private static readonly string[] CompressionExcludedPaths =
+    [
+        "/identity/login",
+        "/identity/refresh",
+        "/identity/register",
+        "/identity/external-login"
+    ];
+
+    public static IApplicationBuilder UseCompressionConfiguration(this IApplicationBuilder app)
+    {
+        app.Use((context, next) =>
+        {
+            var path = context.Request.Path.Value;
+            if (path is not null && CompressionExcludedPaths.Any(p => path.Contains(p, StringComparison.OrdinalIgnoreCase)))
+            {
+                var compressionFeature = context.Features.Get<IHttpsCompressionFeature>();
+                if (compressionFeature is not null)
+                    compressionFeature.Mode = HttpsCompressionMode.DoNotCompress;
+            }
+
+            return next();
+        });
+
+        app.UseResponseCompression();
+
+        return app;
     }
 }
 

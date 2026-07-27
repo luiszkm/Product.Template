@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.HttpOverrides;
 using Product.Template.Api.Configurations;
 using Product.Template.Api.Middleware;
 using Product.Template.Core.Identity.Infrastructure.Data;
@@ -11,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.AddSerilogConfiguration();
 
 JwtStartupValidation.ValidateJwtConfiguration(builder.Configuration, builder.Environment);
+ConnectionsConfigurations.ValidateConnectionStrings(builder.Configuration, builder.Environment);
 
 // Core Application Services (CQRS, Behaviors, Handlers)
 builder.Services.AddApplicationCore(builder.Configuration);
@@ -68,10 +68,7 @@ if (!app.Configuration.GetValue<bool>("DisableDatabaseInitialization"))
 }
 
 // Response Compression
-app.UseResponseCompression();
-
-if (app.Configuration.GetValue<bool>("FeatureFlags:EnableCaching", true))
-    app.UseCachingConfiguration();
+app.UseCompressionConfiguration();
 
 // Serilog Request Logging (captura todas as requisições de forma performática)
 app.UseSerilogConfiguration();
@@ -79,10 +76,7 @@ app.UseSerilogConfiguration();
 // Security (CORS) — must run before any middleware that can short-circuit (tenant, IP, etc.)
 app.UseSecurityConfiguration();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
+app.UseForwardedHeadersConfiguration();
 
 if (app.Configuration.GetValue<bool>("FeatureFlags:EnableAdvancedLogging", true))
     app.UseMiddleware<RequestLoggingMiddleware>();
@@ -105,6 +99,12 @@ if (!app.Environment.IsDevelopment())
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Output Caching — must run after UseAuthentication/UseAuthorization, otherwise cached
+// responses could be served to unauthorized callers without ever hitting the auth checks.
+if (app.Configuration.GetValue<bool>("FeatureFlags:EnableCaching", true))
+    app.UseCachingConfiguration();
+
 app.UseRateLimiting();
 
 app.UseMonitoringApiKey();

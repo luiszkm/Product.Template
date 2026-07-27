@@ -80,10 +80,21 @@ public static class HealthCheckConfiguration
         });
 
         // /health/ready — readiness probe (k8s readinessProbe): only DB checks.
+        // Unauthenticated by design (probed by the orchestrator, not humans) — must NOT use
+        // UIResponseWriter here, since it serializes each entry's exception message and would
+        // leak DB error details (connection/auth failures) to anyone hitting this endpoint.
         app.MapHealthChecks("/health/ready", new HealthCheckOptions
         {
             Predicate    = check => check.Tags.Contains("ready"),
-            ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            ResponseWriter = async (context, report) =>
+            {
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    status    = report.Status.ToString(),
+                    timestamp = DateTime.UtcNow
+                });
+            }
         });
 
         // /health — full check; restricted to Development to avoid information disclosure.

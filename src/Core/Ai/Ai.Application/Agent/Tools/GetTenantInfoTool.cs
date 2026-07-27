@@ -1,16 +1,23 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using MediatR;
+using Product.Template.Core.Tenants.Application.Permissions;
 using Product.Template.Core.Tenants.Application.Queries;
 using Product.Template.Kernel.Application.Ai;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Ai.Application.Agent.Tools;
 
 public sealed class GetTenantInfoTool : ITool
 {
     private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetTenantInfoTool(IMediator mediator) => _mediator = mediator;
+    public GetTenantInfoTool(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
 
     public ToolDefinition Definition { get; } = new(
         Name: "get_tenant_info",
@@ -32,6 +39,8 @@ public sealed class GetTenantInfoTool : ITool
 
     public async Task<string> ExecuteAsync(ToolCall toolCall, CancellationToken cancellationToken = default)
     {
+        ToolAuthorization.EnsurePermission(_currentUser, TenantsPermissions.Read);
+
         var pageSize = toolCall.Parameters["page_size"]?.GetValue<int>() ?? 20;
         pageSize = Math.Clamp(pageSize, 1, 100);
 

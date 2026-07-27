@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Product.Template.Core.Identity.Infrastructure.Data.Seeders;
 using Product.Template.Kernel.Domain.MultiTenancy;
 using Product.Template.Kernel.Infrastructure.HostDb;
@@ -61,8 +62,13 @@ public static class DatabaseConfiguration
             });
             options.ReplaceService<Microsoft.EntityFrameworkCore.Infrastructure.IModelCacheKeyFactory, TenantModelCacheKeyFactory>();
 
-            options.EnableSensitiveDataLogging();
-            options.EnableDetailedErrors();
+            var env = sp.GetRequiredService<IHostEnvironment>();
+            if (env.IsDevelopment())
+            {
+                options.EnableSensitiveDataLogging();
+                options.EnableDetailedErrors();
+            }
+
             var interceptors = new List<IInterceptor>
             {
                 sp.GetRequiredService<AuditableEntityInterceptor>(),

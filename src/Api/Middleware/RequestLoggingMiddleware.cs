@@ -12,7 +12,8 @@ public class RequestLoggingMiddleware
         "Authorization",
         "Cookie",
         "X-Api-Key",
-        "Api-Key"
+        "Api-Key",
+        "X-Monitoring-Api-Key"
     };
 
     private readonly HashSet<string> _sensitiveFields = new(StringComparer.OrdinalIgnoreCase)

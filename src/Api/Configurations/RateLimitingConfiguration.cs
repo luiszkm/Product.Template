@@ -17,14 +17,6 @@ public static class RateLimitingConfiguration
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.AddFixedWindowLimiter("fixed-by-ip", limiterOptions =>
-            {
-                limiterOptions.PermitLimit = permitLimit;
-                limiterOptions.Window = TimeSpan.FromSeconds(windowSeconds);
-                limiterOptions.QueueLimit = queueLimit;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.AutoReplenishment = true; 
-            });
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {

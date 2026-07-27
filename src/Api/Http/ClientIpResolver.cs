@@ -2,24 +2,13 @@ namespace Product.Template.Api.Http;
 
 public static class ClientIpResolver
 {
-    public static string? GetClientIp(HttpContext context)
-    {
-        var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwardedFor))
-        {
-            var ips = forwardedFor.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            if (ips.Length > 0)
-            {
-                return ips[0].Trim();
-            }
-        }
-
-        var realIp = context.Request.Headers["X-Real-IP"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(realIp))
-        {
-            return realIp;
-        }
-
-        return context.Connection.RemoteIpAddress?.ToString();
-    }
+    /// <summary>
+    /// Returns the resolved client IP. Relies on <c>UseForwardedHeaders</c> (configured in Program.cs)
+    /// having already rewritten <see cref="HttpContext.Connection"/>.RemoteIpAddress from
+    /// X-Forwarded-For/X-Real-IP — and only for requests whose immediate peer is a trusted
+    /// proxy (KnownProxies/KnownNetworks). Reading those headers directly here would let any
+    /// caller spoof its IP and bypass the whitelist/blacklist.
+    /// </summary>
+    public static string? GetClientIp(HttpContext context) =>
+        context.Connection.RemoteIpAddress?.ToString();
 }

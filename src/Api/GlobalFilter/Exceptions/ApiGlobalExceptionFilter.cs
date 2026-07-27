@@ -72,7 +72,9 @@ namespace Product.Template.Api.GlobalFilter.Exceptions
                 details.Title = "An unexpected error occurred";
                 details.Status = StatusCodes.Status500InternalServerError;
                 details.Type = "UnexpectedError";
-                details.Detail = exception.Message;
+                details.Detail = _env.IsDevelopment()
+                    ? exception.Message
+                    : "An unexpected error occurred.";
             }
 
             context.HttpContext.Response.StatusCode = (int)details.Status;

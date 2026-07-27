@@ -22,5 +22,17 @@ public static class JwtStartupValidation
             throw new InvalidOperationException(
                 "Jwt:Secret is still the template placeholder. Set a strong secret via environment or secrets manager.");
         }
+
+        // ValidateIssuer/ValidateAudience are silently disabled when Issuer/Audience are unset
+        // (see SecurityConfiguration.JwtOptions) — a token from any issuer/audience would then
+        // validate. Fail fast outside Development instead of degrading validation silently.
+        if (!environment.IsDevelopment())
+        {
+            if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
+                throw new InvalidOperationException("Jwt:Issuer must be configured outside Development.");
+
+            if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
+                throw new InvalidOperationException("Jwt:Audience must be configured outside Development.");
+        }
     }
 }

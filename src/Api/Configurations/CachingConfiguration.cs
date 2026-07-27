@@ -13,16 +13,20 @@ public static class CachingConfiguration
 
         services.AddOutputCache(options =>
         {
-            // Política base padrão
-            options.AddBasePolicy(builder => builder
-                .Expire(TimeSpan.FromMinutes(10))
-                .SetVaryByQuery("*"));
+            // Política base: nada é cacheado por padrão. Endpoints devem optar
+            // explicitamente por uma das políticas nomeadas abaixo via [OutputCache(PolicyName = "...")].
+            // Isso evita cachear respostas autenticadas/tenant-scoped sem opt-in explícito
+            // (nenhum controller usa [OutputCache] hoje — cachear por padrão vazaria dados
+            // entre usuários/tenants que batem na mesma URL+query).
+            options.AddBasePolicy(builder => builder.NoCache());
 
-            // Cache de usuários (5 minutos)
+            // Cache de usuários (5 minutos) — vary by Authorization garante que a resposta
+            // cacheada nunca é compartilhada entre identidades diferentes na mesma URL+query.
             options.AddPolicy("UserCache", builder => builder
                 .Expire(TimeSpan.FromMinutes(5))
                 .Tag("users")
-                .SetVaryByQuery("pageNumber", "pageSize"));
+                .SetVaryByQuery("pageNumber", "pageSize")
+                .SetVaryByHeader("Authorization"));
 
             // Cache de consultas públicas (15 minutos)
             options.AddPolicy("PublicCache", builder => builder

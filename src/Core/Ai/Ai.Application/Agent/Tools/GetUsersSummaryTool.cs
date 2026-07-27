@@ -1,16 +1,23 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using MediatR;
+using Product.Template.Core.Identity.Application.Permissions;
 using Product.Template.Core.Identity.Application.Queries.User;
 using Product.Template.Kernel.Application.Ai;
+using Product.Template.Kernel.Application.Security;
 
 namespace Product.Template.Core.Ai.Application.Agent.Tools;
 
 public sealed class GetUsersSummaryTool : ITool
 {
     private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
 
-    public GetUsersSummaryTool(IMediator mediator) => _mediator = mediator;
+    public GetUsersSummaryTool(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
 
     public ToolDefinition Definition { get; } = new(
         Name: "get_users_summary",
@@ -32,6 +39,8 @@ public sealed class GetUsersSummaryTool : ITool
 
     public async Task<string> ExecuteAsync(ToolCall toolCall, CancellationToken cancellationToken = default)
     {
+        ToolAuthorization.EnsurePermission(_currentUser, IdentityPermissions.UserRead);
+
         var pageSize = toolCall.Parameters["page_size"]?.GetValue<int>() ?? 10;
         pageSize = Math.Clamp(pageSize, 1, 50);
 
