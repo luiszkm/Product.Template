@@ -1,0 +1,286 @@
+﻿---
+name: Docker Rules
+description: Dockerfile, docker-compose, and containerization invariants for .NET 10.
+globs: Dockerfile*, docker-compose*, .dockerignore
+alwaysApply: false
+---
+
+# Docker Rules
+
+> Regras para gera├º├úo e manuten├º├úo de Dockerfiles de qualidade para este reposit├│rio .NET 10 / Clean Architecture.
+
+---
+
+## Princ├¡pios Fundamentais
+
+1. **Multi-stage build obrigat├│rio** ÔÇö nunca copiar o SDK para a imagem final.
+2. **Imagem base m├¡nima** ÔÇö sempre usar `mcr.microsoft.com/dotnet/aspnet:{version}-alpine` na stage `final` salvo necessidade justificada de `bookworm-slim`.
+3. **Non-root user obrigat├│rio** ÔÇö o processo deve rodar como `app` (UID 1654), nunca como `root`.
+4. **Imagem reproduz├¡vel** ÔÇö `dotnet restore` usa `--locked-mode` (requer `packages.lock.json` commitado) para garantir build determin├¡stico.
+5. **Layer cache eficiente** ÔÇö copiar apenas `.csproj` / `.props` antes do `restore`; copiar o c├│digo-fonte depois.
+6. **Nenhum segredo na imagem** ÔÇö tokens, connection strings e chaves nunca s├úo `ARG`/`ENV` em build-time; passados em runtime via `docker secret` ou vari├ível de ambiente do orquestrador.
+7. **ENTRYPOINT + CMD** ÔÇö usar `ENTRYPOINT ["dotnet", "Api.dll"]` + `CMD []`; nunca `CMD dotnet Api.dll` (shell form).
+8. **Labels OCI** ÔÇö adicionar labels de rastreabilidade (`org.opencontainers.image.*`).
+9. **HEALTHCHECK nativa** ÔÇö declarar `HEALTHCHECK` apontando para `/health/live`.
+10. **`.dockerignore` obrigat├│rio** ÔÇö excluir `bin/`, `obj/`, `.git/`, `tests/`, `docs/` e arquivos de IDE.
+
+---
+
+## Estrutura Can├┤nica do Dockerfile
+
+```dockerfile
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+# Stage 1 ÔÇö base runtime (imagem m├¡nima)
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS base
+WORKDIR /app
+
+# Non-root user (Alpine usa addgroup/adduser)
+RUN addgroup --system --gid 1654 appgroup \
+ && adduser  --system --uid 1654 --ingroup appgroup --no-create-home app
+
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:8080/health/live || exit 1
+
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+# Stage 2 ÔÇö restore (cache de depend├¬ncias)
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS restore
+WORKDIR /src
+
+# Copiar SOMENTE arquivos de projeto e props para maximizar cache
+COPY Directory.Build.props ./
+COPY global.json ./
+COPY src/Api/Api.csproj                                       src/Api/
+COPY src/Shared/Kernel.Domain/Kernel.Domain.csproj            src/Shared/Kernel.Domain/
+COPY src/Shared/Kernel.Application/Kernel.Application.csproj  src/Shared/Kernel.Application/
+COPY src/Shared/Kernel.Infrastructure/Kernel.Infrastructure.csproj src/Shared/Kernel.Infrastructure/
+COPY src/Core/Identity/Identity.Domain/Identity.Domain.csproj            src/Core/Identity/Identity.Domain/
+COPY src/Core/Identity/Identity.Application/Identity.Application.csproj  src/Core/Identity/Identity.Application/
+COPY src/Core/Identity/Identity.Infrastructure/Identity.Infrastructure.csproj src/Core/Identity/Identity.Infrastructure/
+# ÔåÆ Adicione novos m├│dulos seguindo o mesmo padr├úo
+
+RUN dotnet restore "src/Api/Api.csproj" --locked-mode
+
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+# Stage 3 ÔÇö build & publish
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+FROM restore AS publish
+ARG BUILD_CONFIGURATION=Release
+ARG VERSION=1.0.0
+
+COPY . .
+
+RUN dotnet publish "src/Api/Api.csproj" \
+      --no-restore \
+      -c $BUILD_CONFIGURATION \
+      -p:Version=$VERSION \
+      -p:UseAppHost=false \
+      -o /app/publish
+
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+# Stage 4 ÔÇö imagem final (apenas runtime)
+# ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+FROM base AS final
+
+# Labels OCI de rastreabilidade
+ARG VERSION=1.0.0
+ARG VCS_REF=unknown
+ARG BUILD_DATE=unknown
+LABEL org.opencontainers.image.title="Product.Template API" \
+      org.opencontainers.image.version="$VERSION" \
+      org.opencontainers.image.revision="$VCS_REF" \
+      org.opencontainers.image.created="$BUILD_DATE" \
+      org.opencontainers.image.source="https://github.com/neuraptor/product-template" \
+      org.opencontainers.image.vendor="Neuraptor"
+
+WORKDIR /app
+COPY --from=publish --chown=app:appgroup /app/publish .
+
+USER app
+
+ENTRYPOINT ["dotnet", "Api.dll"]
+```
+
+---
+
+## `.dockerignore` Can├┤nico
+
+```
+# Build artifacts
+**/bin/
+**/obj/
+
+# Source control
+.git/
+.gitignore
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Tests
+tests/
+
+# Docs / tools
+docs/
+prompts/
+.ai/
+.github/
+setup.ps1
+setup.sh
+*.md
+*.http
+*.txt
+
+# Secrets & local config
+*.pfx
+*.p12
+appsettings.Development.json
+appsettings.Local.json
+.env
+.env.*
+```
+
+---
+
+## Regras Detalhadas
+
+### Imagem base
+| Crit├®rio | Regra |
+|----------|-------|
+| Runtime default | `mcr.microsoft.com/dotnet/aspnet:10.0-alpine` |
+| Necessita ICU (globalization) | `mcr.microsoft.com/dotnet/aspnet:10.0-bookworm-slim` com `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false` |
+| SDK (build only) | `mcr.microsoft.com/dotnet/sdk:10.0-alpine` |
+| NUNCA em produ├º├úo | `sdk:*` na imagem final |
+
+> Sempre pin com minor version **expl├¡cita** (`10.0`, n├úo `latest`). Em pipelines de produ├º├úo, usar digest SHA256.
+
+### Vari├íveis de Ambiente Obrigat├│rias
+```dockerfile
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false   # se usar datas/locale
+ENV DOTNET_GC_HEAP_HARD_LIMIT_PERCENT=75          # previne OOM em containers com limite de mem├│ria
+```
+
+### Porta
+- Expor **apenas porta 8080** (HTTP). TLS ├® terminado no ingress/load balancer.
+- `EXPOSE 443` apenas se houver mTLS direto entre servi├ºos.
+
+### Tamanho da imagem
+- Meta: imagem final < **200 MB** (Alpine).
+- Verificar com `docker image inspect <image> --format='{{.Size}}'` e reportar no CI.
+- Remover ferramentas de diagn├│stico desnecess├írias do runtime.
+
+### Seguran├ºa
+- Rodar como non-root (`USER app`) ÔÇö obrigat├│rio.
+- N├úo instalar `curl`, `wget` ou outros utilit├írios na imagem final (apenas para `HEALTHCHECK`, usar `wget` j├í presente no Alpine).
+- Varrer com `trivy image` no CI ÔÇö falhar se houver CVE `HIGH` ou `CRITICAL` sem exce├º├úo justificada.
+- Nunca usar `--privileged` ou `cap_add` sem aprova├º├úo de seguran├ºa.
+
+### Build Arguments (ARGs)
+```dockerfile
+ARG BUILD_CONFIGURATION=Release   # Release | Debug
+ARG VERSION=1.0.0                 # Injetado pelo CI (ex: git tag)
+ARG VCS_REF=unknown               # git SHA curto
+ARG BUILD_DATE=unknown            # ISO 8601
+```
+Nunca usar `ARG` para segredos ÔÇö usar `--mount=type=secret` (BuildKit).
+
+### Secrets em Build-Time (BuildKit)
+Se precisar de credenciais para `dotnet restore` (feed privado NuGet):
+```dockerfile
+RUN --mount=type=secret,id=nuget_token \
+    dotnet restore "src/Api/Api.csproj" \
+      --configfile NuGet.Config \
+      /p:NuGetToken=$(cat /run/secrets/nuget_token) \
+      --locked-mode
+```
+
+### Cache BuildKit (`--mount=type=cache`)
+```dockerfile
+RUN --mount=type=cache,target=/root/.nuget/packages \
+    dotnet restore "src/Api/Api.csproj" --locked-mode
+```
+Reduz tempo de build em ~40% em builds locais repetidos.
+
+### HEALTHCHECK
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:8080/health/live || exit 1
+```
+- `/health/live` ÔåÆ liveness (processo vivo)
+- `/health/ready` ÔåÆ readiness (depend├¬ncias prontas) ÔÇö verificado pelo orquestrador, n├úo pelo HEALTHCHECK nativo
+
+---
+
+## docker-compose (desenvolvimento local)
+
+```yaml
+# docker-compose.yml
+services:
+  api:
+    build:
+      context: .
+      dockerfile: src/Api/Dockerfile
+      target: final
+      args:
+        BUILD_CONFIGURATION: Release
+        VERSION: "1.0.0-local"
+    image: product-template-api:local
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Host=db;Database=product_template;Username=postgres;Password=postgres
+      - X-Tenant=public
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: product_template
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+---
+
+## What agents must NEVER do
+
+1. Usar `FROM mcr.microsoft.com/dotnet/sdk:*` na imagem final.
+2. Usar `root` como usu├írio em runtime.
+3. Copiar todo o source code antes do `restore` (quebra o cache).
+4. Usar `CMD dotnet Api.dll` (shell form) ÔÇö sempre usar exec form.
+5. Omitir `HEALTHCHECK`.
+6. Passar connection strings ou tokens como `ARG` ou `ENV` no Dockerfile.
+7. Usar `latest` como tag de imagem base em produ├º├úo.
+8. Omitir `.dockerignore` ou deix├í-lo incompleto.
+9. Fazer `COPY . .` sem antes copiar e restaurar os `.csproj` separadamente.
+10. Criar mais de uma porta EXPOSE sem justificativa.
+

@@ -23,6 +23,8 @@ Examples:
 
 - `.cursor/rules/global.mdc`
 - `.cursor/rules/architecture.mdc`
+- `.cursor/rules/application.mdc`
+- `.cursor/rules/api.mdc`
 - `.cursor/rules/security.mdc`
 - `.cursor/rules/tests.mdc`
 - `docs/security/RBAC_MATRIX.md`

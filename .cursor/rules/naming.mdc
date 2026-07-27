@@ -1,0 +1,53 @@
+---
+name: Naming Conventions
+description: Naming conventions for types, files, database elements, tests, and namespaces.
+alwaysApply: true
+---
+
+> For lookup by element type, invoke `/naming-conventions`. Project-specific root namespace: see `.agents/patterns/project-facts.md`.
+
+## Files & Types
+
+| Element | Pattern | Example |
+|---------|---------|---------|
+| **Entity** | `{Noun}` | `User.cs`, `Role.cs` |
+| **Aggregate Root** | `{Noun}` | `User.cs` (inherits `AggregateRoot`) |
+| **Value Object** | `{Noun}` | `Email.cs`, `Password.cs` |
+| **Domain Event** | `{Noun}{PastVerb}Event` | `UserRegisteredEvent.cs` |
+| **Repository Interface** | `I{AggregateRoot}Repository` | `IUserRepository.cs` |
+| **Repository Impl** | `{AggregateRoot}Repository` | `UserRepository.cs` |
+| **Command** | `{Verb}{Noun}Command` | `RegisterUserCommand.cs` |
+| **Command Handler** | `{Verb}{Noun}CommandHandler` | `RegisterUserCommandHandler.cs` |
+| **Query** | `{Get\|List}{Noun}Query` | `GetUserByIdQuery.cs`, `ListRolesQuery.cs` |
+| **Query Handler** | `{Get\|List}{Noun}QueryHandler` | `GetUserByIdQueryHandler.cs` |
+| **Validator** | `{CommandName}Validator` | `RegisterUserCommandValidator.cs` |
+| **Output DTO** | `{Noun}Output` | `UserOutput.cs`, `RoleOutput.cs` |
+| **Mapper** | `{Noun}Mapper` | `UserMapper.cs` |
+| **Controller** | `{Module}Controller` | `IdentityController.cs` |
+| **EF Configuration** | `{Entity}Configurations` | `UserConfigurations.cs` |
+| **Seeder** | `{Entity}Seeder` | `RoleSeeder.cs` |
+| **Middleware** | `{Purpose}Middleware` | `RequestLoggingMiddleware.cs` |
+| **Configuration** | `{Feature}Configuration` | `SecurityConfiguration.cs` |
+| **Test Class** | `{SystemUnderTest}Tests` | `RegisterUserCommandHandlerTests.cs` |
+
+## Namespaces
+
+Pattern: `{RootNamespace}.{Layer}.{Module}.{Folder}` — see `.agents/patterns/project-facts.md` for `{RootNamespace}`.
+
+## Database
+
+| Element | Convention | Example |
+|---------|-----------|---------|
+| Table name | Plural PascalCase | `Users`, `Roles` |
+| Column name | PascalCase | `FirstName`, `TenantId` |
+| FK column | `{ReferencedEntity}Id` | `UserId`, `RoleId` |
+| Index | Composite with `TenantId` | `{TenantId, Email}` |
+
+## Test Methods
+
+`{Method}_{Scenario}_{ExpectedBehavior}` — e.g. `Handle_ShouldCreateUser_WhenInputIsValid`.
+
+## Permissions & Policies
+
+- Policy names: PascalCase constants in `SecurityConfiguration`.
+- Permission names: lowercase dot-separated (`users.read`, `billing.invoice.read`).

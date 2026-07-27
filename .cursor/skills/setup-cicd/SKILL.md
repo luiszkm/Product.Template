@@ -26,6 +26,7 @@ Workflow types: `ci` | `build-push` | `deploy` | `security-scan` | `all`
 
 ## Context — read before generating
 
+- `.cursor/rules/cicd.mdc`
 - `.cursor/rules/global-security.mdc` — secrets and credential rules
 - `.github/workflows/` — existing workflows (check before creating new ones)
 

@@ -1,0 +1,270 @@
+﻿---
+name: AI Features Rules
+description: AI SDK placement, ITool patterns, prompts, observability, and testing invariants for AI capabilities.
+globs: src/**/Ai/**
+alwaysApply: false
+---
+
+# AI Features Rules
+
+> Regras can├│nicas para implementar capacidades de Intelig├¬ncia Artificial neste reposit├│rio.
+> Refer├¬ncia de implementa├º├úo: `src/Core/Ai/` e `src/Shared/Kernel.Infrastructure/Ai/`.
+
+---
+
+## Princ├¡pio fundamental: IA ├® infraestrutura
+
+Um LLM ├® para o dom├¡nio o que um banco de dados ├®: um detalhe de implementa├º├úo.
+O dom├¡nio **nunca** sabe que existe um modelo de IA. As interfaces vivem em `Kernel.Application`.
+
+```
+Domain  ÔåÉ  Application  ÔåÉ  Infrastructure  ÔåÉ  Api
+                Ôåæ                  Ôåæ
+         interfaces IA       implementa├º├Áes IA
+         (Kernel.Application/Ai/)  (Kernel.Infrastructure/Ai/)
+```
+
+**PROIBIDO**: importar `Azure.AI.*`, `OpenAI.*` ou qualquer SDK de IA no Domain ou Application.
+
+---
+
+## Contratos do Kernel (Kernel.Application/Ai/)
+
+| Interface | Responsabilidade |
+|-----------|-----------------|
+| `ILlmService` | Gera├º├úo de texto (complete + stream) com suporte a tool calling |
+| `IEmbeddingService` | Vectoriza├º├úo de texto |
+| `IOcrService` | Extra├º├úo de texto de imagens/PDFs (Azure Document Intelligence) |
+| `ITextToSpeechService` | S├¡ntese de voz |
+| `ISpeechToTextService` | Transcri├º├úo de ├íudio |
+| `IAiUsageTracker` | Rastreamento de tokens e custos por tenant |
+| `ITool` | Contrato de tool para o AgentLoop |
+
+### `ITool` ÔÇö contrato real
+
+```csharp
+public interface ITool
+{
+    ToolDefinition Definition { get; }   // { Name, Description, InputSchema }
+    Task<string> ExecuteAsync(ToolCall call, CancellationToken cancellationToken = default);
+}
+```
+
+- `Definition.Name`: `snake_case`, ├║nico no sistema
+- `Definition.Description`: em ingl├¬s, descreve **quando usar** (o LLM l├¬ isto)
+- `ExecuteAsync` retorna JSON string com o resultado
+- `call.Parameters` cont├®m os argumentos escolhidos pelo LLM
+
+---
+
+## M├│dulo Ai transversal (src/Core/Ai/)
+
+Estrutura can├│nica:
+
+```
+src/Core/Ai/
+  Ai.Application/
+    Handlers/
+      ChatCommand.cs                   ÔåÉ record ChatCommand(string Message, IReadOnlyList<LlmMessage>?)
+      ChatOutput.cs                    ÔåÉ record ChatOutput(string Reply, int IterationsUsed)
+      ChatCommandHandler.cs            ÔåÉ ICommandHandler<ChatCommand, ChatOutput>
+      ChatCommandValidator.cs          ÔåÉ AbstractValidator<ChatCommand>
+    Agent/
+      AgentLoop.cs                     ÔåÉ loop ReAct; RunAsync ÔåÆ AgentResult
+      ToolRegistry.cs                  ÔåÉ cat├ílogo via IEnumerable<ITool> (DI)
+      Tools/
+        GetUsersSummaryTool.cs         ÔåÉ ITool que wrapa ListUserQuery
+        GetTenantInfoTool.cs           ÔåÉ ITool que wrapa ListTenantsQuery
+        ÔöÇÔöÇÔöÇ (nova tool = novo ficheiro aqui) ÔöÇÔöÇÔöÇ
+    Prompts/
+      AgentSystemPrompt.cs             ÔåÉ instru├º├úo de sistema do agente
+  Ai.Infrastructure/
+    DependencyInjection.cs             ÔåÉ AddAiModule()
+    Ai.Infrastructure.csproj
+```
+
+### `AgentLoop.RunAsync` ÔÇö assinatura real
+
+```csharp
+public Task<AgentResult> RunAsync(
+    string userMessage,
+    string systemPrompt,
+    IReadOnlyList<LlmMessage>? history,
+    CancellationToken cancellationToken);
+
+public sealed record AgentResult(string Reply, int IterationsUsed, int TotalTokens);
+```
+
+- `MaxIterations = 5` (teto de seguran├ºa)
+- Tool calls dentro de uma itera├º├úo executadas com `Task.WhenAll` (paralelo)
+- Se atingir o teto, faz chamada de fallback de sumariza├º├úo ÔÇö nunca retorna vazio
+
+### Registo de tools
+
+Expl├¡cito em `Ai.Infrastructure/DependencyInjection.cs`:
+
+```csharp
+services.AddScoped<ITool, GetUsersSummaryTool>();
+services.AddScoped<ITool, GetTenantInfoTool>();
+// services.AddScoped<ITool, NovaTool>();  ÔåÉ uma linha por tool
+```
+
+O `ToolRegistry` descobre as tools via `IEnumerable<ITool>` injectada pelo DI.
+
+---
+
+## Padr├úo por camada: handler de IA em m├│dulo de neg├│cio
+
+Quando um m├│dulo precisa de IA (ex: OCR, LLM, TTS):
+
+### Application ÔÇö Handler
+
+```csharp
+// {Module}.Application/Handlers/Ai/{UseCase}CommandHandler.cs
+public sealed class {UseCase}CommandHandler : ICommandHandler<{UseCase}Command, {UseCase}Output>
+{
+    private readonly I{Entity}Repository _{entity}Repository;
+    private readonly ILlmService _llm;          // ou IOcrService, ITts, etc.
+    private readonly IAiUsageTracker _tracker;
+    private readonly ITenantContext _tenantContext;
+    private readonly ILogger<{UseCase}CommandHandler> _logger;
+
+    public async Task<{UseCase}Output> Handle({UseCase}Command request, CancellationToken ct)
+    {
+        // 1. Buscar dados do dom├¡nio
+        // 2. Construir LlmRequest com o prompt do m├│dulo
+        var llmRequest = {UseCase}Prompts.Build{Action}Request(data);
+
+        var started = DateTime.UtcNow;
+        LlmResponse response;
+        try
+        {
+            response = await _llm.CompleteAsync(llmRequest, ct);
+        }
+        finally
+        {
+            await _tracker.TrackAsync(new AiUsageRecord(
+                Service: "llm",
+                Provider: "azure-openai",
+                Model: "...",
+                Module: "{module}",
+                Operation: nameof({UseCase}CommandHandler),
+                TenantId: _tenantContext.TenantId ?? 0,
+                TokensUsed: ...,
+                Latency: DateTime.UtcNow - started,
+                Success: ...
+            ), ct);
+        }
+
+        // 3. Retornar Output DTO
+        return new {UseCase}Output(response.Text);
+    }
+}
+```
+
+### Application ÔÇö Prompts
+
+```csharp
+// {Module}.Application/Ai/Prompts/{UseCase}Prompts.cs
+internal static class {UseCase}Prompts
+{
+    private const string System =
+        """
+        {Persona e restri├º├Áes}
+        Nunca invente informa├º├Áes que n├úo estejam no contexto fornecido.
+        """;
+
+    public static LlmRequest Build{Action}Request({Entity} entity) => new(
+        SystemPrompt: System,
+        UserPrompt: $"...",
+        Temperature: 0.1f,   // Ôëñ0.2 para extra├º├úo; Ôëñ0.8 para cria├º├úo
+        MaxTokens: 500        // sempre definir
+    );
+}
+```
+
+### Application ÔÇö Tool (para expor ao AgentLoop)
+
+```csharp
+// Ai.Application/Agent/Tools/{UseCase}Tool.cs
+public sealed class {UseCase}Tool : ITool
+{
+    private readonly IMediator _mediator;
+    public {UseCase}Tool(IMediator mediator) => _mediator = mediator;
+
+    public ToolDefinition Definition { get; } = new(
+        Name: "{module_action}",                         // snake_case
+        Description: "...(quando usar, em ingl├¬s)...",
+        InputSchema: new JsonObject
+        {
+            ["type"] = "object",
+            ["properties"] = new JsonObject { ... },
+            ["required"] = new JsonArray { ... }
+        }
+    );
+
+    public async Task<string> ExecuteAsync(ToolCall call, CancellationToken ct = default)
+    {
+        // Extrair par├ómetros de call.Parameters
+        // Despachar query/command via IMediator.Send()
+        // NUNCA aceder reposit├│rio directamente
+        var result = await _mediator.Send(new {SomeQuery}(...), ct);
+        return JsonSerializer.Serialize(result);
+    }
+}
+```
+
+---
+
+## Regras obrigat├│rias
+
+### Architecture
+1. **Nunca** importar SDK de IA (Azure.AI.*, OpenAI.*) fora de `Kernel.Infrastructure`.
+2. **Nunca** injectar `AzureOpenAIClient` directamente em handlers ÔÇö usar `ILlmService`.
+3. Prompts pertencem ├á Application (l├│gica de neg├│cio) ÔÇö nunca ├á Infrastructure.
+4. Tools despacham via `IMediator` ÔÇö **nunca** acedem reposit├│rios directamente.
+
+### Prompts
+5. Todo `LlmRequest` **deve** definir `Temperature` explicitamente (Ôëñ0.2 para extra├º├úo, Ôëñ0.8 para cria├º├úo).
+6. Todo `LlmRequest` **deve** definir `MaxTokens`.
+7. `SystemPrompt` **deve** incluir `"Nunca invente informa├º├Áes"` (previne alucina├º├úo).
+8. Dados do utilizador **nunca** s├úo interpolados no `SystemPrompt` (previne prompt injection).
+
+### Observabilidade
+9. Todo handler que chama IA **deve** chamar `_tracker.TrackAsync(...)`.
+10. Log estruturado obrigat├│rio: `Module`, `Operation`, `Provider`, `Model`, `Tokens`, `Latency`, `TenantId`.
+
+### Resili├¬ncia
+11. `AzureOpenAiLlmService` tem pipeline Polly est├ítico: retry (3x, exponential+jitter) ÔåÆ timeout (30s) ÔåÆ circuit breaker (50% / 2min).
+12. IA usada como enrichment (n├úo bloqueante): capturar exce├º├úo, logar `Warning`, continuar sem o enriquecimento.
+
+### DI e Configura├º├úo
+13. Feature flag `FeatureFlags:EnableAI` controla se usa servi├ºos reais ou Null implementations.
+14. `IDistributedCache` ├® registado em `AiConfiguration.cs` antes de `AddAiServices()` (Redis ou `AddDistributedMemoryCache`).
+15. Cada nova tool deve ser explicitamente registada em `Ai.Infrastructure/DependencyInjection.cs`.
+
+### Testes
+16. **Nunca** chamar APIs de IA em testes unit├írios ÔÇö usar stub inline `StubLlmService`.
+17. Stub inline: `sealed class StubLlmService(string response) : ILlmService { ... }` ÔÇö sem mocking framework.
+18. Tests de `AgentLoop`: cobrir resposta directa (0 tools), chamada de tool ÔåÆ resposta, teto de itera├º├Áes.
+19. Tests de `ToolRegistry`: tool encontrada, tool n├úo encontrada retorna JSON de erro.
+
+---
+
+## Checklist r├ípido ÔÇö nova feature de IA em m├│dulo
+
+- [ ] `{UseCase}Command` + `{UseCase}CommandHandler` em `{Module}.Application/Handlers/Ai/`
+- [ ] `{UseCase}CommandValidator` com valida├º├úo de campos obrigat├│rios
+- [ ] `{UseCase}Prompts.cs` em `{Module}.Application/Ai/Prompts/` com `Temperature` e `MaxTokens`
+- [ ] `_tracker.TrackAsync(...)` ap├│s a chamada de IA
+- [ ] Log estruturado (entry + success + warning em falha)
+- [ ] Se a feature ├® enrichment: capturar exce├º├úo e continuar sem o enriquecimento
+- [ ] `{UseCase}Tool.cs` em `Ai.Application/Agent/Tools/` se exposta ao agente
+- [ ] Tool registada em `Ai.Infrastructure/DependencyInjection.cs`
+- [ ] Unit test com `StubLlmService` inline (happy path + falha de IA)
+
+---
+
+## Refer├¬ncia completa
+
+`docs/guides/ai-integration-guide.md` ÔÇö guia completo com exemplos de cada padr├úo.

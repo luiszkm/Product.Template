@@ -22,6 +22,7 @@ Examples:
 
 ## Context — read before generating
 
+- `.cursor/rules/docker.mdc`
 - `src/Api/Dockerfile` — existing Dockerfile (if any)
 - `compose.yaml` — existing compose (if any)
 - `.dockerignore` — existing ignore rules

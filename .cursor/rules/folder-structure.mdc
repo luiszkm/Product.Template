@@ -1,0 +1,60 @@
+---
+name: Folder Structure
+description: Repository folder structure for modules, tests, and shared kernel.
+globs: src/**, tests/**
+alwaysApply: false
+---
+
+> Full placement guide: invoke `/repo-layout`. Project name and reference module: `.agents/patterns/project-facts.md`.
+
+## Root
+
+```
+{ProjectName}/
+├── .agents/          # checklists, patterns, examples
+├── .cursor/          # rules, skills
+├── docs/security/RBAC_MATRIX.md
+├── src/
+│   ├── Api/
+│   ├── Core/{Module}/   # .Domain / .Application / .Infrastructure
+│   ├── Shared/Kernel.{Domain,Application,Infrastructure}/
+│   └── Tools/Migrator/
+├── tests/
+│   ├── ArchitectureTests/
+│   ├── UnitTests/
+│   ├── IntegrationTests/
+│   ├── CommonTests/
+│   └── E2ETests/
+└── Product.Template.sln   # see project-facts.md for actual name
+```
+
+## Module triple (required for new bounded contexts)
+
+```
+src/Core/{Module}/
+├── {Module}.Domain/         Entities, VOs, Events, Repository interfaces
+├── {Module}.Application/    Handlers, Queries, Validators, Mappers, Permissions
+└── {Module}.Infrastructure/ Persistence, Seeders, DependencyInjection.cs
+```
+
+## Tests layout
+
+```
+tests/
+├── UnitTests/{Feature}/           # handlers, validators, domain
+├── IntegrationTests/{Module}/     # HTTP + auth
+├── ArchitectureTests/             # layer & naming gates
+├── CommonTests/Common/            # BaseFixture
+└── E2ETests/Security/
+    └── RbacMatrixConsistencyTests.cs
+```
+
+## Placement rules
+
+1. Never create files outside this structure without updating `/repo-layout`.
+2. New module → full Domain / Application / Infrastructure triple + DI + MediatR registration.
+3. Controller → `src/Api/Controllers/v1/{Module}Controller.cs`.
+4. EF configuration → `src/Shared/Kernel.Infrastructure/Persistence/Configurations/`.
+5. Authorization entities → `Authorization.Domain` (not Identity).
+6. Tenant entity → `Tenants.Domain` (does **not** implement `IMultiTenantEntity`).
+7. Design-time `AppDbContext` factory → `src/Api/`.

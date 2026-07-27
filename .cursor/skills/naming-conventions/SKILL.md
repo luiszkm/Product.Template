@@ -19,6 +19,11 @@ Examples:
 - `/naming-conventions handler` — show handler naming
 - `/naming-conventions database` — show DB naming
 
+## Context — invariants (rules)
+
+- `.cursor/rules/naming.mdc`
+- `.cursor/rules/style.mdc`
+
 ## Files & Types
 
 | Element | Pattern | Example |
