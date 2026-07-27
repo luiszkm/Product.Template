@@ -69,8 +69,14 @@ internal sealed class AuthorizationSeeder : IAppSeeder
         foreach (var permission in permissions)
             adminRole.AssignPermission(permission.Id);
 
+        // Tenants module permissions are host-scoped (Tenant is not an IMultiTenantEntity — it's
+        // the cross-tenant catalog itself). Granting "tenants.read" to the default per-tenant
+        // "User" role would let any ordinary tenant user enumerate every tenant in the system
+        // (id, key, isolation mode, active status) via GET /api/v1/tenants — a cross-tenant data
+        // leak, not a tenant-scoped read. Exclude the whole module from the blanket ".read" grant.
         var readPermissions = permissions
             .Where(p => p.Name.EndsWith(".read", StringComparison.OrdinalIgnoreCase))
+            .Where(p => !p.Name.StartsWith("tenants.", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         var userRole = Role.Create(tenantId, "User", "Standard read-only access");
