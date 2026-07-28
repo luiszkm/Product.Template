@@ -49,6 +49,8 @@ Breaking changes para integradores:
 
 Requer migração EF / base de dados alinhada ao branch `cursor/tenants-guid-tests-541a`.
 
+Pipeline de resolução, cache do tenant store, provisionamento e isolamento por schema/banco: ver [Multi-tenancy architecture](./multi-tenancy-architecture.md).
+
 ## Novos módulos
 
 Entidades multi-tenant:

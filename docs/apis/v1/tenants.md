@@ -15,7 +15,7 @@ O servidor **gera** `tenantId` na criação (`POST`). O cliente não envia ID nu
 
 Tenant seed padrão (desenvolvimento): `WellKnownTenants.Public` = `00000000-0000-0000-0000-000000000001`, `tenantKey` = `public`.
 
-Detalhes de arquitetura: [Tenant identifiers](../../guides/tenant-identifiers.md).
+Detalhes de arquitetura: [Tenant identifiers](../../guides/tenant-identifiers.md) e [Multi-tenancy architecture](../../guides/multi-tenancy-architecture.md) (resolução, cache, provisionamento, isolamento).
 
 ## GET `/api/v1/tenants`
 
